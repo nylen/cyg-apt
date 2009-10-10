@@ -392,4 +392,20 @@ Added try:...finally: to testupgrade to ensure cleanup code is run.
 Revision 68
 -----------
 
+Standardized the directory structure:
+cyg-apt/
+  /trunk
+  /branches
+  /tags
+  /wiki
+Added a release directory, some notes and the first release:
+cyg-apt-1.0.0-1.tar.bz2
+
+removed mini_mirror setup-2.ini: it's just misleading. If you are going to use test-cyg-apt.py you have to get mini_mirror working on your system. Possibly .cyg-apt should go too.
+
+Revision 75
+-----------
+
+
+
 
