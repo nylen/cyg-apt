@@ -1,0 +1,4 @@
+sdesc: "Test package."
+ldesc: "Test package -- long desc."
+category: Utils
+requires: cygwin testpkg-lib

@@ -1,0 +1,4 @@
+sdesc: "Test package for testing requirements."
+ldesc: "Test package for testing requirements -- long desc."
+category: Utils
+requires: cygwin

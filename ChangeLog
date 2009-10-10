@@ -1,0 +1,395 @@
+Changelog
+--------------------------------------------------------------------------------
+
+Changes apply to trailing revision version: FooVersion has Foo change:
+
+Foo change
+FooVersion
+--------------------------------------------------------------------------------
+Changes for cyg-apt script
+
+Incorrect file
+Revision 1
+----------
+
+Revision 2
+----------
+
+* Added original 2006 version cyg-apt by Jan Nieuwenhuizen from http://lilypond.org/~janneke/software/cyg-apt
+
+Revision 3
+* Changed tabs to spaces: tabs were confusing Python and causing spurious indentation complains.
+
+* Import pdb for debugging
+* Change the hardcoded mirror and cache locations
+official_mirror = 'http://gnu.kookel.org/ftp/cygwin'
+cache = ROOT + '/var/cache/setup' 
+becomes
+official_mirror = 'http://mirror.internode.on.net/pub/cygwin/'
+cache = ROOT + '/e/home/application_data/cygwin' 
+
+* Fix indentation of a line in options parsing in the script lines outside any function at the top.
+        cache = a
+
+* in get_requires(): only look for dependencies in [curr], not in distname which is the selected version of the selected package. My thinking is that those wanting the previous or testing versions of a package probably don't want previous or testing versions of the projects it depends on: there's no gurantee that there is any synchronisation of current-previous-test between packages, or that a previous version or a testing version of dependency exists.
+
+* in get_filelist (): split the decompression of the filelist file into two lines for easier debugging.
+
+* in find () : removed prepending ROOT to the file to search for. ROOT doesn't seem to be a general cygwin concept and I would like to remove it. 
+
+* Changed find () to silently ignore /setup/foo.lst files (containsing installed files for package 'foo') that we would expect to exist from installled.db but aren't actually there. At least with my install some packages were not correctly installed and this file doesn't exist. We should probably warn about these files rather than silently ignore.
+
+Revision 4
+----------
+
+Hack in hardcoded Cygwin 1.7 compatibility to cyg-apt. Add temporary fix to package searches: crudely disable regex searches to avoid failing on
+ packgenames containing control characters.
+
+Added uninstall tests to test-cyg-apt.py and aimed both install and uninstall tests at the product of the newly added mini_mirror : the testpkg packge. Also added tests for postinstall, preremove and postremove scripts.
+
+Added mini_mirror:
+Mini mirror builds a Cywin package from scratch and installs it to a remote server. See mini_mirror/README
+
+Revision 10
+-----------
+
+cyg-apt: Fixed bogus warnings about missing postinstall and pre
+remove scripts during do_install.
+
+Fixed mini_mirror using .bz extension not .bz2, added exclusion of .svn directories when taring up the mini_mirror package build, fix test-cyg-apt.py to match correct built package.
+
+Revision 14
+-----------
+Move test-cyg-apt.py and mini_mirror to use utilpack for path handling, and added /setup/utilpack: the installer for said utilpack.
+
+mini_mirror now ignores any file with substring "svn" in the path/name when "building" the build clean target.
+
+Added "purge" command as per apt-get to cyg-apt.
+Added test for purge and download commands to test-cyg-apt.
+
+
+Revision 31
+-----------
+
+Added testpkg-lib to mini-mirror: an empty package. Set testpkg to be dependant on it, and add tests for commands requires and missing: testpkg-lib must turn up as one of testpkg's requires and cyg-apt must be able to detect if testpkg-lib has been removed.
+
+To better handle multiple packags in mini_mirror setup-2.ini moved to mini_mirror root: all package build reference it. Similarly the build tools were moved off testpkg's src directory to a common directory at the cyg-apt project root: /tools.
+
+cyg-apt:
+Added a better error message for md5 command when target package is missing.
+
+test-cyg-apt:
+Add tests for md5, requires and missing commands.
+
+Revision 38
+------------
+
+Added a new tool setup_ini_diff_make.py to patch setup.ini. Doubt this will be
+the final version: keep generalising the tool. Change mini_mirror to use the
+new tool. Also use the new patch tool in test-cyg-apt to test
+the "cyg-apt new" command: temporarily patch .ini to report availability of
+a new (spurious) version of testpkg: 0.0.2-0. Check cyg-apt new reports the
+new version and revert the .ini
+
+Change the standard .cyg-apt to point to a local setup-2.ini
+
+Revsion 39
+----------
+
+Removed build command: new cyg-apt regards building as out of scope.
+Slightly simplified cyg-apt source command: downloads and unpacks a source tarball into the current working directory. Unlike apt-get we don't automatically apply the cygwin patches: the whole business of building cygwin source packages is non-trivial and cyg-apt is making no attempt to deal with them at this point. Potentially the standard application of cygwin-specific diffs could be included.
+
+This pretty much what it did before, but the build step was removed becasue it looked lillypond specific. Also effectively ignore "SRC" variable for the same reason. We might want to put this back in a more generalised form to support downloading source tarballs to directories other than the current one, but his could be overkill.
+
+Added test for the modified cyg-apt source command. The test is very simple and a little hacky: it executes the command, checks the testpkg-0.0.1-0 directory is present and that a marker file is also present: the mini_mirror source package build tree is also checked for the file as a sanity check in case the mini_mirror changes. It's becoming a problem that the "source" package from mini_mirror is just a duplicate of the binary: sufficent for testing but confusing to newcomers!
+
+Also cleaned up other lilly-pond specific comments variables and script lines in cyg-apt, mostly at the top level of the script: EXTRA, MKNETREL, PATCH and some lines from setup() which appeared to be both lillypond and mingw specific. I'm (chrisc) thinking that cyg-apt should focus on complete tested functionality on Cygwin and not worry about MinGW for now, if ever.
+
+Commented out the hardcoded initial values for offical_mirror, mirror, cache and downloads: until this is sorted out I'd prefer cyg-apt breaks if not given a .cyg-apt or command line arguments for mirror and cache.
+
+Revision 41
+-----------
+
+Fixed comment on cyg-apt uninstall_want_file_removed(): as it stands any function __doc__ string is reported in the --help as if the function is a command and uninstall_want_file_removed() is not a command.
+
+Fixed cyg-apt url command: wasn't prefixing with mirror url.
+
+Added a test for fixed cyg-apt url command.
+
+Revision 42
+-----------
+*Added a very basic test for buildrequires:
+
+The same tests as normal requires since there's very little difference in the Cygwin packaging system. I don't think the existing buildrequires code in cyg-apt is quite right: it looks for
+external-source in .ini package properties but it doesn't appear there, it appears in setup.hint: needs a fix and a better test. In practice external-source is rarely used.
+
+*Added mini_mirror support for the cyg-apt upgrade test: 
+
+mini_mirror now creates a 0.0.2-0 version of testpkg which contains a single additional file as a test marker: /etc/ver2_marker.
+
+* Added a test for upgrade:
+
+installs 0.0.1-0, patches the installed setup-2.ini to indicate 0.0.2-0 as the current version then attempts an upgrade: proper behaviour is the automatic uninstallation of 0.0.1-0 followed by installation of 0.0.2-0. Currently we only check for ver2_marker: a better test would also check for the non-existance of a 0.0.1-0 only file.
+
+* Fiddled with requires inplementation
+
+Use a less confusing list comprehension. I notice the implemenation isn't as efficent as it could be: packages have their requirements merged in to the dictionary multiple times.
+
+* Moved the setup-2.ini used in testing back to /etc/setup-2.ini until I get it sorted out.
+
+* Last commit before culling the top-level script.
+
+Revision 44
+-----------
+
+Added a test for cyg-apt update.
+
+Big architectural change to cyg-apt: gathered the top-level script into a "main" function which has the same role with the advantage of being all in the one place: the top level script was scattered through the file, which makes it very hard to track what happens before the execution of the command entry point. This proved harder than expected due to the large number of existing globals and the way that .cyg-apt is read into the top level's __dict__ necessitating more globals to keep it working.
+
+Passes all the tests in the testsuite but this was such a disruptive change I expect more bugs in the future.
+
+Revision 45
+-----------
+
+Change "basename" to "scriptname" when referring to sys.argv[0] to avoid confusion with other uses of basename, and stop passing it around as global.
+
+Added "get_rc()" in line with get_installed() and get_setup(): localise configuration of cyg-apt from .cyg-apt into one function. This includes both reading values and (currently) expanding values by (for example) adding known path chunks.
+
+Rearrange Main: group the four main things it does:
+setting up constants
+parsing the rc
+command line overrides
+read in the cygwin package database
+
+Also: don't special case the launching of the update and setup commands: a simple if statement avoids reading in the package database in these cases. (Don't read packge db in: these commands don't count on it existing: setup (potentially creates a fresh empty db) while update overwrites setup.in.
+
+Revision 47
+-----------
+
+Moved determing if .cyg-apt exists and if so which one to use back to main. get_rc() and setup() both use this info: get_rc to read in .cyg-apt and setup as an indicator of whether it should create .cyg-apt or not.
+
+Add ability to create .cyg-apt from hardcoded constants to setup() and warnings if setup() is invoked with an existing .cyg-apt: refuses to overwrite.
+
+
+Revision 49
+-----------
+
+Added get_setup_rc(location): reads the Cygwin package database .rc located at /etc/setup/setup.rc and takes last-cache and last-mirror as (sensible) defaults for a new .cyg-apt. Big advtange of this is that new users can now run cyg-apt setup and expect the next command to work (using the last mirror / package cache they accessed using setup.exe.
+
+Added warnings to setup() if /etc/seutp.rc is not found and empty-string default values for mirror and package cache for this case. I expect this case to be rare in practice.
+
+Added verison detection: 1.7 currently uses setup-2.ini not setup.ini: good to pick this up as a default for a fresh .cyg-apt. Will need to remove this once 1.7 moves back to setup.ini
+
+Added sanity check get_rc: if cache or mirror is not defined print an informative error message and exit.
+
+Note -- this new model is quite different from the old one: now a complete .cyg-apt is always required: command line arguments are *strictly overrides* to this initial requirement. It also means you have to create .cyg-apt before running .cyg-apt or (much more common) let cyg-apt setup create one for you.
+
+Revision 50
+-----------
+
+Fix the ROOT problem: previously the global ROOT was being applied both as an absolute directory e.g. "tar -C ROOT" and as a path prefix ie:
+ROOT + /etc/setup/setup.ini
+One constant can't fufill both roles well: to have "/" as root (ie the usual case) you have to use "/." to avoid ROOT + /etc/setup/setup.ini becoming "//etc/setup/setup.ini". Using paths like "etc/setup/setup.ini" are a trap for new developers.
+
+The solution is to have two forms of ROOT: PREFIX_ROOT "" and ABSOLUTE_ROOT "/" which expands well to "/e/home/some/dir/" and "/e/home/some/dir" for a non-null root, not that we expect to be using this since running cyg-apt outside Cygwin is not a (tested) release target at this stage.
+
+Change .cyg-apt to take advantage of the more sensible "/" root.
+
+No test for setup yet.
+
+Revision 51
+-----------
+
+Added a test for cyg-apt setup: removes .cyg-apt in cwd and HOME, calls cyg-apt setup and checks the mirror and cache match Cygwin's setup.rc. Then restores .cyg-apt as required.
+
+Fixed TestCygApt.testlist: broke up the horrible regex into three bite-sized regexes, adding a regex to match on the new version available field when it is present.
+
+Revision 52
+-----------
+
+Now run the testsetup cleanup code always, even if an exception is thrown (important given we're moving the developer's cyg-apt files around during testing.
+
+Changed testinstall_remove to call core do_testinstalll_remove for the actual tests: this allows this testing code to be shared between testinstall_remove and testcommandline.
+
+Added testcommandline: it has a fairly heavyweight test for --cache= option: it actually copies the whole (testing) package cache to a new directory and confirms we can remove/install the testpkg. Has always-cleanup behaviour as per testsetup (see above)
+
+Revision 53
+-----------
+
+Created a do_testupdate function so the test can be shared by testcommandline, which now has a --mirror test: test giving cyg-apt a bad mirror fails properly and test performing an update (of setup.ini) with a command-line provided mirror. The idea is the bad mirror test shows the command line argument is being used and the second test shows it is being used properly: a relatively lightweight test in terms of complexity but unfortunately the bad mirror test takes a few seconds to timeout and it all adds up: the tests now take quite a while to run.
+
+Added utilpack to the tools: some handy routines, currently in the domain of IPC and filesystem queries. (Fancy names for popen and recursive find :) )
+
+
+Revision 54
+-------------
+
+Added tests for --download and --ini. Moved --cache and --mirror tests to their own functions: the command line test was getting monolithic: when something goes wrong it's great to be able to isolate a specific test.
+
+Revision 55
+-------------
+
+setup_ini_diff_make.py is getting out of hand: it's handling of the .ini file is unstructured. This was fine to start with but I keep adding functions eg
+
+Added error exits if the primitive line-hunting code runs out of the package we started in. Changed the name of variables to match my model of setup.ini: as a broken/nonstandard .ini where:
+
+@foo
+[section]
+option=feild1 feild2...
+
+@foo is level higher than the standard .ini section in the tree
+[curr] is implied. Why on earth didn't Cygwin make it explicit?
+[section] is a standard .ini section
+option= are standard .ini options, but
+field, is my term. There's no offical term for space separated words on an option line, as far as I know.
+
+What I really need is to create an object like ConfigParser or derived from it to parse the nonstandard Cygwin .ini. That would be much cleaner, but is it worth the effort?
+
+add dist selection to setup_ini_diff_make.py Add a [test] section to the mini_mirror setup.ini, and add the 0.0.2-0 version of testpkg as the target. Add the corresponding md5 patch command to the makefile.
+
+Use the above [test] section (ie --dist=test) in test-cyg-apt to confirm that the --dist= command line option works.
+
+Fixed a bug in the base 0.0.1-0 testpkg: on a second run of the makesystem it would pick up the 0.0.2-0 marker because it wasn't getting cleaned properly.
+
+Makefile I've been slowly adding to is also getting out of hand. I wish there was a good, *standard*, replacement for make.
+
+Fixed a bug in cyg-apt: --dist was failing because main() wasn't propagating distname out to the other functions as a global. Utilimately cyg-apt has to be turned in an object so we can explicitly use self.foo rather than all these globals.
+
+Revision 56
+-----------
+
+Added a test for cyg-apt version. Simple command, gives the version of an installed package so the test is simple too.
+
+Added support for cyg-apt --no-deps testing in mini_mirror: testpkg-lib (or package_name_2 as it is also know) now installs /usr/lib/testpkg-lib.marker.
+
+Added test for cyg-apt --no-deps command line option: test absence of marker when testpkg is installed (ie that it doesn't pull in its dependency, testpkg-lib), also check installed.db handling by making sure it doesn't appear in `cyg-apt list`
+
+I notice that the new purge command is suboptimal: it cannot/does not remove packages present in the cache but not installed. As it stands I think the main way of locating tarballs in cyg-apt is via installed.db. Fixing this behaviour will require using setup.ini's data in conjunction with other data: it's more like an "anti-install" than a normal remove, though a normal remove also has to happen.
+
+
+Revision 57
+-----------
+
+Added a test for the basic string search version of `cyg-apt search testpkg`
+
+Added a basic test for the command line --root option. Uses Cygiwn mount command to determine the windows path root of the installation we're running in and confirms that cyg-apt list works with this path as the root. Also confirms it fails with a bad root -- just to make sure we're actually using the option data at all. This is a long way from a comprehensive test: running the whole test suite with specific root would be a much better tests. So I'm not 100% sure that cyg-apt works with a specified root on all commands.
+
+Made a temporary fix to cyg-apt's update() function: it was deleting the current setup-2.ini before we know the new download is successful!
+Now it downloads to a transient temporary directory. I notice I've got hardcoding that has to come out.
+
+Revision 58
+-----------
+
+Removed hardcoding of Cygwin 1.7's (current) setup-2.ini name for setup.ini. Mostly removed from  update()
+
+Hacked a bit on purge(): rather than calling remove() it calls do_uninstall() directly: the advantage is that now each package is processed 'atomically' in the purge() mainloop and you don't get a warning when purging a package that isn't installed: it's not an error to do that, so it shouldn't warn. Disadvantage is now do_uninstall() is called from more places and if additional code is added to remove() it won't automatically get picked up by purge()
+
+Big change to --root option handling: removed all the hardcoded assumptions of how cyg-apt should be configured when using --root. Now the model is much simpler and cleaner: setting the root prefixes the .cyg-apt configuration, period. So if you have specific needs for running cyg-apt outside Cygwin the proceedure is to create a custom .cyg-apt for paths that lie within Cygwin and provide command line overides for *anything that lies outside Cygwin's filetree*. This use case remains untested though.
+
+Changed .cyg-apt to use an absolute path for local_cache. This is a backwards step for the ease of setting up cyg-apt testing but had to be done to support the newly simplified .cyg-apt/ --root model.
+
+Revision 59
+------------
+
+Added --regexp flag. Changed cyg-apt search and find to respect the new flag: 
+noflag -> simple substring searches
+--regexp -> report re.search(str) results
+
+The advantage of this is that users are not tripped by characters being used in a regex when they don't expect eg Ahmet Sacan reported a problem with the original cyg-apt when performing cyg-apt search g++.
+
+Added tests for the new flag applied to search and find to test-cyg-apt.py
+I notice that the find command is very slow. Most of the time is in reading the tarballs and extracting their filelists.
+
+Revision 60
+-----------
+
+Don't raise an exception in update() if the given mirror is bad: it's an error condition not a script failure and I'm increasingly wanting to differentiate these.
+
+Don't give usage() if setup.ini or installed.db is missing: these are error conditions like any other. DO give usage() if given a command we don't understand, we used to exit silently.
+
+Big change to test-cyg-apt.py and it's supporting utilpack.py: don't echo anything unless run with -vv (-v will give the tests that are performed, -vv will also echo the cyg-apt commands and their outputs. Getting -vv into the test object is a bit hacky but it's already a bit of overkill. Also changed popen to make it more like popen2: that's a good interface (subprocess's interface sucks IMO. Too complex -- should come with convenience functions reproducing the old os.popen functions.)
+
+Revision 61
+-----------
+
+Remove dependance on Cygwin tar : use Python tarfile module instead.
+Idea is to reduce the number of packages cyg-apt can't safely update. Maybe one day cyg-apt will be runnable from a Windows dos box. That would be very useful: it would open the posibility of updating Cygwin itself. Howver I don't know if core Cygwin can/should be done properly by an unoffical tool such as this one.
+
+I notice we have a dependence on Cygwin gzip. That's new to me, and also has to go.
+
+Revision 62
+-----------
+
+Remove dependence on Cygwin gzip -- use Python gzip module instead.
+
+Revision 63
+-----------
+
+Removed dependence on Cygwin wget -- use Python urllib instead, with CygAptURLopener as a small helper class derived from urllib.FancyURLopener: does a better job of catching errors and has a simple built-in progress bar callback. The calls to uri_get have not been updated to the new semantics: one thing at a time.
+
+Made the cyg-apt error message more informative.
+
+Removed blank link from cyg-apt download's output.
+
+Fixed buggy test in test-cyg-apt: do_updatetest wasn't really testing anything.
+
+Changed test-cyg-apt.py testcmdline_mirror() to match new error message.
+Added always-executed cleanup after do_testupdate() to ensure setup.ini is replaced: the test might (purposefully) clobber the file.
+Fixed test-cyg-apt.py do_testupdate(): it was generating a diff to patch setup.ini with but not applying it, so the overwriting cyg-apt update could never fail. This test is overcomplicated and will be simplified, anyway.
+
+Revision 64
+-----------
+
+cyg-apt update() now checks uri_get error return. Simplify update() -- get rid of all the file shuffling: uri_get won't overwrite anything unless the download succeeds, so there's no need to back up in update(). Remove hardcoding of setup.ini's name in update: now determined by a single call to uname. It's a pitty uname ties us to Cygwin, not sure how to deal with that.
+
+Revision 65
+-----------
+
+Remove dependence on cygpath: use internal fn instead.
+Reduce dependence on uname: still used, but if we aren't running on Cygwin guesses Cygwin 1.5 and keeps going.
+
+Remove dependence on Cygwin md5sum: use Python m5 module instead.
+Add check_forbidden_packages -- fn to eliminate packages we shouldn't attempt to update, not actually used yet.
+
+Revision 66
+-----------
+Added a new line to .cyg-apt: barred. Barred is a list of packages cyg-apt is forbidden to install, remove, purge or update. If a package is on this list, cyg-apt now warns the user and skips over it. The list is the set of packages we are dependent on:
+barred="python cygwin base-cygwin coreutils"
+
+Added a reasonably comprehensive test for barred package handling to test-cyg-apt.py. As part of this added a .cyg-apt patching/restoring fn.
+
+Killed old dead code that faked pipes when using a broken version of Python: we don't pipe anything in cyg-apt anymore: fewer external shell tool dependencies. 
+
+Simplied plist helper fn.
+
+Revision 67
+-----------
+
+Added more barred packages to generated .cyg-apt: things python is dependentant on.
+
+Added a MinGW compatible verison of rename that papers over the Windows Python behaviour of not overwriting a file with rename.
+
+Changed all the string exceptions to objects: deprecated.
+
+Fixed cyg-apt list: long packagenames used to colide with their version numbers: now there is always a space between them.
+
+Moved from Python md module to haslib: Python 2.6 compatibility to aid the effort to make cyg-apt runnable from outside Cygwin.
+
+Added Cygwin 1.5 compatiblity: mainly affects cyg-apt settup: in the absence of of /etc/settup.rc (1.7 and later Cygwin) use the old settup.exe last-mirror last-cache files, if available.
+
+Changed barred package list to be searched for matching substrings: barred package zlib also bars zlib0.
+
+Changed Cygwin platform detection not to crash on MinGW.
+
+Fixed cyg-apt crashing if run as "just cyg-apt" without a .cyg-apt present: insists on having a .cyg-apt before even giving the help! That's because the help contains feilds from the .cyg-apt: useful but a bit unfriendly for first-time users?
+
+Added Cygwin 1.5 support to the testsuite: mostly using last-mirror last-cache as above. Added cygpath helper to cope with last-cache being given as Windows path.
+
+Hacky removal of ".py" extension if present in scriptname.
+
+Added try:...finally: to testupgrade to ensure cleanup code is run.
+
+Revision 68
+-----------
+
+

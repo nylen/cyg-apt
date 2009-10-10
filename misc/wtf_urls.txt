@@ -1,0 +1,7 @@
+http://mirror.internode.on.net/pub/cygwin/release/wtf/
+md5.sum                
+setup.hint             
+wtf-0.0.4-3-src.tar.bz2
+wtf-0.0.4-3.tar.bz2    
+wtf-0.0.4-6-src.tar.bz2
+wtf-0.0.4-6.tar.bz2    
