@@ -406,6 +406,13 @@ removed mini_mirror setup-2.ini: it's just misleading. If you are going to use t
 Revision 75
 -----------
 
+Messed about with ignoring mini_mirror/setup-2.ini but backed that change out: I find it useful to have an initial verison checked in, but changes in this file are not significant and other people won't be able to use it -- they'll need to create their own. Unsolved problem.
+
+Added some basic notes on releases. Changed the file permissions on cyg-apt: it wasn't checked in as being executible. Recreated the first release with fixed permission. Looks like we're ready for the alpha release to Google Code.
+
+Revision 78
+-----------
+
 
 
 

@@ -1,0 +1,9 @@
+cyg-apt has a very lightweight release process:
+/trunk $cp cyg-apt release
+/trunk $tar -jcf release/cyg-apt-X.X.X.X.tar.bz2   release/cyg-apt
+(Major.Minor.Bugfix-CygwinPortNo)
+
+Releases
+-----------
+cyg-apt-1.0.0-1.tar.bz2
+(At svn revision 78)
