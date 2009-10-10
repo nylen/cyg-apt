@@ -1,6 +1,6 @@
 ROOT="/"
 mirror="http://wanda/~chrisc"
-cache="/e/home/develop/code/temp/cyg-apt/trunk/local_cache"
+cache="/e/home/develop/code/cyg-apt/local_cache"
 setup_ini="/etc/setup/setup-2.ini"
 distname="curr"
 barred="python cygwin base-cygwin coreutils bash zlib libreadline"
