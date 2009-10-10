@@ -1,0 +1,48 @@
+This is the source for building and testing cyg-apt.
+
+ChangeLog:
+Original subversion changelog.
+
+
+COMPATABILITY NOTE:
+As it stands this source is aimed at Cygwin 1.7 compatibility though the
+differences to 1.5 are not great:
+setup.ini is setup-2.ini
+If .apt-get not available and no cmd line overide: default mirror is pulled from /etc/setup.rc if available.
+If .apg-get not available and no cmd line overide: default cache is pulled from /etc/setup.rc if available.
+
+
+README:
+======
+This fille
+
+cyg-apt:
+========
+The standalone application Python script (does have dependencies on wget and tar utilities, but no other scripts.) As such it doesn't have to be built. This might change if cyg-apt ever becomes a proper package itself.
+
+mini_mirror:
+============
+Supports testing: allows you to build and deploy a test package to a remote directory. The mini_mirror has dependencies on a set of Python utilities, See the README in that directory for more details.
+
+As a side note, since the mini_mirror includes (very crude) system for building a package it might be of some interest as a starting point if you need to automate building of a another package. 
+
+misc
+====
+Various noncritial development files that don't belong anywhere else.
+
+test-cyg-apt.py
+===============
+Tests a subset of cyg-apt's functionality for regression. Currently depends on the presence of remotely installed test package.
+
+See this file for a list of the functionality covered. While it is a bit of a pain to get this script working I recommend its use since 1) it will flag regression during development when run and 2) since cyg-apt is an (unoffical) installer/uninstaller it is quite important that it doesn't do the wrong thing to people's Cygwin installs.
+
+dot_cyg_apt_template
+====================
+test-cyg-apt.py depends on a custom .cyg-apt being present in this directory to direct cyg-apt to the location of the package built by mini_mirror. This file is an example.
+
+
+
+
+
+
+-------------------------------------------------------------------------------
