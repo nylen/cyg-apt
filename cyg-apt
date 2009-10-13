@@ -19,6 +19,7 @@ import gzip
 import urllib
 import urlparse
 import hashlib
+import shutil
 from pdb import set_trace as stra
 
 
@@ -126,7 +127,9 @@ def uri_get (dir, uri):
     ret = 1
     
     if up.scheme == "file":
-        return os.system ('cp -pv "%s" "%s"' % (uri[7:], dir))
+        shutil.copy(uri[7:], dir)
+        print "cp %s %s" % (uri[7:], dir)
+        ret = 0
     elif up.scheme == "http":
         url_base = os.path.basename(up.path)
         old_cwd = os.getcwd()
@@ -149,6 +152,7 @@ def uri_get (dir, uri):
         os.chdir(old_cwd)
     else:
         print >> sys.stderr, "%s: bad URL %s" % (scriptname, uri)
+        ret = 1
     return ret
         
 
@@ -375,15 +379,16 @@ def update ():
     
     if not os.path.exists (downloads):
         os.makedirs (downloads)
+
     err = uri_get (downloads, setup_ini_url)
     if err:
         print >> sys.stderr,\
             "%s: failed to download setup.ini from %s, exiting." %\
             (scriptname, setup_ini_url)
     else:
-        if os.path.exists (setup_ini):
-            os.system("cp -f " + setup_ini + " " + setup_ini + "~")
-        os.system("cp -pf " + downloads + "/" + setup_ini_name + " " + setup_ini)
+        if os.path.exists(setup_ini):
+            shutil.copy(setup_ini, setup_ini + ".bak")
+        shutil.copy( downloads + "/" + setup_ini_name, setup_ini)
 
 
 def get_version ():
@@ -572,8 +577,6 @@ def do_install_external():
         members = tf.getmembers()
         for m in members:
             path = pm.map_path("/" + m.name)
-            #print ">> " + path
-            #stra()
             if m.isdir():
                 if not os.path.exists(path):
                     os.mkdir(path)
@@ -615,6 +618,11 @@ def get_filelist ():
     return lst
 
 
+def touch(fname, times = None):
+    f = file(fname, 'a')
+    os.utime(fname, times)
+    f.close()
+
 def write_filelist (lst): 
     lst_name = '%s/%s.lst' % (config, packagename)
     lst_cr = [x + "\n" for x in lst]
@@ -623,7 +631,10 @@ def write_filelist (lst):
     new_gz.writelines(lst_cr)
     new_gz.close()
     f.close()
-    os.system ('touch -r %s %s.gz' % (setup_ini, lst_name))
+    stat_struct =  os.stat(setup_ini)
+    atime = stat_struct[7]
+    mtime = stat_struct[8]
+    touch(lst_name, (atime, mtime))
 
 
 def remove_filelist():
@@ -673,8 +684,6 @@ def do_uninstall ():
         file = pm.map_path("/" + i)
         if os.path.isdir(file):
             continue
-        print file
-        #file = os.path.join (ABSOLUTE_ROOT, i)
         if (uninstall_want_file_removed(file, noremoves, nowarns)):
             if os.remove (file):
                 raise IOError
@@ -855,6 +864,11 @@ def setup ():
     # since cyg-apt is dependent on them
     barred = "python cygwin base-cygwin coreutils bash zlib libreadline"
     
+    if not cygwin_p:
+        print >> sys.stderr, "%s: settup only supported under Cygwin. Exiting."\
+            % scriptname
+        return
+            
     if not cyg_apt_rc:
         cyg_apt_rc = home_cyg_apt_rc
         (last_cache, last_mirror) = get_setup_rc(config)
@@ -865,17 +879,10 @@ def setup ():
                 "provide mirror and cache." % (scriptname, config, cyg_apt_rc)
                 last_cache = missing_cache_marker
                 last_mirror  = missing_mirror_marker
-        print "%s: creating %s." % (scriptname, cyg_apt_rc)
         mirror = last_mirror
         cache = last_cache
-        platform = os.popen("uname").read()[:6]
-        if platform == "CYGWIN":
-            cygwin_version = os.popen("uname -r").read()[:3]
-        else:
-            print >> sys.stderr, scriptname +\
-                ": not running under Cygwin, guessing target Cygwin install is"\
-                " version 1.5: setup_ini in .cyg-apt may be incorrect."
-            cygwin_version = "1.5"            
+
+        cygwin_version = os.uname()[2][:3]    
         if cygwin_version == "1.7":
             setup_ini = config + "/setup-2.ini"
         else:
@@ -884,7 +891,8 @@ def setup ():
         h = open(cyg_apt_rc,"w")
         for i in rc_options:
             h.write('%s="%s"\n' % (i, eval(i)))
-        h.close() 
+        h.close()
+        print "%s: creating %s." % (scriptname, cyg_apt_rc)
     else:
         print "%s: %s exists; not overrwriting." % (scriptname, cyg_apt_rc)
 
@@ -917,7 +925,7 @@ def do_unpack ():
     if os.path.exists(packagename):
         printerr(packagename + " already exists. Not overwriting.\n")
         return 1       
-    os.system("mkdir " + packagename)
+    os.mkdir(packagename)
     if tarfile.is_tarfile(ball):
         tf = tarfile.open(ball)
         tf.extractall(packagename)
@@ -1097,13 +1105,16 @@ def main():
     scriptname = os.path.basename (sys.argv[0])
     if (scriptname[-3:] == ".py"):
         scriptname = scriptname[:-3]
-    cygwin_p = ("uname" in dir(os) and os.uname()[0][:6] == 'CYGWIN')   
+    cygwin_p = (sys.platform == "cygwin")
     
     # Take most of our configuration from .cyg-apt 
     # preferring .cyg-apt in current directory over $(HOME)/.cyg-apt
     h = 0
     cyg_apt_rc = None
-    home_cyg_apt_rc = os.environ['HOME'] + '/.' + scriptname
+    if "HOME" in os.environ:
+        home_cyg_apt_rc = os.environ['HOME'] + '/.' + scriptname
+    else:
+        home_cyg_apt_rc = None
     cwd_cyg_apt_rc = os.getcwd () + '/.' + scriptname
     if os.path.exists (cwd_cyg_apt_rc):
         cyg_apt_rc = home_cyg_apt_rc = cwd_cyg_apt_rc

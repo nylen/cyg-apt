@@ -436,8 +436,20 @@ Bugfix in test-cyg-apt.py: testsetup() was failing if ~/.cyg-apt never existed: 
 Revision 85
 -----------
 
+Removed more dependence on shell operations:
+uri_get(), update(): use shutil.copy instead of cp.
+write_filelist() use os.stat/os.utime instead of "touch"
+Added a bailout for attempts at setup outside Cygwin.
+Cleaned up platform detection and cygwin version detection, removing a call to Cygwin's shell uname in the process -- affects main() and setup()
 
+Move the .cyg-apt creation message to the end of the setup() function: at this point we can be sure we've actually created it and not encountered an error.
 
+os.mkdir in place of shell mkdir in do_unpack() (source unpack)
 
+If "HOME" is not in the environemnt set home_cyg_apt_rc to None rather than fail with an error.
 
+We now run under DOS!
+
+Revision 86
+-----------
 
