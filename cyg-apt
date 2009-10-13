@@ -22,6 +22,32 @@ import hashlib
 from pdb import set_trace as stra
 
 
+class PathMapper:
+    def __init__(self, root):
+        self.root = root
+        mountout = os.popen(self.root + "/bin/mount").readlines()
+        self.add_mapping(mountout)
+    
+    
+    def add_mapping(self, mtab):
+        self.map = {}
+        mtab = [l.split() for l in mtab]
+        for l in mtab:
+            if l[2] != "/":
+                self.map[l[2] + "/"] = l[0] + "/"
+                #print "mapping %s -----> %s" % (l[2] + "/", l[0] + "/")
+
+                
+    def map_path(self, path):
+        for cygpath in self.map.keys():
+            if path.find(cygpath) == 0:
+                #print "Found %s in %s" % (cygpath, path)
+                path = path.replace(cygpath, self.map[cygpath])
+                #print "Replacing it with %s" % self.map[cygpath]
+                return path
+        return self.root  + path
+        
+
 class CygAptURLopener(urllib.FancyURLopener):
     def __init__(self, *args):
         urllib.FancyURLopener.__init__(self, *args)
@@ -420,7 +446,7 @@ def new ():
 
 def get_md5 ():
     url, md5 = get_url ()
-    f = file("%s/%s" % (downloads, url)).read()
+    f = file("%s/%s" % (downloads, url),"rb").read()
     m = hashlib.md5()
     m.update(f)
     digest = m.hexdigest()
@@ -522,12 +548,12 @@ def run_script (file_name):
 
 
 def try_run_script (file_name):
-    if os.path.isfile (file_name):
-        if cygwin_p:
+    if cygwin_p:
+        if os.path.isfile (file_name):
             run_script (file_name)
-        else:
-            sys.stderr.write ('warning: please see after: %(file_name)s' % vars ())
-            sys.stderr.write ('\n')
+    else:
+        sys.stderr.write ('warning: please see after: %(file_name)s' % vars ())
+        sys.stderr.write ('\n')
 
 
 def run_all (dir):
@@ -538,7 +564,36 @@ def run_all (dir):
             try_run_script ('%s/%s' % (dir, i))
 
 
+def do_install_external():
+    global pm
+    ball = get_ball ()
+    if tarfile.is_tarfile(ball):
+        tf = tarfile.open(ball)
+        members = tf.getmembers()
+        for m in members:
+            path = pm.map_path("/" + m.name)
+            #print ">> " + path
+            #stra()
+            if m.isdir():
+                if not os.path.exists(path):
+                    os.mkdir(path)
+            elif m.isfile():
+                ef = tf.extractfile(m).read()
+                file(path,"wb").write(ef)
+        lst = tf.getnames()
+    else:
+        print >> sys.stderr, "%s: bad tarball %s, exiting." % (scriptname, ball)
+        print >> sys.stderr, "%s: INSTALL FAILED" % scriptname
+        sys.exit(1)
+    write_filelist (lst)
+    installed[0][packagename] = os.path.basename (ball)
+    write_installed ()
+
+
 def do_install ():
+    if not cygwin_p:
+        do_install_external()
+        return
     ball = get_ball ()
     if tarfile.is_tarfile(ball):
         tf = tarfile.open(ball)
@@ -580,22 +635,26 @@ def remove_filelist():
              (sys.argv[0], lst_name))
 
             
-def uninstall_want_file_removed(file, postremove, nowarns):
+def uninstall_want_file_removed(file, noremoves, nowarns):
     # Returns true if the path from the tarball should result in a file # removal operation, false if not.
     if not os.path.exists (file) and not os.path.islink (file):
         if file not in nowarns:
             sys.stderr.write ('warning: %s no such file\n' % file)
         return False
-    elif not os.path.isdir (file) and file != postremove:
+    elif not os.path.isdir (file) and file not in noremoves:
         return True
    
              
 def do_uninstall ():
     global PREFIX_ROOT
     global ABSOLUTE_ROOT
+    global pm
     
-    try_run_script (PREFIX_ROOT + '/etc/preremove/%s.sh' % packagename)    
+    preremove = PREFIX_ROOT + '/etc/preremove/%s.sh' % packagename
     postremove = PREFIX_ROOT + '/etc/postremove/%s.sh' % packagename
+    postinstall_done = PREFIX_ROOT + "/etc/postinstall/%s.sh.done" % packagename
+    
+    try_run_script (preremove)
     lst = get_filelist ()
     
     # We don't expect these to be present: they are executed 
@@ -604,16 +663,26 @@ def do_uninstall ():
     nowarns.append(PREFIX_ROOT + "/etc/postinstall/" + packagename + ".sh")
     nowarns.append(PREFIX_ROOT + "/etc/preremove/" + packagename + ".sh")
     
+    noremoves = []
+    if not cygwin_p:
+        noremoves.append(preremove)
+    noremoves.append(postremove)
+      
     # remove files
     for i in lst:
-        file = os.path.join (ABSOLUTE_ROOT, i)
-        if (uninstall_want_file_removed(file, postremove, nowarns)):
+        file = pm.map_path("/" + i)
+        if os.path.isdir(file):
+            continue
+        print file
+        #file = os.path.join (ABSOLUTE_ROOT, i)
+        if (uninstall_want_file_removed(file, noremoves, nowarns)):
             if os.remove (file):
                 raise IOError
     try_run_script (postremove)
-    if os.path.isfile (postremove):
-        if os.remove (postremove):
-            raise IOError
+    if cygwin_p:
+        if os.path.isfile (postremove):
+            if os.remove (postremove):
+                raise IOError
 
     # We don't remove empty directories: the problem is are we sure no other
     # package is depending on them.
@@ -622,6 +691,10 @@ def do_uninstall ():
     # as much like setup.exe as possible
     # write_filelist ([])
     remove_filelist()
+    
+    # Clean up the postintall script: it's been moved to .done
+    if os.path.isfile(postinstall_done):
+        os.remove(postinstall_done)
     
     # update installed[]
     del (installed[0][packagename])
@@ -1008,12 +1081,14 @@ def main():
     global distname
     global regex_search
     global barred
-
+    global pm
+    
     # Define constants
     installed_db_magic = 'INSTALLED.DB 2\n'
     INSTALL = 'install'
     rc_options = ['ROOT', 'mirror', 'cache', 'setup_ini', 'distname', 'barred']
     distnames = ('curr', 'test', 'prev')
+    pm = None
 
     # Default behaviours
     regex_search = False
@@ -1078,18 +1153,23 @@ def main():
             set_root(a)
             to_prefix =\
                 ["config", "cache", "setup_ini", "installed_db", "downloads"]
+                #["config", "setup_ini", "installed_db"]
+            pm = PathMapper(PREFIX_ROOT)
             d = __main__.__dict__
             for conf_item in to_prefix:
-                d[conf_item] = PREFIX_ROOT + d[conf_item]
+                d[conf_item] = pm.map_path(d[conf_item])
         elif o == '--dist' or o == '-t':
             distname = a
         elif o == '--no-deps' or o == '-x':
             nodeps_p = 1
         elif o == '--regexp' or o == '-s':
             regex_search = True
+    if not pm:
+        pm = PathMapper("")
 
     # Check for existence of Cygwin's package database and read it in,
     # Unless executing commands to update/establish that database.
+
     if (command not in ['setup', 'update', 'help']):
         for i in (installed_db, setup_ini):
             if not os.path.isfile (i):

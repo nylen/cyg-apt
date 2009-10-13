@@ -151,7 +151,7 @@ class TestCygApt(unittest.TestCase):
                 out = utilpack.popen_ext("cp %s %s" % (self.cwd_cyg_apt_bak, self.cwd_cyg_apt))[0]
                 if not out:
                     utilpack.popen_ext("rm %s" % self.cwd_cyg_apt_bak)
-            if os.path.exists(self.home_cyg_apt_bak):
+            if self.home_cyg_apt_bak and os.path.exists(self.home_cyg_apt_bak):
                 out = utilpack.popen_ext("cp %s %s" % (self.home_cyg_apt_bak, self.home_cyg_apt))[0]
                 if not out:
                     utilpack.popen_ext("rm %s" % self.home_cyg_apt_bak)

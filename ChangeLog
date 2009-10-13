@@ -413,6 +413,31 @@ Added some basic notes on releases. Changed the file permissions on cyg-apt: it 
 Revision 78
 -----------
 
+Reverted to using Cygwin cygpath instead of my own version to pick up setup.rc -- my version wasn't accounting for possible filepath mapping issues. Need to think more about this.
+
+Conducted the cyg-apt-1.0.1-1 release to get this change out there.
+
+Started work on making cyg-apt runnable from DOS/Windows Python. Added PathMapper: a small class that handles mapping paths according to Cygwin mount: we've still (intentionally) got a dependence on Cygwin being installed before managing packages.
+
+try_run_script() now rejects running scripts if not in Cygwin before it checks if the script is there -- it was throwing exceptions before getting the chance to realise we weren't under cygwin so it didn't matter.
+
+Added a custom tarball unpacking function for running outside Cygwin. We really have to have an external function: the Python library function expects to unpack into a root directory whereas external path mapping has to be done file-by-file. By external path mapping I mean handling the mount table outside Cygwin: ie /usr/bin is actually at C:\cygwin\bin, not C:\cygwin\usr\bin.
+
+Complicated the handling of scripts on removal to cope with running cyg-apt from Windows dosbox: don't remove scripts and don't attempt to run them. Warn the user that they'll need to look after them. I'm planning to provide a cyg-apt command to ease this process: a postremove command to run in Cygwin afterwards. It's all rather theoretical. To this end add the concept of "noremove" to  uninstall_want_file_removed().
+
+Set up PathMapper in main: set when the root is explicitly set, which is basically a covert requirement of running outside Cygwin at the moment: something else to address. When not setting root explicitly the PathMapper is given "" as root, making mapping operations no-ops. That might sound bad, but I don't want lots of differnt paths of control depending on where we are running from.
+
+get_md5() now opens "rb" -- needed on MinGW and the correct thing to do in any case.
+
+The uninstall tarfile remove loop was altered directly to use map_path() mappings. This works but it would be more consistent to use diff functions as per install.
+
+Bugfix in test-cyg-apt.py: testsetup() was failing if ~/.cyg-apt never existed: if we started testing without this file we don't create a backup of it, so we can't restore it after testing and, well don't need to. Doy.
+
+Revision 85
+-----------
+
+
+
 
 
 
