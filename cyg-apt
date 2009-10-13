@@ -721,14 +721,15 @@ def upgrade ():
 
 
 def cygpath(path):
-    path = path.replace("\\", "/")
-    if len(path) == 3:
-        if path[1] == ":":
-            path = "/" + path[0].lower()
-    elif len(path) > 1:        
-        if path[1] == ":":
-            path = "/" + path[0].lower() + path[2:]
-    return path
+    return os.popen("cygpath \"%s\"" % path).read().strip()
+#    path = path.replace("\\", "/")
+#    if len(path) == 3:
+#        if path[1] == ":":
+#            path = "/" + path[0].lower()
+#    elif len(path) > 1:        
+#        if path[1] == ":":
+#            path = "/" + path[0].lower() + path[2:]
+#    return path
 
 
 def get_setup_rc(location):
