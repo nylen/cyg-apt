@@ -293,9 +293,6 @@ def get_requires():
             p = dist[i]
             if not p.has_key ('requires'):
                 continue
-            #reqs.update (dict (map (lambda x: (x, 0),
-            #            string.split (p['requires']))))
-            # I find the original form less clear
             update_list = [(x,0) for x in string.split(p['requires'])]
             reqs.update(update_list)
     rlist = reqs.keys()
@@ -371,23 +368,27 @@ def filelist ():
 
 def postinstall():
     ''' runs scripts for package installed from DOS '''
+    global postinstall
     if not cygwin_p:
         print >> sys.stderr,\
             "%s: postinstall must be run within Cygwin. Exiting." % (scriptname)
-    run_all(PREFIX_ROOT + '/etc/postinstall')        
+    run_all(postinstall)        
 
 
 def postremove():
     ''' runs scripts for package installed from DOS '''
+    global preremove
+    global postremove
+    
     if not cygwin_p:
         print >> sys.stderr,\
             "%s: postremove must be run within Cygwin. Exiting." %\
             (scriptname)
     for packagename in files[1:]:
-        preremove = PREFIX_ROOT + '/etc/preremove/%s.sh' % packagename
-        postremove = PREFIX_ROOT + '/etc/postremove/%s.sh' % packagename
-        try_run_script(preremove)
-        try_run_script(postremove)
+        preremove_sh = preremove + "/" + packagename + ".sh"
+        postremove_sh = postremove + "/" + packagename + ".sh"
+        try_run_script(preremove_sh)
+        try_run_script(postremove_sh)
     
 
 def update ():
@@ -463,7 +464,6 @@ def get_new ():
 
 def new ():
     '''list new (upgradable) packages in distribution'''
-    #print string.join (get_new (), '\n')
     global packagename
     for packagename in psort (get_new ()):
         print '%-20s%-12s' % (packagename,
@@ -516,7 +516,6 @@ def search ():
                     keys.append (j)
     for i in keys:
         packagename = i
-        #if not regexp or re.search (regexp, i):
         if not regexp or re.search (regexp, i) \
            or re.search (regexp, get_field ('sdesc')) \
            or re.search (regexp, get_field ('ldesc')):
@@ -583,7 +582,6 @@ def try_run_script(file_name):
 
 def run_all(dir):
     if os.path.isdir(dir):
-        #lst = filter (lambda x: x[-5:] != '.done', os.listdir (dir))
         lst = filter (lambda x: x[-3:] == '.sh', os.listdir (dir))
         for i in lst:
             try_run_script ('%s/%s' % (dir, i))
@@ -666,27 +664,29 @@ def uninstall_want_file_removed(file, noremoves, nowarns):
    
              
 def do_uninstall ():
-    global PREFIX_ROOT
-    global ABSOLUTE_ROOT
+    global preremove
+    global postremove
+    global postinstall
     global pm
     
-    preremove = PREFIX_ROOT + '/etc/preremove/%s.sh' % packagename
-    postremove = PREFIX_ROOT + '/etc/postremove/%s.sh' % packagename
-    postinstall_done = PREFIX_ROOT + "/etc/postinstall/%s.sh.done" % packagename
+    postremove_sh = postremove + "/" + packagename + ".sh"
+    postinstall_sh = postinstall + "/" + packagename + ".sh"
+    preremove_sh = preremove + "/" + packagename + ".sh"
+    postinstall_done = postinstall + "/" + packagename + ".sh.done"
     
-    try_run_script (preremove)
+    try_run_script (preremove_sh)
     lst = get_filelist()
     
     # We don't expect these to be present: they are executed 
     # and moved to $(packagename).sh.done
     nowarns = []
-    nowarns.append(PREFIX_ROOT + "/etc/postinstall/" + packagename + ".sh")
-    nowarns.append(PREFIX_ROOT + "/etc/preremove/" + packagename + ".sh")
+    nowarns.append(postinstall_sh)
+    nowarns.append(preremove_sh)
     
     noremoves = []
     if not cygwin_p:
-        noremoves.append(preremove)
-    noremoves.append(postremove)
+        noremoves.append(preremove_sh)
+    noremoves.append(postremove_sh)
       
     # remove files
     for i in lst:
@@ -696,10 +696,10 @@ def do_uninstall ():
         if (uninstall_want_file_removed(file, noremoves, nowarns)):
             if os.remove (file):
                 raise IOError
-    try_run_script (postremove)
+    try_run_script (postremove_sh)
     if cygwin_p:
-        if os.path.isfile (postremove):
-            if os.remove (postremove):
+        if os.path.isfile (postremove_sh):
+            if os.remove (postremove_sh):
                 raise IOError
 
     # We don't remove empty directories: the problem is are we sure no other
@@ -740,9 +740,10 @@ def remove ():
 def purge ():
     '''purge package'''
     global packagename
-    global PREFIX_ROOT
-    global ABSOLUTE_ROOT
     global scriptname
+    global postinstall
+    global postremove
+    global preremove
     
     for packagename in files[1:]:
         if installed[0].has_key (packagename):
@@ -754,9 +755,9 @@ def purge ():
                 % (packagename,
                 version_to_string (get_installed_version ())))
             do_uninstall ()
-        scripts = ['/etc/postinstall/%s.sh',  '/etc/preremove/%s.sh',\
-            '/etc/postremove/%s.sh']
-        scripts = [PREFIX_ROOT + s % packagename + ".done" for s in scripts]
+        scripts = [postinstall + "/%s.sh.done",  preremove + "/%s.sh.done",\
+            postremove + "/%s.sh.done"]
+        scripts = [s % packagename for s in scripts]
         for s in scripts:
             if os.path.exists(s):
                 os.remove(s)
@@ -769,6 +770,9 @@ def purge ():
 def install ():
     '''download and install packages with dependencies'''
     global packagename
+    global cygwin_p
+    global postinstall
+    
     missing = {}
     for packagename in files[1:]:
         missing.update (dict (map (lambda x: (x, 0), get_missing ())))
@@ -783,8 +787,10 @@ def install ():
 
     for packagename in missing.keys ():
         if is_barred_package(packagename):
-            print >> sys.stderr, scriptname + ": NOT installing package " +\
-                packagename + ": " + scriptname + " is dependent on it."
+            print >> sys.stderr, scriptname + ": NOT installing " +\
+                packagename + ": " + scriptname + " is dependent on it under Cygwin."
+            if not cygwin_p:
+                print >> sys.stderr, "Use -f to override but proceed with caution."
             del missing[packagename]
             
     for packagename in missing.keys ():
@@ -801,11 +807,11 @@ def install ():
                   % (packagename,
                      version_to_string (get_version ())))
         do_install ()
-    if cygwin_p:
-        run_all(PREFIX_ROOT + '/etc/postinstall')
-    else:
-        print "To complete the installation, run \"cyg-apt postinstall %s\""\
-            " from within\nCygwin." % packagename
+        if cygwin_p:
+            run_all(postinstall)
+        else:
+            print "To complete the installation, run \"cyg-apt postinstall %s\""\
+                " from within\nCygwin." % packagename
 
 
 def upgrade ():
@@ -1006,6 +1012,7 @@ def usage():
             -t,--dist=NAME         set dist name (curr, test, prev) [%(distname)s]
             -x,--no-deps           ignore dependencies
             -s,--regexp            search as regex pattern
+            -f,--nobarred          add/remove packages cyg-apt depends on
         ''' % d)
 
 
@@ -1044,6 +1051,9 @@ def get_rc(h):
     global ROOT
     global distname
     global barred
+    global postinstall
+    global preremove
+    global postremove
 
     for i in h.readlines ():
         k, v = i.split ('=', 2)
@@ -1067,12 +1077,17 @@ def get_rc(h):
     config = PREFIX_ROOT + '/etc/setup'    
     downloads = cache + '/' + urllib.quote (mirror, '').lower ()
     installed_db = config + '/installed.db'
+    postinstall = PREFIX_ROOT + "/etc/postinstall"
+    postremove = PREFIX_ROOT + "/etc/postremove"
+    preremove =  PREFIX_ROOT + "/etc/preremove"
+    
     return 0
 
 
 def is_barred_package(package):
     global barred
-    return package in barred
+    global nobarred
+    return (not nobarred) and package in barred
 
 
 def main():
@@ -1102,6 +1117,10 @@ def main():
     global regex_search
     global barred
     global pm
+    global nobarred
+    global postinstall
+    global preremove
+    global postremove
     
     # Define constants
     installed_db_magic = 'INSTALLED.DB 2\n'
@@ -1112,6 +1131,7 @@ def main():
 
     # Default behaviours
     regex_search = False
+    nobarred = False
     
     # A couple of configuration items are set in main
     scriptname = os.path.basename (sys.argv[0])
@@ -1142,9 +1162,9 @@ def main():
     
     # Override one or more configuration elements if on the command line
     (options, files) = getopt.getopt (sys.argv[1:],
-                      'c:dhi:m:r:t:x',
+                      'c:dhi:m:r:t:xf',
                       ('cache=', 'download', 'help', 'mirror=',
-                       'root=', 'ini=', 'dist=', 'no-deps', 'regexp')) 
+                       'root=', 'ini=', 'dist=', 'no-deps', 'regexp', 'nobarred')) 
     command = 'help'
     if len (files) > 0:
         command = files[0]
@@ -1175,8 +1195,7 @@ def main():
         elif o == '--root' or o == '-r':
             set_root(a)
             to_prefix =\
-                ["config", "cache", "setup_ini", "installed_db", "downloads"]
-                #["config", "setup_ini", "installed_db"]
+                ["config", "cache", "setup_ini", "installed_db", "downloads", "postinstall", "postremove", "preremove"]
             pm = PathMapper(PREFIX_ROOT)
             d = __main__.__dict__
             for conf_item in to_prefix:
@@ -1187,6 +1206,8 @@ def main():
             nodeps_p = 1
         elif o == '--regexp' or o == '-s':
             regex_search = True
+        elif o == '--nobarred' or o == '-f':
+            nobarred = True
     if not pm:
         pm = PathMapper("")
 

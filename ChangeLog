@@ -464,3 +464,9 @@ Some moves towards some sort of coding standard adherance. Long way to go.
 Revision 87
 -----------
 
+Added -f options: allows any package to be installed or removed. For use from DOS where we have no Cygwin dependencies. It's a dangerous option: can remove core Cygwin components. Added a message to prompt user to its availablity from DOS, but not Cygwin.
+
+Added yet more globals, increasing the need to convert cyg-apt to an object: postinstall, postremove, preremove (directories.) The advantage of this is that it localises path mapping to main and get_rc: if path mapping has to change in the future it will be easier to do.
+
+Revision 88
+-----------
