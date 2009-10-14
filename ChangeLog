@@ -490,3 +490,13 @@ Move .cyg-apt to include new product of setup() ie the windows path Cygwin root.
 Revision 89
 -----------
 
+Made PathMapper platform specific: returns Cygwin paths under Cygwin, windows paths under DOS (we retain the proper "/" path separators though, not the foolish "\" ones... Windows Python accepts this.)
+
+Fixed error message in set_root() -- can't complain about a bad .rc, root might not be set from the .rc.
+
+Reduce use of PREFIX_ROOT  in setup()-- replace with map_path to localise how we map paths to that one object.
+
+More coding standard changes -- fairly disruptive I'm afraid: eliminate spaces between all functions and their argument parens.
+
+Revision 90
+-----------
