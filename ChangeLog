@@ -453,3 +453,14 @@ We now run under DOS!
 Revision 86
 -----------
 
+Add postinstall and postremove commands to cyg-apt: make it easy for the user to run scripts after installing a package from cyg-apt running in DOS.
+
+Simplify do_external_install to reduce the amount of duplicated code.
+
+Change DOS install messages to avoid the old per-script warnings and just tell the user to run cyg-apt postinstall from Cygwin.
+
+Some moves towards some sort of coding standard adherance. Long way to go.
+
+Revision 87
+-----------
+

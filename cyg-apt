@@ -369,6 +369,27 @@ def filelist ():
     print string.join (get_filelist (), '\n')
 
 
+def postinstall():
+    ''' runs scripts for package installed from DOS '''
+    if not cygwin_p:
+        print >> sys.stderr,\
+            "%s: postinstall must be run within Cygwin. Exiting." % (scriptname)
+    run_all(PREFIX_ROOT + '/etc/postinstall')        
+
+
+def postremove():
+    ''' runs scripts for package installed from DOS '''
+    if not cygwin_p:
+        print >> sys.stderr,\
+            "%s: postremove must be run within Cygwin. Exiting." %\
+            (scriptname)
+    for packagename in files[1:]:
+        preremove = PREFIX_ROOT + '/etc/preremove/%s.sh' % packagename
+        postremove = PREFIX_ROOT + '/etc/postremove/%s.sh' % packagename
+        try_run_script(preremove)
+        try_run_script(postremove)
+    
+
 def update ():
     '''setup.ini'''
     global setup_ini
@@ -542,69 +563,57 @@ def get_missing ():
     return lst
 
 
-def missing ():
+def missing():
     '''print missing dependencies'''
-    print string.join (get_missing (), '\n')
+    print string.join(get_missing (), '\n')
 
 
-def run_script (file_name):
-     sys.stderr.write ('running: %(file_name)s\n' % vars ())
-     os.system ('sh "%(file_name)s" && mv "%(file_name)s" "%(file_name)s.done"' % vars ())
+def run_script(file_name):
+     sys.stderr.write('running: %(file_name)s\n' % vars ())
+     os.system('sh "%(file_name)s" && mv "%(file_name)s" "%(file_name)s.done"' % vars ())
 
 
-def try_run_script (file_name):
+def try_run_script(file_name):
     if cygwin_p:
-        if os.path.isfile (file_name):
-            run_script (file_name)
+        if os.path.isfile(file_name):
+            run_script(file_name)
     else:
-        sys.stderr.write ('warning: please see after: %(file_name)s' % vars ())
-        sys.stderr.write ('\n')
+        sys.stderr.write('warning: please see after: %(file_name)s\n' % vars ())
 
 
-def run_all (dir):
-    if os.path.isdir (dir):
+def run_all(dir):
+    if os.path.isdir(dir):
         #lst = filter (lambda x: x[-5:] != '.done', os.listdir (dir))
         lst = filter (lambda x: x[-3:] == '.sh', os.listdir (dir))
         for i in lst:
             try_run_script ('%s/%s' % (dir, i))
 
 
-def do_install_external():
+def do_install_external(tf):
     global pm
-    ball = get_ball ()
-    if tarfile.is_tarfile(ball):
-        tf = tarfile.open(ball)
-        members = tf.getmembers()
-        for m in members:
-            path = pm.map_path("/" + m.name)
-            if m.isdir():
-                if not os.path.exists(path):
-                    os.mkdir(path)
-            elif m.isfile():
-                ef = tf.extractfile(m).read()
-                file(path,"wb").write(ef)
-        lst = tf.getnames()
-    else:
-        print >> sys.stderr, "%s: bad tarball %s, exiting." % (scriptname, ball)
-        print >> sys.stderr, "%s: INSTALL FAILED" % scriptname
-        sys.exit(1)
-    write_filelist (lst)
-    installed[0][packagename] = os.path.basename (ball)
-    write_installed ()
+    members = tf.getmembers()
+    for m in members:
+        path = pm.map_path("/" + m.name)
+        if m.isdir():
+            if not os.path.exists(path):
+                os.mkdir(path)
+        elif m.isfile():
+            ef = tf.extractfile(m).read()
+            file(path,"wb").write(ef)
 
 
 def do_install ():
-    if not cygwin_p:
-        do_install_external()
-        return
     ball = get_ball ()
     if tarfile.is_tarfile(ball):
         tf = tarfile.open(ball)
-        tf.extractall(ABSOLUTE_ROOT)
+        if cygwin_p:
+            tf.extractall(ABSOLUTE_ROOT)
+        else:
+            do_install_external(tf)
         lst = tf.getnames()
     else:
-        print >> sys.stderr, "%s: bad tarball %s, exiting." % (scriptname, ball)
-        print >> sys.stderr, "%s: INSTALL FAILED" % scriptname
+        print >> sys.stderr,\
+        "%s: bad tarball %s. Install failed, exiting." % (scriptname, ball)
         sys.exit(1)
     write_filelist (lst)
     installed[0][packagename] = os.path.basename (ball)
@@ -666,7 +675,7 @@ def do_uninstall ():
     postinstall_done = PREFIX_ROOT + "/etc/postinstall/%s.sh.done" % packagename
     
     try_run_script (preremove)
-    lst = get_filelist ()
+    lst = get_filelist()
     
     # We don't expect these to be present: they are executed 
     # and moved to $(packagename).sh.done
@@ -698,7 +707,6 @@ def do_uninstall ():
     
     # setup.exe removes the filelist when a package is uninstalled: we try to be
     # as much like setup.exe as possible
-    # write_filelist ([])
     remove_filelist()
     
     # Clean up the postintall script: it's been moved to .done
@@ -715,18 +723,18 @@ def remove ():
 
     global packagename
     for packagename in files[1:]:
-        if not installed[0].has_key (packagename):
-            sys.stderr.write ('warning: %s not installed\n' % packagename)
+        if not installed[0].has_key(packagename):
+            sys.stderr.write('warning: %s not installed\n' % packagename)
             continue
         if is_barred_package(packagename):
             print >> sys.stderr, scriptname + ": NOT removing package " +\
                 packagename + ": " + scriptname + " is dependent on it."
             continue
             
-        sys.stderr.write ('uninstalling %s %s\n' \
+        sys.stderr.write('uninstalling %s %s\n' \
                   % (packagename,
                      version_to_string (get_installed_version ())))
-        do_uninstall ()
+        do_uninstall()
 
 
 def purge ():
@@ -785,21 +793,25 @@ def install ():
         sys.exit (0)
     for packagename in missing.keys ():            
         if installed[0].has_key (packagename):
-            sys.stderr.write ('preparing to replace %s %s\n' \
+            sys.stderr.write('preparing to replace %s %s\n' \
                       % (packagename,
                          version_to_string (get_installed_version ())))
             do_uninstall ()
-        sys.stderr.write ('installing %s %s\n' \
+        sys.stderr.write('installing %s %s\n' \
                   % (packagename,
                      version_to_string (get_version ())))
         do_install ()
-    run_all (PREFIX_ROOT + '/etc/postinstall')
+    if cygwin_p:
+        run_all(PREFIX_ROOT + '/etc/postinstall')
+    else:
+        print "To complete the installation, run \"cyg-apt postinstall %s\""\
+            " from within\nCygwin." % packagename
 
 
 def upgrade ():
     '''all installed packages: use with CAUTION'''
-    files[1:] = get_new ()
-    install ()
+    files[1:] = get_new()
+    install()
 
 
 def cygpath(path):
