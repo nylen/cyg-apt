@@ -470,3 +470,23 @@ Added yet more globals, increasing the need to convert cyg-apt to an object: pos
 
 Revision 88
 -----------
+
+Added "mountroot" to the PathMapper class: the Cygwin root (as in windows path to "/" as found from the mount program.
+
+Changed the script directories to *_dir to avoid namespace collisions with the new postinstall/postremove commands.
+
+Use PathMapper in setup() to fetch Cygwin root from Cygwin mount command.
+
+Added setup_ini to the paths that get prefixed in get_rc(). Added platform specific behaviour: under Cygwin the root is always "/": that's the Cygwin filesystem. Under DOS we take the root from the rc: the windows path to the Cygwin root.
+
+Tough decision: removed root and cache command line options. Given the complexities of cyg-apt's Cygwin/DOS behaviour I decided to simplify configuration down to: setup or normal run, where normal run always takes all path configuration from .cyg-apt and there are no command line overrides.
+
+Now path mapper is set up in two places only: get_rc() which is the core path configuaration function and setup() which has it's own local copy to get the Cygwin root, exiting afterwards.
+
+Comment out the defunct commandline tests.
+
+Move .cyg-apt to include new product of setup() ie the windows path Cygwin root. .cyg-apt and setup-2.ini are checked in: they are specific to my machine and to a mini_mirror build so they really need to be easily generated but not in svn -- TODO.
+
+Revision 89
+-----------
+

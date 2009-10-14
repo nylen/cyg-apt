@@ -27,6 +27,7 @@ class PathMapper:
     def __init__(self, root):
         self.root = root
         mountout = os.popen(self.root + "/bin/mount").readlines()
+        self.mountroot = "/"
         self.add_mapping(mountout)
     
     
@@ -37,6 +38,8 @@ class PathMapper:
             if l[2] != "/":
                 self.map[l[2] + "/"] = l[0] + "/"
                 #print "mapping %s -----> %s" % (l[2] + "/", l[0] + "/")
+            else:
+                self.mountroot = l[0] + "/"
 
                 
     def map_path(self, path):
@@ -368,25 +371,25 @@ def filelist ():
 
 def postinstall():
     ''' runs scripts for package installed from DOS '''
-    global postinstall
+    global postinstall_dir
     if not cygwin_p:
         print >> sys.stderr,\
             "%s: postinstall must be run within Cygwin. Exiting." % (scriptname)
-    run_all(postinstall)        
+    run_all(postinstall_dir)        
 
 
 def postremove():
     ''' runs scripts for package installed from DOS '''
-    global preremove
-    global postremove
+    global preremove_dir
+    global postremove_dir
     
     if not cygwin_p:
         print >> sys.stderr,\
             "%s: postremove must be run within Cygwin. Exiting." %\
             (scriptname)
     for packagename in files[1:]:
-        preremove_sh = preremove + "/" + packagename + ".sh"
-        postremove_sh = postremove + "/" + packagename + ".sh"
+        preremove_sh = preremove_dir + "/" + packagename + ".sh"
+        postremove_sh = postremove_dir + "/" + packagename + ".sh"
         try_run_script(preremove_sh)
         try_run_script(postremove_sh)
     
@@ -664,15 +667,15 @@ def uninstall_want_file_removed(file, noremoves, nowarns):
    
              
 def do_uninstall ():
-    global preremove
-    global postremove
-    global postinstall
+    global preremove_dir
+    global postremove_dir
+    global postinstall_dir
     global pm
     
-    postremove_sh = postremove + "/" + packagename + ".sh"
-    postinstall_sh = postinstall + "/" + packagename + ".sh"
-    preremove_sh = preremove + "/" + packagename + ".sh"
-    postinstall_done = postinstall + "/" + packagename + ".sh.done"
+    postremove_sh = postremove_dir + "/" + packagename + ".sh"
+    postinstall_sh = postinstall_dir + "/" + packagename + ".sh"
+    preremove_sh = preremove_dir + "/" + packagename + ".sh"
+    postinstall_done = postinstall_dir + "/" + packagename + ".sh.done"
     
     try_run_script (preremove_sh)
     lst = get_filelist()
@@ -741,9 +744,9 @@ def purge ():
     '''purge package'''
     global packagename
     global scriptname
-    global postinstall
-    global postremove
-    global preremove
+    global postinstall_dir
+    global postremove_dir
+    global preremove_dir
     
     for packagename in files[1:]:
         if installed[0].has_key (packagename):
@@ -755,8 +758,9 @@ def purge ():
                 % (packagename,
                 version_to_string (get_installed_version ())))
             do_uninstall ()
-        scripts = [postinstall + "/%s.sh.done",  preremove + "/%s.sh.done",\
-            postremove + "/%s.sh.done"]
+        scripts = [postinstall_dir + "/%s.sh.done",\
+            preremove_dir + "/%s.sh.done",\
+            postremove_dir + "/%s.sh.done"]
         scripts = [s % packagename for s in scripts]
         for s in scripts:
             if os.path.exists(s):
@@ -771,7 +775,7 @@ def install ():
     '''download and install packages with dependencies'''
     global packagename
     global cygwin_p
-    global postinstall
+    global postinstall_dir
     
     missing = {}
     for packagename in files[1:]:
@@ -808,7 +812,7 @@ def install ():
                      version_to_string (get_version ())))
         do_install ()
         if cygwin_p:
-            run_all(postinstall)
+            run_all(postinstall_dir)
         else:
             print "To complete the installation, run \"cyg-apt postinstall %s\""\
                 " from within\nCygwin." % packagename
@@ -872,7 +876,8 @@ def setup ():
     global ABSOLUTE_ROOT
     global barred
     
-    ROOT = "/"
+    pm = PathMapper("")
+    ROOT = pm.mountroot
     set_root(ROOT)
     config = PREFIX_ROOT + '/etc/setup'
     installed_db = config + '/installed.db'
@@ -1051,9 +1056,12 @@ def get_rc(h):
     global ROOT
     global distname
     global barred
-    global postinstall
-    global preremove
-    global postremove
+    global postinstall_dir
+    global preremove_dir
+    global postremove_dir
+    global cygwin_p
+    global setup_ini
+    global pm
 
     for i in h.readlines ():
         k, v = i.split ('=', 2)
@@ -1072,14 +1080,19 @@ def get_rc(h):
     
     # We want ROOT + "/etc/setup" and cd(ROOT) to work: 
     # necessitates two different forms, prefix and absolute
-    set_root(ROOT)
+    if (cygwin_p):
+        set_root("/")
+    else:
+        set_root(ROOT)
     ROOT = None
     config = PREFIX_ROOT + '/etc/setup'    
     downloads = cache + '/' + urllib.quote (mirror, '').lower ()
     installed_db = config + '/installed.db'
-    postinstall = PREFIX_ROOT + "/etc/postinstall"
-    postremove = PREFIX_ROOT + "/etc/postremove"
-    preremove =  PREFIX_ROOT + "/etc/preremove"
+    postinstall_dir = PREFIX_ROOT + "/etc/postinstall"
+    postremove_dir = PREFIX_ROOT + "/etc/postremove"
+    preremove_dir =  PREFIX_ROOT + "/etc/preremove"
+    setup_ini = PREFIX_ROOT + setup_ini
+    pm = PathMapper(PREFIX_ROOT)
     
     return 0
 
@@ -1118,9 +1131,9 @@ def main():
     global barred
     global pm
     global nobarred
-    global postinstall
-    global preremove
-    global postremove
+    global postinstall_dir
+    global preremove_dir
+    global postremove_dir
     
     # Define constants
     installed_db_magic = 'INSTALLED.DB 2\n'
@@ -1162,9 +1175,8 @@ def main():
     
     # Override one or more configuration elements if on the command line
     (options, files) = getopt.getopt (sys.argv[1:],
-                      'c:dhi:m:r:t:xf',
-                      ('cache=', 'download', 'help', 'mirror=',
-                       'root=', 'ini=', 'dist=', 'no-deps', 'regexp', 'nobarred')) 
+        'dhm:t:xf', ('download', 'help', 'mirror=', 'dist=', 'no-deps',\
+        'regexp', 'nobarred')) 
     command = 'help'
     if len (files) > 0:
         command = files[0]
@@ -1180,26 +1192,13 @@ def main():
         a = i[1]
         if 0:
             pass
-        elif o == '--cache' or o == '-c':
-            cache = a
-            downloads = cache + '/' + urllib.quote (mirror, '').lower ()
         elif o == '--download' or o == '-d':
                 download_p = 1
         elif o == '--help' or o == '-h':
             command = 'help'
-        elif o == '--ini' or o == '-i':
-            setup_ini = a
         elif o == '--mirror' or o == '-m':
             mirror = a
             downloads = cache + '/' + urllib.quote (mirror, '').lower ()
-        elif o == '--root' or o == '-r':
-            set_root(a)
-            to_prefix =\
-                ["config", "cache", "setup_ini", "installed_db", "downloads", "postinstall", "postremove", "preremove"]
-            pm = PathMapper(PREFIX_ROOT)
-            d = __main__.__dict__
-            for conf_item in to_prefix:
-                d[conf_item] = pm.map_path(d[conf_item])
         elif o == '--dist' or o == '-t':
             distname = a
         elif o == '--no-deps' or o == '-x':
@@ -1208,8 +1207,6 @@ def main():
             regex_search = True
         elif o == '--nobarred' or o == '-f':
             nobarred = True
-    if not pm:
-        pm = PathMapper("")
 
     # Check for existence of Cygwin's package database and read it in,
     # Unless executing commands to update/establish that database.
