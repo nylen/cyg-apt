@@ -37,7 +37,6 @@ class PathMapper:
         for l in mtab:
             if l[2] != "/":
                 self.map[l[2] + "/"] = l[0] + "/"
-                #print "mapping %s -----> %s" % (l[2] + "/", l[0] + "/")
             else:
                 self.mountroot = l[0] + "/"
 
@@ -46,11 +45,11 @@ class PathMapper:
         global cygwin_p
         if cygwin_p:
             return path
-        for cygpath in self.map.keys():
+        # sort to map to /e/bar/foo in pefrence /e/bar
+        l = prsort(self.map.keys())
+        for cygpath in l:
             if path.find(cygpath) == 0:
-                #print "Found %s in %s" % (cygpath, path)
                 path = path.replace(cygpath, self.map[cygpath])
-                #print "Replacing it with %s" % self.map[cygpath]
                 return path
         return self.root  + path
         
@@ -352,6 +351,17 @@ def psort(lst):
     return lst
 
 
+def prsort(lst):
+    lst.sort()
+    lst.reverse()
+    return lst
+    
+
+def preverse(lst):
+    lst.reverse()
+    return lst
+
+
 def list():
     '''installed packages'''
     global packagename
@@ -377,8 +387,10 @@ def postinstall():
     global postinstall_dir
     if not cygwin_p:
         print >> sys.stderr,\
-            "%s: postinstall must be run within Cygwin. Exiting." % (scriptname)
-    run_all(postinstall_dir)        
+            "%s: postinstall must be run within Cygwin. Exiting." %\
+            (scriptname)
+    else:
+        run_all(postinstall_dir)        
 
 
 def postremove():
@@ -386,15 +398,20 @@ def postremove():
     global preremove_dir
     global postremove_dir
     
-    if not cygwin_p:
+    if len(files[1:]) == 0:
+        print >> sys.stderr,\
+            "%s: must specify package to run postremove. Exiting." %\
+            (scriptname)
+    elif not cygwin_p:
         print >> sys.stderr,\
             "%s: postremove must be run within Cygwin. Exiting." %\
             (scriptname)
-    for packagename in files[1:]:
-        preremove_sh = preremove_dir + "/" + packagename + ".sh"
-        postremove_sh = postremove_dir + "/" + packagename + ".sh"
-        try_run_script(preremove_sh)
-        try_run_script(postremove_sh)
+    else:
+        for packagename in files[1:]:
+            preremove_sh = preremove_dir + "/" + packagename + ".sh"
+            postremove_sh = postremove_dir + "/" + packagename + ".sh"
+            try_run_script(preremove_sh)
+            try_run_script(postremove_sh)
     
 
 def update():
@@ -674,13 +691,20 @@ def do_uninstall():
     global postremove_dir
     global postinstall_dir
     global pm
+    global nopostremove
     
     postremove_sh = postremove_dir + "/" + packagename + ".sh"
     postinstall_sh = postinstall_dir + "/" + packagename + ".sh"
     preremove_sh = preremove_dir + "/" + packagename + ".sh"
     postinstall_done = postinstall_dir + "/" + packagename + ".sh.done"
+    suppression_msg =\
+        "%s: postremove suppressed: \"%s postremove %s\" to complete." %\
+        (scriptname, scriptname, packagename)
     
-    try_run_script(preremove_sh)
+    if not nopostremove:
+        try_run_script(preremove_sh)
+    else:
+        print >> sys.stdout, suppression_msg
     lst = get_filelist()
     
     # We don't expect these to be present: they are executed 
@@ -690,7 +714,7 @@ def do_uninstall():
     nowarns.append(preremove_sh)
     
     noremoves = []
-    if not cygwin_p:
+    if not cygwin_p or nopostremove:
         noremoves.append(preremove_sh)
     noremoves.append(postremove_sh)
       
@@ -702,11 +726,12 @@ def do_uninstall():
         if (uninstall_want_file_removed(file, noremoves, nowarns)):
             if os.remove(file):
                 raise IOError
-    try_run_script(postremove_sh)
-    if cygwin_p:
-        if os.path.isfile(postremove_sh):
-            if os.remove(postremove_sh):
-                raise IOError
+    if not nopostremove:       
+        try_run_script(postremove_sh)
+        if cygwin_p:
+            if os.path.isfile(postremove_sh):
+                if os.remove(postremove_sh):
+                    raise IOError
 
     # We don't remove empty directories: the problem is are we sure no other
     # package is depending on them.
@@ -779,7 +804,11 @@ def install():
     global packagename
     global cygwin_p
     global postinstall_dir
+    global nopostinstall
     
+    suppression_msg =\
+        "%s: postinstall suppressed: \"%s postinstall\" to complete." %\
+        (scriptname, scriptname)
     missing = {}
     for packagename in files[1:]:
         missing.update(dict(map(lambda x: (x, 0), get_missing())))
@@ -813,7 +842,10 @@ def install():
               % (packagename, version_to_string(get_version())))
         do_install()
         if cygwin_p:
-            run_all(postinstall_dir)
+            if nopostinstall:
+                print >> sys.stdout, suppression_msg
+            else:        
+                run_all(postinstall_dir)
         else:
             print "To complete the installation, run "\
             "\"cyg-apt postinstall %s\" from within\nCygwin." % packagename
@@ -827,14 +859,6 @@ def upgrade():
 
 def cygpath(path):
     return os.popen("cygpath \"%s\"" % path).read().strip()
-#    path = path.replace("\\", "/")
-#    if len(path) == 3:
-#        if path[1] == ":":
-#            path = "/" + path[0].lower()
-#    elif len(path) > 1:        
-#        if path[1] == ":":
-#            path = "/" + path[0].lower() + path[2:]
-#    return path
 
 
 def get_setup_rc(location):
@@ -997,10 +1021,11 @@ def find():
 
 
 def usage():
+    global cyg_apt_rc
     scriptname = os.path.basename(sys.argv[0])
-    sys.stdout.write('''%s [OPTION]... COMMAND [PACKAGE]...
-  
-    Commands:\n''' % scriptname)
+    print("%s [OPTION]... COMMAND [PACKAGE]..." % scriptname)
+    print("Configuration: %s\n\n" % cyg_apt_rc)
+    print("    Commands:")
     d = __main__.__dict__
     commands = filter(lambda x:
                type(d[x]) == type(usage) and d[x].__doc__, d)
@@ -1009,17 +1034,15 @@ def usage():
     psort(commands)))
     sys.stdout.write(r'''
         Options:
-            -c,--cache=DIR         download cache [%(cache)s]
             -d,--download          download only
             -h,--help              show brief usage
-            -i,--ini=FILE          use setup.ini [%(setup_ini)s]
             -m,--mirror=URL        use mirror [%(mirror)s]
-            -r,--root=DIR          set root [%(ROOT)s]
             -t,--dist=NAME         set dist name (curr, test, prev) [%(distname)s]
             -x,--no-deps           ignore dependencies
             -s,--regexp            search as regex pattern
             -f,--nobarred          add/remove packages cyg-apt depends on
         ''' % d)
+
 
 
 def set_root(root):
@@ -1135,6 +1158,8 @@ def main():
     global postinstall_dir
     global preremove_dir
     global postremove_dir
+    global nopostinstall
+    global nopostremove
     
     # Define constants
     installed_db_magic = 'INSTALLED.DB 2\n'
@@ -1146,6 +1171,8 @@ def main():
     # Default behaviours
     regex_search = False
     nobarred = False
+    nopostinstall = False
+    nopostremove = False
     
     # A couple of configuration items are set in main
     scriptname = os.path.basename(sys.argv[0])
@@ -1165,10 +1192,11 @@ def main():
     if os.path.exists(cwd_cyg_apt_rc):
         cyg_apt_rc = home_cyg_apt_rc = cwd_cyg_apt_rc
     elif os.path.exists(home_cyg_apt_rc):
-        cyg_apt_rc = home_cyg_apt_rc    
+        cyg_apt_rc = home_cyg_apt_rc
     if cyg_apt_rc:
         # Take our configuration from .cyg-apt
         # Command line options can override, but only for this run.
+        cyg_apt_rc = cyg_apt_rc.replace("\\","/")
         get_rc(open(cyg_apt_rc))
     elif (len(sys.argv) == 1 or sys.argv[1] != "setup"):
         print "cyg-apt: no .cyg-apt: run \"cyg-apt setup\" Exiting."
@@ -1176,7 +1204,7 @@ def main():
     
     # Override one or more configuration elements if on the command line
     (options, files) = getopt.getopt(sys.argv[1:],
-        'dhm:t:xf', ('download', 'help', 'mirror=', 'dist=', 'no-deps',\
+        'dhm:t:xfyz', ('download', 'help', 'mirror=', 'dist=', 'no-deps',\
         'regexp', 'nobarred')) 
     command = 'help'
     if len(files) > 0:
@@ -1208,6 +1236,10 @@ def main():
             regex_search = True
         elif o == '--nobarred' or o == '-f':
             nobarred = True
+        elif o == '-y':
+            nopostinstall = True
+        elif o == '-z':
+            nopostremove = True
 
     # Check for existence of Cygwin's package database and read it in,
     # Unless executing commands to update/establish that database.

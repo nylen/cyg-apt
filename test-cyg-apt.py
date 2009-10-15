@@ -34,6 +34,7 @@ class TestCygApt(unittest.TestCase):
         self.version_2_marker = "/etc/ver2_marker"
         self.testpkg_lib_marker = "/usr/lib/testpkg-lib.marker"
         self.pre_remove_marker = "/usr/share/doc/testpkg/README"
+        self.postinstall_marker = self.pre_remove_marker
         self.post_remove_marker = "/usr/share/doc/testpkg"
         self.post_install_script = "/etc/postinstall/testpkg.sh"
         self.post_install_script_done = \
@@ -475,15 +476,6 @@ class TestCygApt(unittest.TestCase):
         self.assert_("testpkg - is a test package" in searchout)
         
         
-#    def testroot(self):
-#        utilpack.popen_ext("cyg-apt install " + self.package_name, self.v)[0]
-#        listout = utilpack.popen_ext("cyg-apt --root=bad list", self.v)[0]
-#        self.assert_(self.package_name not in listout)
-#        listout = utilpack.popen_ext\
-#            ("cyg-apt --root=%s list" % self.root, self.v)[0]
-#        self.assert_(self.package_name in listout)
-     
-        
     def testurl(self):
         utilpack.popen_ext("cyg-apt install " + self.package_name, self.v)
         urlout = utilpack.popen_ext\
@@ -550,22 +542,33 @@ class TestCygApt(unittest.TestCase):
         self.assert_fyes(self.pre_remove_script_done)
         self.assert_fyes(self.post_remove_script_done) 
 
-        
-    def testinstall_remove(self):
-        self.do_install_remove_test()
+    
+    def testpostinstall(self):
+        utilpack.popen_ext\
+            ("cyg-apt remove " + self.package_name, self.v)
+        self.confirm_remove_clean(self.package_name)
+        # -y is an undocumented option to cyg-apt: suppresses postinstall
+        utilpack.popen_ext\
+            ("cyg-apt -y install " + self.package_name, self.v)
+        self.confirm_installed(self.package_name, nopostinstall=True)
+        utilpack.popen_ext("cyg-apt postinstall", self.v)
+        self.confirm_installed(self.package_name, nopostinstall=False)
 
     
-#    def testcmdline_cache(self):
-#        utilpack.popen_ext("cp -rf %s %s" % (self.opts["cache"], "package_cache_copy"))
-#        utilpack.popen_ext("mv %s %s" %\
-#        (self.opts["cache"], self.opts["cache"] + ".bak"))
-#        try:
-#            self.do_install_remove_test("--cache=package_cache_copy")
-#        finally:
-#            utilpack.popen_ext("mv %s %s" %\
-#            (self.opts["cache"] + ".bak", self.opts["cache"]))
-#            if os.path.exists(self.opts["cache"]):
-#                utilpack.popen_ext("rm -rf package_cache_copy")
+    def testpostremove(self):
+        utilpack.popen_ext\
+            ("cyg-apt install " + self.package_name, self.v)
+        self.confirm_installed(self.package_name)
+        # -z is an undocumented option to cyg-apt: suppresses postremove
+        utilpack.popen_ext\
+            ("cyg-apt -z remove " + self.package_name, self.v)
+        self.confirm_remove_clean(self.package_name, nopostremove=True)
+        utilpack.popen_ext("cyg-apt postremove " + self.package_name, self.v)
+        self.confirm_remove_clean(self.package_name, nopostremove=False)
+    
+    
+    def testinstall_remove(self):
+        self.do_install_remove_test()
 
 
     def testcmdline_mirror(self):
@@ -585,19 +588,7 @@ class TestCygApt(unittest.TestCase):
         install_out = utilpack.popen_ext\
             ("cyg-apt --download install " + self.package_name, self.v)[1]
         self.confirm_remove_clean(self.package_name)
-        
-        
-#    def testcmdline_ini(self):
-#        utilpack.popen_ext("cyg-apt install " + self.package_name, self.v)[0]
-#        list_out = utilpack.popen_ext\
-#            ("cyg-apt --ini=bad list", self.v)[1]
-#        self.assert_("\"bad\" no such file" in list_out)
-#        
-#        list_out = utilpack.popen_ext\
-#            ("cyg-apt --ini=%s list" % self.build_setup_ini, self.v)[0]
-#        self.assert_(self.package_name in list_out)
-        
-        
+          
          
     def assert_fyes(self, f):
             self.assert_(os.path.exists(f) is True)
@@ -605,12 +596,14 @@ class TestCygApt(unittest.TestCase):
     def assert_fno(self, f):
             self.assert_(os.path.exists(f) is False)    
     
-    def tar_do(self, tarball, fn):
+    def tar_do(self, tarball, fn, notest=None):
         """ Applies fn to each file in a tarfile"""
         if tarfile.is_tarfile(tarball):
             input_tarfile = tarfile.open(tarball)
             contents = input_tarfile.getnames()
             contents = ["/" + f for f in contents]
+            if notest:
+                contents = [f for f in contents if f not in notest]
             for f in contents:
                 if os.path.isfile(f):
                     fn(f)
@@ -620,10 +613,14 @@ class TestCygApt(unittest.TestCase):
             self.assert_(0)
 
     
-    def confirm_remove_clean(self, package):
+    def confirm_remove_clean(self, package, nopostremove=False):
         """ Confirms that no files or configuration file state exists for a package that has been subject to cyg-apt remove. """
         
-        self.tar_do(self.tarfile, self.assert_fno)
+        if nopostremove:
+            notest = [self.pre_remove_script, self.post_remove_script]
+        else:
+            notest = None
+        self.tar_do(self.tarfile, self.assert_fno, notest)
             
         # Next confirm that the filelist file is gone
         # Not the original cyg-apt behaviour but setup.exe removes
@@ -636,26 +633,38 @@ class TestCygApt(unittest.TestCase):
         for line in installed_db:
             self.assert_(line.split()[0] != package)
 
-        self.assert_fno(self.pre_remove_marker)
-        self.assert_fno(self.post_remove_marker)
-        self.assert_fno(self.pre_remove_script)
-        self.assert_fno(self.post_remove_script)
+        if nopostremove:
+            self.assert_fyes(self.pre_remove_marker)
+            self.assert_fyes(self.post_remove_marker)
+            self.assert_fyes(self.pre_remove_script)
+            self.assert_fyes(self.post_remove_script)            
+        else:
+            self.assert_fno(self.pre_remove_marker)
+            self.assert_fno(self.post_remove_marker)
+            self.assert_fno(self.pre_remove_script)
+            self.assert_fno(self.post_remove_script)
          
         
 
-    def confirm_installed(self, package):
+    def confirm_installed(self, package, nopostinstall=False):
         """ Confirms that a package is installed: the tarball files are 
         present, the package is represented in installed.db, if a postinstall script is present it's in the .done form, the filelist file exists and is correct."""
         
         self.tar_do(self.tarfile, self.assert_fyes)
         
         # Confirm that the postinstall script has run
-        self.assert_fyes(self.pre_remove_marker)
+        if not nopostinstall:
+            self.assert_fyes(self.postinstall_marker)
         self.assert_fyes(self.post_remove_marker)
         
         # Confirm that the postinstall script has been moved
-        self.assert_fno(self.post_install_script)
-        self.assert_fyes(self.post_install_script_done)
+        # if postinstall performed, otherwise confirm ready to run
+        if not nopostinstall:
+            self.assert_fno(self.post_install_script)
+            self.assert_fyes(self.post_install_script_done)
+        else:
+            self.assert_fyes(self.post_install_script)
+            self.assert_fno(self.post_install_script_done)
         
 if __name__ == '__main__':
     verbose = ("-vv" in sys.argv)

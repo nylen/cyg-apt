@@ -500,3 +500,21 @@ More coding standard changes -- fairly disruptive I'm afraid: eliminate spaces b
 
 Revision 90
 -----------
+
+Sort the mapped paths in PathMapper: this ensures that /foo/baz will be taken instead of /foo for path /foo/baz/adir/afile if both /foo/baz and /foo are present in the mount table.
+
+Added preverse utility function. It's beyond me why a python list reverse doesn't return the list!
+
+Added the .cyg-apt in use to the usage message. Removed options we no longer support.
+
+Added options to suppress postinstall and postremove script execution. Potentially useful in rare real-world cases, more useful to test the new postinstall and postremove functions.
+
+Added tests for postinstall and postremove to test-cyg-apt. Changed helper functions to support same: allow install and remove states to be in the no-postinstall no-postremove state.
+
+All this is aimed at providing some parital testing of:
+DOS: cyg-apt install/remove testpkg
+CYGWIN: cyg-apt postinstall/postremove testpkg
+commands work without recourse to a DOS-side testing framework.
+
+Revision 91
+-----------
