@@ -518,3 +518,10 @@ commands work without recourse to a DOS-side testing framework.
 
 Revision 91
 -----------
+
+Part one of removing use of "global" -- transform the main script into an object, but retain the globals. The globals will become class members in the next step.
+
+Revision 92
+-----------
+
+
