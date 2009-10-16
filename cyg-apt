@@ -20,15 +20,17 @@ import urllib
 import urlparse
 import hashlib
 import shutil
+import inspect
 from pdb import set_trace as stra
 
 
 class PathMapper:
-    def __init__(self, root):
+    def __init__(self, root, cygwin_p):
         self.root = root
         mountout = os.popen(self.root + "/bin/mount").readlines()
         self.mountroot = "/"
         self.add_mapping(mountout)
+        self.cygwin_p = cygwin_p
     
     
     def add_mapping(self, mtab):
@@ -42,8 +44,7 @@ class PathMapper:
 
                 
     def map_path(self, path):
-        global cygwin_p
-        if cygwin_p:
+        if self.cygwin_p:
             return path
         # sort to map to /e/bar/foo in pefrence /e/bar
         l = self.prsort(self.map.keys())
@@ -86,6 +87,81 @@ class CygAptURLopener(urllib.FancyURLopener):
 
         
 class CygApt:
+    def __init__(self,\
+        main_packagename,\
+        main_files,\
+        main_cyg_apt_rc,\
+        main_download_p,\
+        main_mirror,\
+        main_downloads,\
+        main_distname,\
+        main_nodeps_p,\
+        main_regex_search,\
+        main_nobarred,\
+        main_nopostinstall,\
+        main_nopostremove,\
+        main_dists,\
+        main_installed,\
+        main_scriptname,\
+        main_command):
+    
+        # Define constants
+        self.installed_db_magic = 'INSTALLED.DB 2\n'
+        self.INSTALL = 'install'
+        self.rc_options = ['ROOT', 'mirror', 'cache', 'setup_ini', 'distname', 'barred']
+        self.distnames = ('curr', 'test', 'prev')
+        self.cygwin_p = (sys.platform == "cygwin")
+        
+        # Default behaviours
+        self.regex_search = False
+        self.nobarred = False
+        self.nopostinstall = False
+        self.nopostremove = False
+        
+        # Init
+        self.scriptname = main_scriptname
+        self.packagename = main_packagename
+        self.files = main_files
+        self.download_p = main_download_p
+
+        self.downloads = main_downloads
+        #self.distname = main_distname
+        self.nodeps_p = main_nodeps_p
+        self.regex_search = main_regex_search
+        self.nobarred = main_nobarred
+        self.nopostinstall = main_nopostinstall
+        self.nopostremove = main_nopostremove
+        self.dists = main_dists
+        self.installed = main_installed
+        self.cyg_apt_rc = main_cyg_apt_rc
+        
+        # !!!!!!!!!!!!!!!!
+        # backhere clean up
+        if main_command != "setup":
+            self.get_rc(open(self.cyg_apt_rc))
+        
+        #overrides
+        if (main_mirror):
+            self.mirror = main_mirror
+            self.downloads = self.cache + '/' + urllib.quote(self.mirror, '').lower()
+    
+        if (main_distname):
+            self.distname = main_distname
+            
+
+        
+        # wacky stuff
+        if (main_command not in ['setup', 'update', 'help']):
+            for i in (self.installed_db, self.setup_ini):
+                if not os.path.isfile(i):
+                    sys.stderr.write('\n')
+                    sys.stderr.write('error: \"%s\" no such file\n' % i)
+                    sys.stderr.write('error: run cyg-apt setup?\n' % vars())
+                    sys.exit(2)
+            self.get_setup_ini()
+            self.get_installed()
+
+    
     def version_to_string(self, t):
         def try_itoa(x):
             if type(x) == int:
@@ -129,7 +205,6 @@ class CygApt:
 
     
     def uri_get(self, dir, uri):
-        global scriptname
         up = urlparse.urlparse(uri)
         opener = CygAptURLopener()
         ret = 1
@@ -142,7 +217,7 @@ class CygApt:
             url_base = os.path.basename(up.path)
             old_cwd = os.getcwd()
             os.chdir(dir)
-            print "%s: downloading: %s" % (scriptname, uri)
+            print "%s: downloading: %s" % (self.scriptname, uri)
             try:
                 result = opener.retrieve\
                     (uri, url_base + ".tmp", reporthook = opener.dlProgress)
@@ -155,34 +230,33 @@ class CygApt:
             else:
                 if os.path.exists(url_base + ".tmp"):
                     os.remove(url_base + ".tmp")
-                print >> sys.stderr, "%s: bad URL %s" % (scriptname, uri)
+                print >> sys.stderr, "%s: bad URL %s" % (self.scriptname, uri)
                 ret = 1
             os.chdir(old_cwd)
         else:
-            print >> sys.stderr, "%s: bad URL %s" % (scriptname, uri)
+            print >> sys.stderr, "%s: bad URL %s" % (self.scriptname, uri)
             ret = 1
         return ret
             
     
     def help(self, ):
         '''help COMMAND'''
-        if len(files) < 2:
+        if len(self.files) < 2:
             self.usage()
             sys.exit()
-        print  __main__.__dict__[packagename].__doc__
+        print  self.__dict__[self.packagename].__doc__
     
     
     def get_setup_ini(self):
-        global dists
-        if dists:
+        if self.dists:
             return
-        dists = {'test': {}, 'curr': {}, 'prev' : {}}
-        chunks = string.split(open(setup_ini).read(), '\n\n@ ')
+        self.dists = {'test': {}, 'curr': {}, 'prev' : {}}
+        chunks = string.split(open(self.setup_ini).read(), '\n\n@ ')
         for i in chunks[1:]:
             lines = string.split(i, '\n')
             name = string.strip(lines[0])
             self.debug('package: ' + name)
-            packages = dists['curr']
+            packages = self.dists['curr']
             records = {'sdesc': name}
             j = 1
             while j < len(lines) and string.strip(lines[j]):
@@ -193,7 +267,7 @@ class CygApt:
                 elif lines[j][0] == '[':
                     self.debug('dist: ' + lines[j][1:5])
                     packages[name] = records.copy()
-                    packages = dists[lines[j][1:5]]
+                    packages = self.dists[lines[j][1:5]]
                     j = j + 1
                     continue
     
@@ -215,34 +289,34 @@ class CygApt:
     
             
     def get_url(self):
-        if not dists[distname].has_key(packagename) \
-           or not dists[distname][packagename].has_key(INSTALL):
+        if not self.dists[self.distname].has_key(self.packagename) \
+           or not self.dists[self.distname][self.packagename].has_key(self.INSTALL):
             self.no_package()
             install = 0
-            for d in distnames:
-                if dists[d].has_key(packagename) \
-                   and dists[d][packagename].has_key(INSTALL):
-                    install = dists[d][packagename][INSTALL]
+            for d in self.distnames:
+                if self.dists[d].has_key(self.packagename) \
+                   and self.dists[d][self.packagename].has_key(self.INSTALL):
+                    install = self.dists[d][self.packagename][self.INSTALL]
                     sys.stderr.write("warning: using [%s]\n" % d)
                     break
             if not install:
                 sys.stderr.write("warning: %s no install\n" \
-                          % packagename)
+                          % self.packagename)
                 return 0
         else:
-            install = dists[distname][packagename][INSTALL]
+            install = self.dists[self.distname][self.packagename][self.INSTALL]
         file, size, md5 = string.split(install)
         return file, md5
     
     
     def url(self):
         '''print tarball url'''
-        print mirror + "/" + self.get_url()[0]
+        print self.mirror + "/" + self.get_url()[0]
     
     
     def get_ball(self):
         url, md5 = self.get_url()
-        return '%s/%s' % (downloads, url)
+        return '%s/%s' % (self.downloads, url)
     
     
     def ball(self):
@@ -252,11 +326,11 @@ class CygApt:
         
     def do_download(self):
         url, md5 = self.get_url()
-        dir = '%s/%s' % (downloads, os.path.split(url)[0])
+        dir = '%s/%s' % (self.downloads, os.path.split(url)[0])
         if not os.path.exists(self.get_ball()) or not self.check_md5():
             if not os.path.exists(dir):
                 os.makedirs(dir)
-            status = self.uri_get(dir, '%s/%s' % (mirror, url))
+            status = self.uri_get(dir, '%s/%s' % (self.mirror, url))
             if status:
                 raise IOError
     
@@ -270,22 +344,22 @@ class CygApt:
             
     def no_package(self, s='error'):
         sys.stderr.write \
-        ("%s: %s not in [%s]\n" % (s, packagename, distname))
+        ("%s: %s not in [%s]\n" % (s, self.packagename, self.distname))
     
     
     def get_requires(self):
         # Looking for dependencies on curr not prev or test
-        dist = dists["curr"]
-        if not dists[distname].has_key(packagename):
+        dist = self.dists["curr"]
+        if not self.dists[self.distname].has_key(self.packagename):
             self.no_package('error')
             #return []
             sys.exit(1)
-        if nodeps_p:
-            return [packagename]
-        reqs = {packagename:0}
-        if INSTALL == 'source' \
-            and dist[packagename].has_key('external-source'):
-            reqs[dist[packagename]['external-source']] = 0
+        if self.nodeps_p:
+            return [self.packagename]
+        reqs = {self.packagename:0}
+        if self.INSTALL == 'source' \
+            and dist[self.packagename].has_key('external-source'):
+            reqs[dist[self.packagename]['external-source']] = 0
         n = 0
         while len(reqs) > n:
             n = len(reqs)
@@ -293,7 +367,7 @@ class CygApt:
                 if not dist.has_key(i):
                     sys.stderr.write("error: %s not in [%s]\n" \
                         % (i, distname))
-                    if i != packagename:
+                    if i != self.packagename:
                         del reqs[i]
                     continue
                 reqs[i] = '0'
@@ -314,37 +388,34 @@ class CygApt:
     
     def buildrequires(self):
         '''print buildrequires: for package'''
-        global INSTALL
-        INSTALL = 'source'
+        self.INSTALL = 'source'
         print string.join(self.get_requires(), '\n')
     
     
     def get_installed(self):
-        global installed
-        if installed:
-            return installed
-        installed = {0:{}}
-        for i in open(installed_db).readlines()[1:]:
+        if self.installed:
+            return self.installed
+        self.installed = {0:{}}
+        for i in open(self.installed_db).readlines()[1:]:
             name, ball, status = string.split(i)
-            installed[int(status)][name] = ball
-        return installed
+            self.installed[int(status)][name] = ball
+        return self.installed
     
     
     def write_installed(self):
-        global installed_db_magic
-        file = open(installed_db, 'w')
-        file.write(installed_db_magic)
-        file.writelines(map(lambda x: '%s %s 0\n' % (x, installed[0][x]),
-                      installed[0].keys()))
+        file = open(self.installed_db, 'w')
+        file.write(self.installed_db_magic)
+        file.writelines(map(lambda x: '%s %s 0\n' % (x, self.installed[0][x]),
+                      self.installed[0].keys()))
         if file.close():
             raise IOError
     
     
     def get_field(self, field, default=''):
-        for d in (distname,) + distnames:
-            if dists[d].has_key(packagename) \
-               and dists[d][packagename].has_key(field):
-                return dists[d][packagename][field]
+        for d in (self.distname,) + self.distnames:
+            if self.dists[d].has_key(self.packagename) \
+               and self.dists[d][self.packagename].has_key(field):
+                return self.dists[d][self.packagename][field]
         return default
     
     
@@ -366,14 +437,13 @@ class CygApt:
     
     def list(self):
         '''installed packages'''
-        global packagename
-        for packagename in self.psort(installed[0].keys()):
+        for self.packagename in self.psort(self.installed[0].keys()):
             ins = self.get_installed_version()
             new = 0
-            if dists[distname].has_key(packagename) \
-               and dists[distname][packagename].has_key(INSTALL):
+            if self.dists[self.distname].has_key(self.packagename) \
+               and self.dists[self.distname][self.packagename].has_key(self.INSTALL):
                 new = self.get_version()
-            s = '%-19s %-15s' % (packagename, self.version_to_string(ins))
+            s = '%-19s %-15s' % (self.packagename, self.version_to_string(ins))
             if new and new != ins:
                 s += '(%s)' % self.version_to_string(new)
             print s
@@ -386,118 +456,107 @@ class CygApt:
     
     def postinstall(self):
         ''' runs postinall scripts for package installed from DOS '''
-        global postinstall_dir
-        if not cygwin_p:
+        if not self.cygwin_p:
             print >> sys.stderr,\
                 "%s: postinstall must be run within Cygwin. Exiting." %\
-                (scriptname)
+                (self.scriptname)
         else:
-            self.run_all(postinstall_dir)        
+            self.run_all(self.postinstall_dir)        
     
     
     def postremove(self):
         ''' runs postremove scripts for package installed from DOS '''
-        global preremove_dir
-        global postremove_dir
-        
-        if len(files[1:]) == 0:
+        if len(self.files[1:]) == 0:
             print >> sys.stderr,\
                 "%s: must specify package to run postremove. Exiting." %\
-                (scriptname)
-        elif not cygwin_p:
+                (self.scriptname)
+        elif not self.cygwin_p:
             print >> sys.stderr,\
                 "%s: postremove must be run within Cygwin. Exiting." %\
-                (scriptname)
+                (self.scriptname)
         else:
-            for packagename in files[1:]:
-                preremove_sh = preremove_dir + "/" + packagename + ".sh"
-                postremove_sh = postremove_dir + "/" + packagename + ".sh"
-                self.try_run_script(preremove_sh)
-                self.try_run_script(postremove_sh)
+            for self.packagename in self.files[1:]:
+                self.preremove_sh = self.preremove_dir + "/" + self.packagename + ".sh"
+                self.postremove_sh = self.postremove_dir + "/" + self.packagename + ".sh"
+                self.try_run_script(self.preremove_sh)
+                self.try_run_script(self.postremove_sh)
         
     
     def update(self):
         '''setup.ini'''
-        global setup_ini
-        global scriptname
-        global downloads
-        setup_ini_name = os.path.basename(setup_ini)
-        setup_ini_url = '%s/%s' % (mirror, setup_ini_name)
+        setup_ini_name = os.path.basename(self.setup_ini)
+        setup_ini_url = '%s/%s' % (self.mirror, setup_ini_name)
         
-        if not os.path.exists(downloads):
-            os.makedirs(downloads)
+        if not os.path.exists(self.downloads):
+            os.makedirs(self.downloads)
     
-        err = self.uri_get(downloads, setup_ini_url)
+        err = self.uri_get(self.downloads, setup_ini_url)
         if err:
             print >> sys.stderr,\
                 "%s: failed to download setup.ini from %s, exiting." %\
-                (scriptname, setup_ini_url)
+                (self.scriptname, setup_ini_url)
         else:
-            if os.path.exists(setup_ini):
-                shutil.copy(setup_ini, setup_ini + ".bak")
-            shutil.copy( downloads + "/" + setup_ini_name, setup_ini)
+            if os.path.exists(self.setup_ini):
+                shutil.copy(self.setup_ini, self.setup_ini + ".bak")
+            shutil.copy(self.downloads + "/" + setup_ini_name, self.setup_ini)
     
     
     def get_version(self):
-        if not dists[distname].has_key(packagename) \
-           or not dists[distname][packagename].has_key(INSTALL):
+        if not self.dists[self.distname].has_key(self.packagename) \
+           or not self.dists[self.distname][self.packagename].has_key(self.INSTALL):
             self.no_package()
             return (0, 0)
-            
-        package = dists[distname][packagename]
+        package = self.dists[self.distname][self.packagename]
         if not package.has_key('ver'):
-            file = string.split(package[INSTALL])[0]
+            file = string.split(package[self.INSTALL])[0]
             ball = os.path.split(file)[1]
             package['ver'] = self.split_ball(ball)[1]
         return package['ver']
     
        
     def get_installed_version(self):
-        return self.split_ball(installed[0][packagename])[1]
+        return self.split_ball(self.installed[0][self.packagename])[1]
     
     
     def version(self):
         '''print installed version'''
-        global distname, packagename
-        if packagename:
-            if not installed[0].has_key(packagename):
-                distname = 'installed'
+        if self.packagename:
+            if not self.installed[0].has_key(self.packagename):
+                self.distname = 'installed'
                 self.no_package()
                 sys.exit(1)
             print self.version_to_string(self.get_installed_version())
         else:
-            for packagename in self.psort(installed[0].keys()):
-                if not installed[0].has_key(packagename):
-                    distname = 'installed'
+            for self.packagename in self.psort(self.installed[0].keys()):
+                if not self.installed[0].has_key(self.packagename):
+                    self.distname = 'installed'
                     self.no_package()
                     sys.exit(1)
-                print '%-20s%-12s' % (packagename,
+                print '%-20s%-12s' % (self.packagename,
                          self.version_to_string(self.get_installed_version()))
     
         
     def get_new(self):
-        global packagename
         lst = []
-        for packagename in installed[0].keys():
+        for self.packagename in self.installed[0].keys():
             new = self.get_version()
             ins = self.get_installed_version()
             if new > ins:
                 self.debug(" %s > %s" % (new, ins))
-                lst.append(packagename)
+                lst.append(self.packagename)
         return lst
     
     
     def new(self):
         '''list new (upgradable) packages in distribution'''
-        global packagename
-        for packagename in self.psort(self.get_new()):
-            print '%-20s%-12s' % (packagename,
+        for self.packagename in self.psort(self.get_new()):
+            print '%-20s%-12s' % (self.packagename,
                           self.version_to_string(self.get_version()))
     
     
     def get_md5(self):
         url, md5 = self.get_url()
-        f = file("%s/%s" % (downloads, url),"rb").read()
+        f = file("%s/%s" % (self.downloads, url),"rb").read()
         m = hashlib.md5()
         m.update(f)
         digest = m.hexdigest()
@@ -524,33 +583,31 @@ class CygApt:
         
     def search(self):
         '''search package list'''
-        global packagename
-        global regex_search
-        if not regex_search:
-            regexp = re.escape(packagename)
+        if not self.regex_search:
+            regexp = re.escape(self.packagename)
         else:
-            regexp = packagename
+            regexp = self.packagename
         packages = []
         keys = []
-        if distname in dists:
-            keys = dists[distname].keys()
+        if self.distname in self.dists:
+            keys = self.dists[self.distname].keys()
         else:
-            for i in dists.keys():
-                for j in dists[i].keys():
+            for i in self.dists.keys():
+                for j in self.dists[i].keys():
                     if not j in keys:
                         keys.append(j)
         for i in keys:
-            packagename = i
+            self.packagename = i
             if not regexp or re.search(regexp, i) \
                or re.search(regexp, self.get_field('sdesc')) \
                or re.search(regexp, self.get_field('ldesc')):
-                if distname in dists:
-                    if dists[distname][i].has_key(INSTALL):
+                if self.distname in self.dists:
+                    if self.dists[self.distname][i].has_key(self.INSTALL):
                         packages.append(i)
                 else:
                     packages.append(i)
-        for packagename in self.psort(packages):
-            s = packagename
+        for self.packagename in self.psort(packages):
+            s = self.packagename
             d = self.get_field('sdesc') 
             if d:
                 s += ' - %s' % d[1:-1]
@@ -559,12 +616,11 @@ class CygApt:
     
     def show(self):
         '''print information for package'''
-        s = packagename
+        s = self.packagename
         d = self.get_field('sdesc') 
         if d:
             s += ' - %s' % d[1:-1]
-        print s
-        print
+        print s + "\n"
         print self.get_field('ldesc')
     
     
@@ -572,18 +628,18 @@ class CygApt:
         reqs = self.get_requires()
         lst = []
         for i in reqs:
-            if not installed[0].has_key(i):
+            if not self.installed[0].has_key(i):
                 lst.append(i)
-        if lst and packagename not in lst:
+        if lst and self.packagename not in lst:
             sys.stderr.write('warning: missing packages: %s\n' % string.join(lst))
-        elif installed[0].has_key(packagename):
+        elif self.installed[0].has_key(self.packagename):
             ins = self.get_installed_version()
             new = self.get_version()
             if ins >= new:
-                sys.stderr.write('%s is already the newest version\n' % packagename)
+                sys.stderr.write('%s is already the newest version\n' % self.packagename)
                 #lst.remove(packagename)
-            elif packagename not in lst:
-                lst.append(packagename)
+            elif self.packagename not in lst:
+                lst.append(self.packagename)
         return lst
     
     
@@ -598,7 +654,7 @@ class CygApt:
     
     
     def try_run_script(self, file_name):
-        if cygwin_p:
+        if self.cygwin_p:
             if os.path.isfile(file_name):
                 self.run_script(file_name)
         else:
@@ -613,38 +669,37 @@ class CygApt:
     
     
     def do_install_external(self, tf):
-        global pm
         members = tf.getmembers()
         for m in members:
-            path = pm.map_path("/" + m.name)
+            path = self.pm.map_path("/" + m.name)
             if m.isdir():
                 if not os.path.exists(path):
                     os.mkdir(path)
             elif m.isfile():
                 ef = tf.extractfile(m).read()
-                file(path,"wb").write(ef)
+                file(path, "wb").write(ef)
     
     
     def do_install(self):
         ball = self.get_ball()
         if tarfile.is_tarfile(ball):
             tf = tarfile.open(ball)
-            if cygwin_p:
-                tf.extractall(ABSOLUTE_ROOT)
+            if self.cygwin_p:
+                tf.extractall(self.ABSOLUTE_ROOT)
             else:
                 self.do_install_external(tf)
             lst = tf.getnames()
         else:
             print >> sys.stderr,\
-            "%s: bad tarball %s. Install failed, exiting." % (scriptname, ball)
+            "%s: bad tarball %s. Install failed, exiting." % (self.scriptname, ball)
             sys.exit(1)
         self.write_filelist(lst)
-        installed[0][packagename] = os.path.basename(ball)
+        self.installed[0][self.packagename] = os.path.basename(ball)
         self.write_installed()
     
     
     def get_filelist(self):
-        filelist_file = "%s/%s.lst.gz" % (config, packagename)    
+        filelist_file = "%s/%s.lst.gz" % (self.config, self.packagename)    
         lst = gzip.GzipFile(filelist_file).readlines()
         lst = [x.strip() for x in lst]
         return lst
@@ -655,22 +710,23 @@ class CygApt:
         os.utime(fname, times)
         f.close()
     
-    def write_filelist(self, lst): 
-        lst_name = '%s/%s.lst' % (config, packagename)
+    
+    def write_filelist(self, lst):
+        lst_name = '%s/%s.lst' % (self.config, self.packagename)
         lst_cr = [x + "\n" for x in lst]
         f = file(lst_name + ".gz", "w")
-        new_gz = gzip.GzipFile(filename = packagename + ".lst", fileobj = f)
+        new_gz = gzip.GzipFile(filename = self.packagename + ".lst", fileobj = f)
         new_gz.writelines(lst_cr)
         new_gz.close()
         f.close()
-        stat_struct =  os.stat(setup_ini)
+        stat_struct =  os.stat(self.setup_ini)
         atime = stat_struct[7]
         mtime = stat_struct[8]
         self.touch(lst_name, (atime, mtime))
     
     
     def remove_filelist(self):
-        lst_name = '%s/%s.lst.gz' % (config, packagename)
+        lst_name = '%s/%s.lst.gz' % (self.config, self.packagename)
         if os.path.exists(lst_name):
              os.remove(lst_name)
         else:
@@ -689,21 +745,15 @@ class CygApt:
        
                  
     def do_uninstall(self):
-        global preremove_dir
-        global postremove_dir
-        global postinstall_dir
-        global pm
-        global nopostremove
-        
-        postremove_sh = postremove_dir + "/" + packagename + ".sh"
-        postinstall_sh = postinstall_dir + "/" + packagename + ".sh"
-        preremove_sh = preremove_dir + "/" + packagename + ".sh"
-        postinstall_done = postinstall_dir + "/" + packagename + ".sh.done"
+        postremove_sh = self.postremove_dir + "/" + self.packagename + ".sh"
+        postinstall_sh = self.postinstall_dir + "/" + self.packagename + ".sh"
+        preremove_sh = self.preremove_dir + "/" + self.packagename + ".sh"
+        postinstall_done = self.postinstall_dir + "/" + self.packagename + ".sh.done"
         suppression_msg =\
             "%s: postremove suppressed: \"%s postremove %s\" to complete." %\
-            (scriptname, scriptname, packagename)
+            (self.scriptname, self.scriptname, self.packagename)
         
-        if not nopostremove:
+        if not self.nopostremove:
             self.try_run_script(preremove_sh)
         else:
             print >> sys.stdout, suppression_msg
@@ -716,21 +766,21 @@ class CygApt:
         nowarns.append(preremove_sh)
         
         noremoves = []
-        if not cygwin_p or nopostremove:
+        if not self.cygwin_p or self.nopostremove:
             noremoves.append(preremove_sh)
         noremoves.append(postremove_sh)
           
         # remove files
         for i in lst:
-            file = pm.map_path("/" + i)
+            file = self.pm.map_path("/" + i)
             if os.path.isdir(file):
                 continue
             if (self.uninstall_want_file_removed(file, noremoves, nowarns)):
                 if os.remove(file):
                     raise IOError
-        if not nopostremove:       
+        if not self.nopostremove:       
             self.try_run_script(postremove_sh)
-            if cygwin_p:
+            if self.cygwin_p:
                 if os.path.isfile(postremove_sh):
                     if os.remove(postremove_sh):
                         raise IOError
@@ -747,115 +797,101 @@ class CygApt:
             os.remove(postinstall_done)
         
         # update installed[]
-        del(installed[0][packagename])
+        del(self.installed[0][self.packagename])
         self.write_installed()
     
     
     def remove(self):
         '''uninstall packages'''
-        global packagename
-        
-        for packagename in files[1:]:
-            if not installed[0].has_key(packagename):
-                sys.stderr.write('warning: %s not installed\n' % packagename)
+        for self.packagename in self.files[1:]:
+            if not self.installed[0].has_key(self.packagename):
+                sys.stderr.write('warning: %s not installed\n' % self.packagename)
                 continue
-            if self.is_barred_package(packagename):
-                print >> sys.stderr, scriptname + ": NOT removing package " +\
-                    packagename + ": " + scriptname + " is dependent on it."
+            if self.is_barred_package(self.packagename):
+                print >> sys.stderr, self.scriptname + ": NOT removing package " +\
+                    self.packagename + ": " + self.scriptname + " is dependent on it."
                 continue
-                
             sys.stderr.write('uninstalling %s %s\n' \
-                      % (packagename,
+                      % (self.packagename,
                          self.version_to_string(self.get_installed_version())))
             self.do_uninstall()
     
     
     def purge(self):
         '''purge package'''
-        global packagename
-        global scriptname
-        global postinstall_dir
-        global postremove_dir
-        global preremove_dir
-        
-        for packagename in files[1:]:
-            if installed[0].has_key(packagename):
-                if self.is_barred_package(packagename):
-                    print >> sys.stderr, scriptname + ": NOT purging package " +\
-                        packagename + ": " + scriptname + " is dependent on it."
+        for self.packagename in self.files[1:]:
+            if self.installed[0].has_key(self.packagename):
+                if self.is_barred_package(self.packagename):
+                    print >> sys.stderr, self.scriptname + ": NOT purging package " +\
+                        self.packagename + ": " + self.scriptname + " is dependent on it."
                     continue
                 sys.stderr.write('uninstalling %s %s\n' \
-                    % (packagename,
+                    % (self.packagename,
                     self.version_to_string(self.get_installed_version())))
                 self.do_uninstall()
-            scripts = [postinstall_dir + "/%s.sh.done",\
-                preremove_dir + "/%s.sh.done",\
-                postremove_dir + "/%s.sh.done"]
-            scripts = [s % packagename for s in scripts]
+            scripts = [self.postinstall_dir + "/%s.sh.done",\
+                self.preremove_dir + "/%s.sh.done",\
+                self.postremove_dir + "/%s.sh.done"]
+            scripts = [s % self.packagename for s in scripts]
             for s in scripts:
                 if os.path.exists(s):
                     os.remove(s)
             ball = self.get_ball()
             if os.path.exists(ball):
-                print "%s: removing %s" % (scriptname, ball)
+                print "%s: removing %s" % (self.scriptname, ball)
                 os.remove(ball)
     
     
     def install(self):
         '''download and install packages with dependencies'''
-        global packagename
-        global cygwin_p
-        global postinstall_dir
-        global nopostinstall
-        
         suppression_msg =\
             "%s: postinstall suppressed: \"%s postinstall\" to complete." %\
-            (scriptname, scriptname)
+            (self.scriptname, self.scriptname)
         missing = {}
-        for packagename in files[1:]:
+        for self.packagename in self.files[1:]:
             missing.update(dict(map(lambda x: (x, 0), self.get_missing())))
         if len(missing) > 1:
             sys.stderr.write('to install: \n')
             sys.stderr.write('    %s' % string.join(missing.keys()))
             sys.stderr.write('\n')
     
-        for packagename in missing.keys():
+        for self.packagename in missing.keys():
             if not self.get_url():
-                del missing[packagename]     
+                del missing[self.packagename]     
     
-        for packagename in missing.keys():
-            if self.is_barred_package(packagename):
-                print >> sys.stderr, scriptname + ": NOT installing " +\
-                    packagename + ": " + scriptname + " is dependent on it under Cygwin."
-                if not cygwin_p:
+        for self.packagename in missing.keys():
+            if self.is_barred_package(self.packagename):
+                print >> sys.stderr, self.scriptname + ": NOT installing " +\
+                    self.packagename + ": " + self.scriptname + " is dependent on it under Cygwin."
+                if not self.cygwin_p:
                     print >> sys.stderr, "Use -f to override but proceed with caution."
-                del missing[packagename]
+                del missing[self.packagename]
                 
-        for packagename in missing.keys():
+        for self.packagename in missing.keys():
             self.download()
-        if download_p:
+        if self.download_p:
             sys.exit(0)
-        for packagename in missing.keys():            
-            if installed[0].has_key(packagename):
+        for self.packagename in missing.keys():            
+            if self.installed[0].has_key(self.packagename):
                 sys.stderr.write('preparing to replace %s %s\n' \
-                    % (packagename, self.version_to_string(self.get_installed_version())))
+                    % (self.packagename, self.version_to_string(self.get_installed_version())))
                 self.do_uninstall()
             sys.stderr.write('installing %s %s\n' \
-                  % (packagename, self.version_to_string(self.get_version())))
+                  % (self.packagename, self.version_to_string(self.get_version())))
             self.do_install()
-            if cygwin_p:
-                if nopostinstall:
+            if self.cygwin_p:
+                if self.nopostinstall:
                     print >> sys.stdout, suppression_msg
                 else:        
-                    self.run_all(postinstall_dir)
+                    self.run_all(self.postinstall_dir)
             else:
                 print "To complete the installation, run "\
-                "\"cyg-apt postinstall %s\" from within\nCygwin." % packagename
+                "\"cyg-apt postinstall %s\" from within\nCygwin." % self.packagename
     
     
     def upgrade(self):
         '''all installed packages: use with CAUTION'''
-        files[1:] = self.get_new()
+        self.files[1:] = self.get_new()
         self.install()
     
     
@@ -890,74 +926,64 @@ class CygApt:
     
     
     def setup(self):
-        '''cygwin environment'''
-        global installed
-        global cyg_apt_rc
-        global home_cyg_apt_rc
-        global rc_options
-        global scriptname
-        global ROOT
-        global setup_ini
-        global config
-        global PREFIX_ROOT
-        global ABSOLUTE_ROOT
-        global barred
-        
-        pm = PathMapper("")
-        ROOT = pm.mountroot
-        self.set_root(ROOT)
-        config = '/etc/setup'
-        installed_db = config + '/installed.db'
+        '''cygwin environment'''        
+        self.pm = PathMapper("", self.cygwin_p)
+        self.ROOT = self.pm.mountroot
+        self.set_root(self.ROOT)
+        self.config = '/etc/setup'
+        installed_db = self.config + '/installed.db'
         missing_cache_marker = ""
         missing_mirror_marker = ""
+        self.distname = "curr"
         # Refuse to remove/install any package including these substrings
         # since cyg-apt is dependent on them
-        barred = "python cygwin base-cygwin coreutils bash zlib libreadline"
+        self.barred = "python cygwin base-cygwin coreutils bash zlib libreadline"
         
-        if not cygwin_p:
+        if not self.cygwin_p:
             print >> sys.stderr, "%s: settup only supported under Cygwin. Exiting."\
-                % scriptname
+                % self.scriptname
             return
                 
-        if not cyg_apt_rc:
-            cyg_apt_rc = home_cyg_apt_rc
-            (last_cache, last_mirror) = self.get_setup_rc(config)
+        if not self.cyg_apt_rc:
+            #backhere -- right?
+            self.cyg_apt_rc = os.environ['HOME'] + '/.' + self.scriptname              
+            (last_cache, last_mirror) = self.get_setup_rc(self.config)
             if ((not last_cache) or (not last_mirror)):
-                (last_cache, last_mirror) = self.get_pre17_last(config)
+                (last_cache, last_mirror) = self.get_pre17_last(self.config)
                 if ((not last_cache) or (not last_mirror)):
                     print "%s: %s/setup.rc not found. Please edit %s to "\
-                    "provide mirror and cache." % (scriptname, config, cyg_apt_rc)
+                    "provide mirror and cache." % (self.scriptname, self.config, self.cyg_apt_rc)
                     last_cache = missing_cache_marker
                     last_mirror  = missing_mirror_marker
-            mirror = last_mirror
-            cache = last_cache
+            self.mirror = last_mirror
+            self.cache = last_cache
     
-            cygwin_version = os.uname()[2][:3]    
+            cygwin_version = os.uname()[2][:3]
             if cygwin_version == "1.7":
-                setup_ini = config + "/setup-2.ini"
+                self.setup_ini = self.config + "/setup-2.ini"
             else:
-                setup_ini = config + "/setup.ini"
+                self.setup_ini = self.config + "/setup.ini"
             distname = "curr"
-            h = open(cyg_apt_rc,"w")
-            for i in rc_options:
-                h.write('%s="%s"\n' % (i, eval(i)))
+            h = open(self.cyg_apt_rc, "w")
+            for i in self.rc_options:
+                h.write('%s="%s"\n' % (i, eval("self." + i)))
             h.close()
-            print "%s: creating %s." % (scriptname, cyg_apt_rc)
+            print "%s: creating %s." % (self.scriptname, self.cyg_apt_rc)
         else:
-            print "%s: %s exists; not overrwriting." % (scriptname, cyg_apt_rc)
+            print "%s: %s exists; not overrwriting." % (self.scriptname, self.cyg_apt_rc)
     
-        if not os.path.isdir(ABSOLUTE_ROOT):
-            sys.stderr.write('error: %s no root dir\n' % ABSOLUTE_ROOT)
+        if not os.path.isdir(self.ABSOLUTE_ROOT):
+            sys.stderr.write('error: %s no root dir\n' % self.ABSOLUTE_ROOT)
             sys.exit(2)
-        if not os.path.isdir(config):
-            sys.stderr.write('creating %s\n' % config)
-            os.makedirs(config)
+        if not os.path.isdir(self.config):
+            sys.stderr.write('creating %s\n' % self.config)
+            os.makedirs(self.config)
         if not os.path.isfile(installed_db):
             sys.stderr.write('creating %s\n' % installed_db)
             installed = {0:{}}
             self.write_installed()
-        if not os.path.isfile(setup_ini):
-            sys.stderr.write('getting %s\n' % setup_ini)
+        if not os.path.isfile(self.setup_ini):
+            sys.stderr.write('getting %s\n' % self.setup_ini)
             self.update()
         
     
@@ -967,35 +993,30 @@ class CygApt:
     
     def do_unpack(self):
         ball = self.get_ball()
-        global packagename
-    
         basename = os.path.basename(ball)
-        packagename = re.sub('(-src)*\.tar\.(bz2|gz)', '', basename)
-        SRC = packagename
-        if os.path.exists(packagename):
-            self.printerr(packagename + " already exists. Not overwriting.\n")
+        self.packagename = re.sub('(-src)*\.tar\.(bz2|gz)', '', basename)
+        if os.path.exists(self.packagename):
+            self.printerr(self.packagename + " already exists. Not overwriting.\n")
             return 1       
-        os.mkdir(packagename)
+        os.mkdir(self.packagename)
         if tarfile.is_tarfile(ball):
             tf = tarfile.open(ball)
-            tf.extractall(packagename)
+            tf.extractall(self.packagename)
             lst = tf.getnames()
         else:
             print >> sys.stderr,\
                 "%s: bad source tarball %s, exiting." % (scriptname, ball)
             print >> sys.stderr, "%s: SOURCE UNPACK FAILED" % scriptname
             sys.exit(1)
-        if not os.path.exists(packagename):
+        if not os.path.exists(self.packagename):
             raise IOError
-        print packagename
+        print self.packagename
                   
               
     def source(self):
         '''download/unpack source tarball'''
-        global packagename
-        global INSTALL
-        INSTALL = 'source'
-        for packagename in files[1:]:
+        self.INSTALL = 'source'
+        for self.packagename in self.files[1:]:
             self.download()
             self.do_unpack()
         sys.exit(0)
@@ -1003,37 +1024,31 @@ class CygApt:
     
     def find(self):
         '''package containing file'''
-        global packagename
-        global regex_search
-        
-        if regex_search:
-            file_to_find = packagename
+        if self.regex_search:
+            file_to_find = self.packagename
         else:
-            file_to_find = re.escape(packagename)
+            file_to_find = re.escape(self.packagename)
         hits = []
-        for packagename in self.psort(installed[0].keys()):
-            filenames_file = "%s/%s.lst.gz" % (config, packagename)
+        for self.packagename in self.psort(self.installed[0].keys()):
+            filenames_file = "%s/%s.lst.gz" % (self.config, self.packagename)
             if not os.path.exists(filenames_file):
                 continue
             files = self.get_filelist()
             for i in files:
                 if re.search(file_to_find, '/%s' % i):
-                    hits.append('%s: /%s' % (packagename, i))
+                    hits.append('%s: /%s' % (self.packagename, i))
         print(string.join(hits, '\n'))
     
     
     def usage(self):
-        global cyg_apt_rc
-        scriptname = os.path.basename(sys.argv[0])
-        print("%s [OPTION]... COMMAND [PACKAGE]..." % scriptname)
-        print("Configuration: %s\n\n" % cyg_apt_rc)
+        print("%s [OPTION]... COMMAND [PACKAGE]..." % self.scriptname)
+        print("Configuration: %s\n\n" % self.cyg_apt_rc)
         print("    Commands:")
-        d = __main__.__dict__
-        commands = filter(lambda x:
-                   type(d[x]) == type(usage) and d[x].__doc__, d)
-        sys.stdout.writelines(map(lambda x:
-                        "    %s - %s\n" % (x, d[x].__doc__),
-        self.psort(commands)))
+        for m in inspect.getmembers(self):
+            if type(m[1]) == type(self.usage):
+                if m[1].__doc__:
+                    print m[0] + " - " + m[1].__doc__
+        d = self.__dict__
         sys.stdout.write(r'''
             Options:
                 -d,--download          download only
@@ -1048,222 +1063,153 @@ class CygApt:
     
     
     def set_root(self, root):
-        global PREFIX_ROOT
-        global ABSOLUTE_ROOT
-        global scriptname
         if len(root) < 1 or root[-1] != "/":
-            print "%s: ROOT must end in a slash. Exiting." % scriptname
+            print "%s: ROOT must end in a slash. Exiting." % self.scriptname
             sys.exit(1)
-        PREFIX_ROOT = root[:-1]
-        ABSOLUTE_ROOT = root
+        self.PREFIX_ROOT = root[:-1]
+        self.ABSOLUTE_ROOT = root
     
     
     def get_rc(self, h):
-        global cache
-        global mirror
-        global downloads
-        global config
-        global dists
-        global installed
-        global installed_db
-        global files
-        global nodeps_p
-        global INSTALL
-        global download_p
-        global packagename
-        global distnames
-        global rc_options
-        global cyg_apt_rc
-        global scriptname
-        global PREFIX_ROOT
-        global ABSOLUTE_ROOT
-        global ROOT
-        global distname
-        global barred
-        global postinstall_dir
-        global preremove_dir
-        global postremove_dir
-        global cygwin_p
-        global setup_ini
-        global pm
-    
         for i in h.readlines():
             k, v = i.split('=', 2)
-            if k in rc_options:
-                __main__.__dict__[k] = eval(v)
+            if k in self.rc_options:
+                self.__dict__[k] = eval(v)
         h.close()
                 
-        if not cache:
-            print "%s: %s doesn't define cache. Exiting." % (scriptname, cyg_apt_rc)
+        if not self.cache:
+            print "%s: %s doesn't define cache. Exiting." % (self.scriptname, self.cyg_apt_rc)
             sys.exit(1)
-        if not mirror:
-            print "%s: %s doesn't define mirror. Exiting." %(scriptname, cyg_apt_rc)
+        if not self.mirror:
+            print "%s: %s doesn't define mirror. Exiting." %(self.scriptname, self.cyg_apt_rc)
             sys.exit(1)
-        
-        # Some values are derived from .cyg-apt
         
         # We want ROOT + "/etc/setup" and cd(ROOT) to work: 
         # necessitates two different forms, prefix and absolute
-        if(cygwin_p):
+        if(self.cygwin_p):
             self.set_root("/")
         else:
-            self.set_root(ROOT)
-        ROOT = None
-        pm = PathMapper(PREFIX_ROOT)
-        config = pm.map_path("/etc/setup")
-        cache = pm.map_path(cache)
-        downloads = cache + '/' + urllib.quote(mirror, '').lower()
-        installed_db = config + '/installed.db'
-        postinstall_dir = pm.map_path("/etc/postinstall")
-        postremove_dir = pm.map_path("/etc/postremove")
-        preremove_dir =  pm.map_path("/etc/preremove")
-        setup_ini = pm.map_path(setup_ini)
+            self.set_root(self.ROOT)
+        self.ROOT = None
+        self.pm = PathMapper(self.PREFIX_ROOT, self.cygwin_p)
+        self.config = self.pm.map_path("/etc/setup")
+        self.cache = self.pm.map_path(self.cache)
+        self.downloads = self.cache + '/' + urllib.quote(self.mirror, '').lower()
+        self.installed_db = self.config + '/installed.db'
+        self.postinstall_dir = self.pm.map_path("/etc/postinstall")
+        self.postremove_dir = self.pm.map_path("/etc/postremove")
+        self.preremove_dir =  self.pm.map_path("/etc/preremove")
+        self.setup_ini = self.pm.map_path(self.setup_ini)
         return 0
     
     
     def is_barred_package(self, package):
-        global barred
-        global nobarred
-        return (not nobarred) and package in barred
-
+        return (not self.nobarred) and package in self.barred
+        
 
 def main():
-    global cache
-    global mirror
-    global downloads
-    global config
-    global dists
-    global installed
-    global installed_db
-    global files
-    global nodeps_p
-    global INSTALL
-    global download_p
-    global installed_db_magic
-    global packagename
-    global distnames
-    global setup_ini
-    global rc_options
-    global cyg_apt_rc
-    global cygwin_p
-    global home_cyg_apt_rc
-    global scriptname
-    global PREFIX_ROOT
-    global ABSOLUTE_ROOT
-    global distname
-    global regex_search
-    global barred
-    global pm
-    global nobarred
-    global postinstall_dir
-    global preremove_dir
-    global postremove_dir
-    global nopostinstall
-    global nopostremove
-    cyg_apt = CygApt()
-    
-    # Define constants
-    installed_db_magic = 'INSTALLED.DB 2\n'
-    INSTALL = 'install'
-    rc_options = ['ROOT', 'mirror', 'cache', 'setup_ini', 'distname', 'barred']
-    distnames = ('curr', 'test', 'prev')
-    pm = None
+    main_mirror = None
+    main_downloads = None
+    main_nodeps_p = None
+    main_download_p = None
+    main_distname = None
+    main_regex_search = None
+    main_nobarred = None
+    main_nopostinstall = None
+    main_nopostremove = None
+    main_files = None
+    main_dists = 0
+    main_installed = 0
+    main_packagename = 0
+    main_command = 'help'
+    main_cyg_apt_rc = None
+    main_scriptname = None
 
-    # Default behaviours
-    regex_search = False
-    nobarred = False
-    nopostinstall = False
-    nopostremove = False
-    
-    # A couple of configuration items are set in main
-    scriptname = os.path.basename(sys.argv[0])
-    if (scriptname[-3:] == ".py"):
-        scriptname = scriptname[:-3]
-    cygwin_p = (sys.platform == "cygwin")
-    
-    # Take most of our configuration from .cyg-apt 
-    # preferring .cyg-apt in current directory over $(HOME)/.cyg-apt
-    h = 0
-    cyg_apt_rc = None
-    if "HOME" in os.environ:
-        home_cyg_apt_rc = os.environ['HOME'] + '/.' + scriptname
-    else:
-        home_cyg_apt_rc = None
-    cwd_cyg_apt_rc = os.getcwd() + '/.' + scriptname
-    if os.path.exists(cwd_cyg_apt_rc):
-        cyg_apt_rc = home_cyg_apt_rc = cwd_cyg_apt_rc
-    elif os.path.exists(home_cyg_apt_rc):
-        cyg_apt_rc = home_cyg_apt_rc
-    if cyg_apt_rc:
-        # Take our configuration from .cyg-apt
-        # Command line options can override, but only for this run.
-        cyg_apt_rc = cyg_apt_rc.replace("\\","/")
-        cyg_apt.get_rc(open(cyg_apt_rc))
-    elif (len(sys.argv) == 1 or sys.argv[1] != "setup"):
-        print "cyg-apt: no .cyg-apt: run \"cyg-apt setup\" Exiting."
-        sys.exit(1)
-    
-    # Override one or more configuration elements if on the command line
-    (options, files) = getopt.getopt(sys.argv[1:],
+    main_scriptname = os.path.basename(sys.argv[0])
+    if (main_scriptname[-3:] == ".py"):
+        main_scriptname = main_scriptname[:-3]
+            
+    (main_options, main_files) = getopt.getopt(sys.argv[1:],
         'dhm:t:xfyz', ('download', 'help', 'mirror=', 'dist=', 'no-deps',\
         'regexp', 'nobarred')) 
-    command = 'help'
-    if len(files) > 0:
-        command = files[0]
-    
-    packagename = 0
-    if len(files) > 1:
-        packagename = files[1]
+
+    if len(main_files) > 0:
+        main_command = main_files[0]
+    if len(main_files) > 1:
+        main_packagename = main_files[1]
      
-    nodeps_p = 0
-    download_p = 0
-    for i in options:
+    main_nodeps_p = 0
+    main_download_p = 0
+    for i in main_options:
         o = i[0]
         a = i[1]
         if 0:
             pass
         elif o == '--download' or o == '-d':
-                download_p = 1
+                main_download_p = 1
         elif o == '--help' or o == '-h':
-            command = 'help'
+            main_command = 'help'
         elif o == '--mirror' or o == '-m':
-            mirror = a
-            downloads = cache + '/' + urllib.quote(mirror, '').lower()
+            main_mirror = a
+            #main_downloads = self.cache + '/' + urllib.quote(init_mirror, '').lower()
         elif o == '--dist' or o == '-t':
-            distname = a
+            main_distname = a
         elif o == '--no-deps' or o == '-x':
-            nodeps_p = 1
+            main_nodeps_p = 1
         elif o == '--regexp' or o == '-s':
-            regex_search = True
+            main_regex_search = True
         elif o == '--nobarred' or o == '-f':
-            nobarred = True
+            main_nobarred = True
         elif o == '-y':
-            nopostinstall = True
+            main_nopostinstall = True
         elif o == '-z':
-            nopostremove = True
+            main_nopostremove = True
+            
+    # Take most of our configuration from .cyg-apt 
+    # preferring .cyg-apt in current directory over $(HOME)/.cyg-apt
+    cyg_apt_rc = None
+    if "HOME" in os.environ:
+        home_cyg_apt_rc = os.environ['HOME'] + '/.' + main_scriptname
+    else:
+        home_cyg_apt_rc = None
+    cwd_cyg_apt_rc = os.getcwd() + '/.' + main_scriptname
+    if os.path.exists(cwd_cyg_apt_rc):
+        main_cyg_apt_rc = home_cyg_apt_rc = cwd_cyg_apt_rc
+    elif os.path.exists(home_cyg_apt_rc):
+        main_cyg_apt_rc = home_cyg_apt_rc
+        
+    if main_cyg_apt_rc:
+        # Take our configuration from .cyg-apt
+        # Command line options can override, but only for this run.
+        main_cyg_apt_rc = main_cyg_apt_rc.replace("\\","/")
+    elif (len(sys.argv) == 1 or sys.argv[1] != "setup"):
+        print "cyg-apt: no .cyg-apt: run \"cyg-apt setup\" Exiting."
+        sys.exit(1)
 
     # Check for existence of Cygwin's package database and read it in,
     # Unless executing commands to update/establish that database.
-
-    if (command not in ['setup', 'update', 'help']):
-        for i in (installed_db, setup_ini):
-            if not os.path.isfile(i):
-                sys.stderr.write('\n')
-                sys.stderr.write('error: \"%s\" no such file\n' % i)
-                sys.stderr.write('error: run cyg-apt setup?\n' % vars())
-                sys.exit(2)
-        dists = 0
-        installed = 0
-        cyg_apt.get_setup_ini()
-        cyg_apt.get_installed()
-    
+    cyg_apt = CygApt(main_packagename,\
+        main_files,\
+        main_cyg_apt_rc,\
+        main_download_p,\
+        main_mirror,\
+        main_downloads,\
+        main_distname,\
+        main_nodeps_p,\
+        main_regex_search,\
+        main_nobarred,\
+        main_nopostinstall,\
+        main_nopostremove,\
+        main_dists,\
+        main_installed,\
+        main_scriptname,\
+        main_command)
     # Finished init: launch command to do the work
-    #if command and command in __main__.__dict__:
-    #   __main__.__dict__[command]()
-    if command and command in dir(cyg_apt):
-        getattr(cyg_apt, command)()
+    if main_command and main_command in dir(cyg_apt):
+        getattr(cyg_apt, main_command)()
     else:
         cyg_apt.usage()
-        
+
+      
 if __name__ == '__main__':
     main()

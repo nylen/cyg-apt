@@ -524,4 +524,14 @@ Part one of removing use of "global" -- transform the main script into an object
 Revision 92
 -----------
 
+Part two of removing use of "global" -- transform all global variables to class members. Big change: cyg-apt 175 lines of 1215 changed.
+
+added __init__ for CygApt.
+
+Moved initialisation from main to CygApt.__init__(): main retains arugment parsing and some high level environment discovery such as .cyg-apt presence and the platform we are running on.
+
+CygApt creator arguments override values from .rc ie command line overrides as before, but made it more explicit.
+
+Re-wrote Usage() to reflect transformation to an object.
+
 
