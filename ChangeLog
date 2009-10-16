@@ -534,4 +534,21 @@ CygApt creator arguments override values from .rc ie command line overrides as b
 
 Re-wrote Usage() to reflect transformation to an object.
 
+Revision 93
+-----------
+
+Cleaned up the object model: removed the link between CygApt object creation and the command you will use it for: rather than having different sets of creation requirements and supported initilisation options for different commands, CygApt now has only one set of requirements: the presence of .cyg-apt, setup.ini and installed.db.
+
+To this end I removed command as a parameter to CygApt.__init__() and created a new object CygAptSetup. This object has fewer preconditions and is used to set the environment up for CygApt. It handles help, setup and update, removed from the main class.
+
+Moved some standalone functions out of class scope so both objects can use them. It makes their role as helper functions clearer, too.
+
+Changed main to invoke CygApt or CygAptSetup as required.
+
+Simplified usage() -- echos less configuration details. Separation of concerns.
+
+Revision 94
+-----------
+
+
 
