@@ -27,6 +27,19 @@ class CygAptSetup:
     def __init__(self, cygwin_p):
         self.cygwin_p = cygwin_p
         self.rc_options = ['ROOT', 'mirror', 'cache', 'setup_ini', 'distname', 'barred']
+        self.rc_comments = {\
+            "ROOT" : "# The root of your Cygwin installation as a windows path\n",\
+            "mirror" : "# URL of your Cygwin mirror: example http://mirror.internode.on.net/pub/cygwin/\n",\
+            "cache" : "# Your package cache as a POSIX path: example /e/home/cygwin_package/cache\n",\
+            "setup_ini" : "# setup.ini lists available packages and is downloaded from the top level\n"\
+            "# of the downloaded mirror. Standard location is /etc/seutp.ini,\n"\
+            "# seutp-2.ini for Cygwin 1.7 Beta\n",\
+            "distname" : "# The distribution, current previous or test [curr, prev, test].\n"\
+            "# Usually you want the \"curr\" version of a package.\n",\
+            "barred" : "# Packages which cyg-apt depends on under Cygwin and so can't change.\n"\
+            "# Run cyg-apt under DOS with -f (force) option to change these packages.\n"\
+            "# Treat Cygwin core packages with CAUTION.\n"\
+            }
         self.scriptname = os.path.basename(sys.argv[0])
         
     def setup(self, cyg_apt_rc):
@@ -69,7 +82,9 @@ class CygAptSetup:
         distname = "curr"
         h = open(self.cyg_apt_rc, "w")
         for i in self.rc_options:
-            h.write('%s="%s"\n' % (i, eval("self." + i)))
+            if i in self.rc_comments.keys():
+                h.write(self.rc_comments[i])
+            h.write('%s="%s"\n\n' % (i, eval("self." + i)))
         h.close()
         print "%s: creating %s." % (self.scriptname, self.cyg_apt_rc)
     
@@ -157,6 +172,44 @@ def get_setup_rc(location):
     last_cache = cygpath(last_cache)
     return (last_cache, last_mirror)
 
+ERROR_STR= """Error removing %(path)s, %(error)s """
+def rmgeneric(path, __func__):
+    try:
+        __func__(path)
+    except OSError, (errno, strerror):
+        print ERROR_STR % {'path' : path, 'error': strerror }
+
+
+def fix_broken_shutil(path):
+    if not os.path.isdir(path):
+        return
+    files = os.listdir(path)
+    for x in files:
+        fullpath = os.path.join(path, x)
+        os.chmod(fullpath, 0777)
+        if os.path.isdir(fullpath):
+            fix_broken_shutil(fullpath)
+            
+
+            
+def removeall(path):
+
+    if not os.path.isdir(path):
+        return
+    
+    files=os.listdir(path)
+
+    for x in files:
+        fullpath=os.path.join(path, x)
+        if os.path.isfile(fullpath):
+            os.chmod(fullpath, 0777)
+            f=os.remove
+            rmgeneric(fullpath, f)
+        elif os.path.isdir(fullpath):
+            removeall(fullpath)
+            f=os.rmdir
+            rmgeneric(fullpath, f)
+    os.rmdir(path)
 
 def cygpath(path):
     return os.popen("cygpath \"%s\"" % path).read().strip()
@@ -203,6 +256,11 @@ def uri_get(dir, uri):
         ret = 1
     return ret
         
+
+def prsort(lst):
+    lst.sort()
+    lst.reverse()
+    return lst
         
 class PathMapper:
     def __init__(self, root, cygwin_p):
@@ -227,7 +285,7 @@ class PathMapper:
         if self.cygwin_p:
             return path
         # sort to map to /e/bar/foo in pefrence /e/bar
-        l = self.prsort(self.map.keys())
+        l = prsort(self.map.keys())
         for cygpath in l:
             if path.find(cygpath) == 0:
                 path = path.replace(cygpath, self.map[cygpath])
@@ -271,6 +329,7 @@ class CygApt:
         main_packagename,\
         main_files,\
         main_cyg_apt_rc,\
+        main_cygwin_p,\
         main_download_p,\
         main_mirror,\
         main_downloads,\
@@ -289,7 +348,8 @@ class CygApt:
         self.INSTALL = 'install'
         self.rc_options = ['ROOT', 'mirror', 'cache', 'setup_ini', 'distname', 'barred']
         self.distnames = ('curr', 'test', 'prev')
-        self.cygwin_p = (sys.platform == "cygwin")
+        self.rc_regex = re.compile("^\s*(\w+)\s*=\s*(.*)\s*$")
+
         
         # Default behaviours
         self.regex_search = False
@@ -301,6 +361,7 @@ class CygApt:
         self.scriptname = main_scriptname
         self.packagename = main_packagename
         self.files = main_files
+        self.cygwin_p = main_cygwin_p
         self.download_p = main_download_p
         self.downloads = main_downloads
         self.nodeps_p = main_nodeps_p
@@ -552,12 +613,6 @@ class CygApt:
     def psort(self, lst):
         lst.sort()
         return lst
-    
-    
-    def prsort(self, lst):
-        lst.sort()
-        lst.reverse()
-        return lst
         
     
     def preverse(self, lst):
@@ -581,7 +636,11 @@ class CygApt:
     
     def filelist(self):
         '''installed files'''
-        print string.join(self.get_filelist(), '\n')
+        if not self.packagename:
+            print >> sys.stderr,\
+                "%s: no package name given. Exiting.\n" % self.scriptname
+        else:
+            print string.join(self.get_filelist(), '\n')
     
     
     def postinstall(self):
@@ -765,11 +824,11 @@ class CygApt:
     
     
     def try_run_script(self, file_name):
-        if self.cygwin_p:
-            if os.path.isfile(file_name):
-                self.run_script(file_name)
-        else:
-            sys.stderr.write('warning: please see after: %(file_name)s\n' % vars())
+        if os.path.isfile(file_name):      
+            if self.cygwin_p:
+                    self.run_script(file_name)
+            else:
+                sys.stderr.write('Not running %(file_name)s under DOS.\n' % vars())
     
     
     def run_all(self, dir):
@@ -781,15 +840,33 @@ class CygApt:
     
     def do_install_external(self, tf):
         members = tf.getmembers()
-        for m in members:
-            path = self.pm.map_path("/" + m.name)
-            if m.isdir():
-                if not os.path.exists(path):
-                    os.mkdir(path)
-            elif m.isfile():
-                ef = tf.extractfile(m).read()
-                file(path, "wb").write(ef)
-    
+        tempdir = os.path.basename(tf.name)
+        tempdir = tempdir.replace(".tar.bz2","")
+        if os.path.exists(tempdir):
+            print >> sys.stderr,\
+            "%s: tmpdir %s exists, won't overwrite.\nInstall "\
+            "of %s failed. exiting." % (self.scriptname, tempdir, self.packagename)
+            sys.exit(1)
+        try:
+            tf.extractall(tempdir)
+            for m in members:
+                if m.isdir():
+                    path = self.pm.map_path("/" + m.name)
+                    if not os.path.exists(path):
+                        os.makedirs(path, m.mode)
+            for m in members:
+                if not m.isdir():
+                    path = self.pm.map_path("/" + m.name)
+                    dirname = os.path.dirname(path)
+                    if not os.path.exists(dirname):
+                        os.makedirs(dirname)
+                    if os.path.exists(path):
+                        os.chmod(path, 0777)
+                        os.remove(path)
+                    shutil.copy(tempdir + "/" + m.name, path)
+        finally:
+            fix_broken_shutil(tempdir)
+            shutil.rmtree(tempdir)
     
     def do_install(self):
         ball = self.get_ball()
@@ -810,7 +887,7 @@ class CygApt:
     
     
     def get_filelist(self):
-        filelist_file = "%s/%s.lst.gz" % (self.config, self.packagename)    
+        filelist_file = "%s/%s.lst.gz" % (self.config, self.packagename)
         lst = gzip.GzipFile(filelist_file).readlines()
         lst = [x.strip() for x in lst]
         return lst
@@ -823,18 +900,16 @@ class CygApt:
     
     
     def write_filelist(self, lst):
-        lst_name = '%s/%s.lst' % (self.config, self.packagename)
+        gz_filename = '%s/%s.lst.gz' % (self.config, self.packagename)
         lst_cr = [x + "\n" for x in lst]
-        f = file(lst_name + ".gz", "w")
-        new_gz = gzip.GzipFile(filename = self.packagename + ".lst", fileobj = f)
-        new_gz.writelines(lst_cr)
-        new_gz.close()
-        f.close()
+        gz = gzip.open(gz_filename, "wb")
+        gz.writelines(lst_cr)
+        gz.close()
         stat_struct =  os.stat(self.setup_ini)
         atime = stat_struct[7]
         mtime = stat_struct[8]
-        self.touch(lst_name, (atime, mtime))
-    
+        self.touch(gz_filename, (atime, mtime))
+
     
     def remove_filelist(self):
         lst_name = '%s/%s.lst.gz' % (self.config, self.packagename)
@@ -868,6 +943,7 @@ class CygApt:
             self.try_run_script(preremove_sh)
         else:
             print >> sys.stdout, suppression_msg
+        
         lst = self.get_filelist()
         
         # We don't expect these to be present: they are executed 
@@ -926,6 +1002,9 @@ class CygApt:
                       % (self.packagename,
                          self.version_to_string(self.get_installed_version())))
             self.do_uninstall()
+            if not self.cygwin_p:
+                print "To complete package removal, run "\
+                    "\"cyg-apt postremove %s\" from within\nCygwin." % self.packagename
     
     
     def purge(self):
@@ -990,12 +1069,12 @@ class CygApt:
             sys.stderr.write('installing %s %s\n' \
                   % (self.packagename, self.version_to_string(self.get_version())))
             self.do_install()
-            if self.cygwin_p:
-                if self.nopostinstall:
-                    print >> sys.stdout, suppression_msg
-                else:        
-                    self.run_all(self.postinstall_dir)
-            else:
+            
+            if self.nopostinstall:
+                print >> sys.stdout, suppression_msg
+            else:        
+                self.run_all(self.postinstall_dir)
+            if not self.cygwin_p:                    
                 print "To complete the installation, run "\
                 "\"cyg-apt postinstall %s\" from within\nCygwin." % self.packagename
     
@@ -1080,9 +1159,12 @@ class CygApt:
     
     def get_rc(self, h):
         for i in h.readlines():
-            k, v = i.split('=', 2)
-            if k in self.rc_options:
-                self.__dict__[k] = eval(v)
+            result = self.rc_regex.search(i)
+            if result:
+                k = result.group(1)
+                v = result.group(2)
+                if k in self.rc_options:
+                    self.__dict__[k] = eval(v)
         h.close()
                 
         if not self.cache:
@@ -1132,9 +1214,10 @@ def main():
     main_command = 'help'
     main_cyg_apt_rc = None
     main_scriptname = None
-    cas = CygAptSetup(True)
-            
-
+    
+    main_cygwin_p = (sys.platform == "cygwin")
+    cas = CygAptSetup(main_cygwin_p)
+    
     main_scriptname = os.path.basename(sys.argv[0])
     if (main_scriptname[-3:] == ".py"):
         main_scriptname = main_scriptname[:-3]
@@ -1161,7 +1244,6 @@ def main():
             main_command = 'help'
         elif o == '--mirror' or o == '-m':
             main_mirror = a
-            #main_downloads = self.cache + '/' + urllib.quote(init_mirror, '').lower()
         elif o == '--dist' or o == '-t':
             main_distname = a
         elif o == '--no-deps' or o == '-x':
@@ -1206,6 +1288,7 @@ def main():
         cyg_apt = CygApt(main_packagename,\
             main_files,\
             main_cyg_apt_rc,\
+            main_cygwin_p,\
             main_download_p,\
             main_mirror,\
             main_downloads,\

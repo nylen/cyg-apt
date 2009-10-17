@@ -550,5 +550,20 @@ Simplified usage() -- echos less configuration details. Separation of concerns.
 Revision 94
 -----------
 
+Add comments to generate .cyg-apt to help new users.
+Move rpsort() to helper status. Why on earth does Python sort fail to return the sorted list?
+Move platform detection to main()
+Improve error handling for filelist()
+Only warn about scripts not run under DOS if they actually exist (try_run_script)
+Big revamp of do_install_external() to address several ways Python is broken under Windows. Very disappointing.
+Fix filelist .gz generation: the method I was using is valid but broken under Windows. 
+First cut at providing some sort of reminder to run postremove command when running under DOS. Needs work.
+Hacked install() to provide warnings about unrun postinstall scripts under DOS. Bit unclear to those unused to the code though. Needs work.
+
+Improved parsing of .cyg-apt -- use a regex to be more tolerant of formatting for user-edited .cyg-apt files and to robustly step over comments. Use the same code in test-cyg-apt to verify contents of .cyg-apt.
+
+Revision 95
+-----------
+
 
 

@@ -105,6 +105,7 @@ class TestCygApt(unittest.TestCase):
                 found = True
                 break
         self.assert_(found)
+        self.rc_regex = re.compile("^\s*(\w+)\s*=\s*(.*)\s*$")
 
     def init_from_dot_cyg_apt(self):
         self.opts = {}
@@ -132,8 +133,11 @@ class TestCygApt(unittest.TestCase):
         cyg_apt_rc = file(self.home_cyg_apt, "r").readlines()
         rc_dict = {}
         for l in cyg_apt_rc:
-            k, v = l.split ('=', 2)
-            rc_dict[k] = eval(v)
+            result = self.rc_regex.search(l)
+            if result:
+                k = result.group(1)
+                v = result.group(2)
+                rc_dict[k] = eval(v)
         self.assert_(rc_dict["mirror"] == self.last_mirror)
         self.assert_(rc_dict["cache"] == self.last_cache)
 
