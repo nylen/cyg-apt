@@ -600,6 +600,17 @@ cyg-apt can now handle Cygwin Python and its dependants now (from DOS: reinstall
 Revision 98
 -----------
 
+Improve user messages for show and missing commands.
+Move windows temporary extraction directory to [packagename]-[ver]-tmp to avoid colliding with packages downloaded as source.
+
+Fix setup command: SetupCygApt was being passed the .cyg-apt location from main() -- the same logic as the main CygApt object: the proper behaviour is to always create in $(HOME) unless a .cyg-apt file already exists.
+
+Fix some typos/errors in .cyg-apt comments.
+
+Release: 1.0.2-1
+
+Revision 99
+-----------
 
 
 

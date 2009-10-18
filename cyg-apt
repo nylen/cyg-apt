@@ -2,13 +2,12 @@
 '''
   cyg-apt - a Cygwin package manager.
   
-  (c) 2002--2009  Jan Nieuwenhuizen, Chris Cormie 
-                  <janneke@gnu.org> <cjcormie@gmail.com>
+  (c) 2002--2009 Chris Cormie         Jan Nieuwenhuizen
+                 <cjcormie@gmail.com> <janneke@gnu.org> 
   
   License: GNU GPL
 '''
 
-import __main__
 import getopt
 import os
 import re
@@ -23,28 +22,47 @@ import shutil
 import inspect
 from pdb import set_trace as stra
 
+
 class CygAptSetup:
     def __init__(self, cygwin_p):
         self.cygwin_p = cygwin_p
-        self.rc_options = ['ROOT', 'mirror', 'cache', 'setup_ini', 'distname', 'barred']
+        self.rc_options = ['ROOT', 'mirror', 'cache', 'setup_ini', 'distname',\
+            'barred']
         self.rc_comments = {\
             "ROOT" : "# The root of your Cygwin installation as a windows path\n",\
-            "mirror" : "# URL of your Cygwin mirror: example http://mirror.internode.on.net/pub/cygwin/\n",\
-            "cache" : "# Your package cache as a POSIX path: example /e/home/cygwin_package/cache\n",\
-            "setup_ini" : "# setup.ini lists available packages and is downloaded from the top level\n"\
-            "# of the downloaded mirror. Standard location is /etc/seutp.ini,\n"\
+            "mirror" : "# URL of your Cygwin mirror: example "\
+            "http://mirror.internode.on.net/pub/cygwin/\n",\
+            "cache" : "# Your package cache as a POSIX path: example "\
+            "/e/home/cygwin_package_cache\n",\
+            "setup_ini" : "# setup.ini lists available packages and is "\
+            "downloaded from the top level\n"\
+            "# of the downloaded mirror. Standard location is "\
+            "/etc/setup/setup.ini,\n"\
             "# seutp-2.ini for Cygwin 1.7 Beta\n",\
-            "distname" : "# The distribution, current previous or test [curr, prev, test].\n"\
+            "distname" : "# The distribution, current previous or test "\
+            "[curr, prev, test].\n"\
             "# Usually you want the \"curr\" version of a package.\n",\
-            "barred" : "# Packages which cyg-apt depends on under Cygwin and so can't change.\n"\
-            "# Run cyg-apt under DOS with -f (force) option to change these packages.\n"\
-            "# Treat Cygwin core packages with CAUTION.\n"\
+            "barred" : "# Packages which cyg-apt can't change under Cygwin "\
+            "since it depends on them.\n"\
+            "# Run cyg-apt under DOS with -f (force) option to change "\
+            "these packages.\n"\
+            "# Treat Cygwin core packages with CAUTION. (Not tested.)\n"\
             }
         self.scriptname = os.path.basename(sys.argv[0])
         
-    def setup(self, cyg_apt_rc):
+    def setup(self, flags=None):
         '''cygwin environment'''
-        self.cyg_apt_rc = cyg_apt_rc        
+        if "HOME" in os.environ:
+            self.cyg_apt_rc = os.environ['HOME'] + '/.' + self.scriptname
+        else:
+            sys.stderr.write("%s: can't locate home directory. Setup "\
+                "failed, exiting.\n" % self.scriptname)
+            sys.exit(1)
+        if os.path.exists(self.cyg_apt_rc):
+            sys.stderr.write("%s: %s exists, not overwriting. "\
+                "Setup failed, exiting.\n" % (self.scriptname, self.cyg_apt_rc))
+            sys.exit(1)
+           
         self.pm = PathMapper("", self.cygwin_p)
         self.ROOT = self.pm.mountroot
         self.ABSOLUTE_ROOT = self.ROOT
@@ -780,8 +798,12 @@ class CygApt:
         d = self.get_field('sdesc') 
         if d:
             s += ' - %s' % d[1:-1]
-        print s + "\n"
-        print self.get_field('ldesc')
+        ldesc = self.get_field('ldesc')
+        if ldesc != "":
+            print s + "\n"
+            print ldesc
+        else:
+            print "%s: not found in setup.ini: %s" % (self.scriptname, s)
     
     
     def get_missing(self):
@@ -805,7 +827,11 @@ class CygApt:
     
     def missing(self):
         '''print missing dependencies'''
-        print string.join(self.get_missing(), '\n')
+        missing = self.get_missing()
+        if len(missing) > 0:
+            print string.join(missing, '\n')
+        else:
+            print "All dependent packages for %s installed" % self.packagename
     
     
     def run_script(self, file_name, optional=True):
@@ -832,7 +858,7 @@ class CygApt:
     
     def do_install_external(self, tf):
         members = tf.getmembers()
-        tempdir = os.path.basename(tf.name)
+        tempdir = os.path.basename(tf.name) + "-tmp"
         tempdir = tempdir.replace(".tar.bz2","")
         if os.path.exists(tempdir):
             print >> sys.stderr,\
@@ -952,16 +978,20 @@ class CygApt:
         if self.nopostremove:
             noremoves.append(self.pm.map_path(preremove_sh))
         noremoves.append(self.pm.map_path(postremove_sh))
-          
+        
         # remove files
         for i in lst:
             file = self.pm.map_path("/" + i)
             if os.path.isdir(file):
                 continue
             if (self.uninstall_want_file_removed(file, noremoves, nowarns)):
-                os.chmod(file, 0777)
-                if os.remove(file):
-                    raise IOError
+                if os.path.exists(file):
+                    os.chmod(file, 0777)
+                    if os.remove(file):
+                        raise IOError
+                else:
+                    print "%s: internal error: expected to remove %s but it was"\
+                        " not there." % (self.scriptname, file)
         if not self.nopostremove:
             if expect_postremove:
                 self.run_script(postremove_sh, optional=False)
@@ -1082,7 +1112,7 @@ class CygApt:
             
             if self.nopostinstall:
                 print >> sys.stdout, suppression_msg
-            else:        
+            else:
                 self.run_all(self.postinstall_dir)
         self.barred_warn_if_need(barred, "installing")
 
@@ -1228,14 +1258,14 @@ def main():
     main_command = 'help'
     main_cyg_apt_rc = None
     main_scriptname = None
+    home_cyg_apt_rc = None
     
     main_cygwin_p = (sys.platform == "cygwin")
     cas = CygAptSetup(main_cygwin_p)
-    
+
     main_scriptname = os.path.basename(sys.argv[0])
     if (main_scriptname[-3:] == ".py"):
         main_scriptname = main_scriptname[:-3]
-      
     try:
         (main_options, main_files) = getopt.getopt(sys.argv[1:],
             'dhm:t:xfyz', ('download', 'help', 'mirror=', 'dist=', 'no-deps',\
@@ -1244,7 +1274,6 @@ def main():
         cas.usage()
         sys.exit(1)
         
-
     if len(main_files) > 0:
         main_command = main_files[0]
     if len(main_files) > 1:
@@ -1280,11 +1309,9 @@ def main():
     cyg_apt_rc = None
     if "HOME" in os.environ:
         home_cyg_apt_rc = os.environ['HOME'] + '/.' + main_scriptname
-    else:
-        home_cyg_apt_rc = None
     cwd_cyg_apt_rc = os.getcwd() + '/.' + main_scriptname
     if os.path.exists(cwd_cyg_apt_rc):
-        main_cyg_apt_rc = home_cyg_apt_rc = cwd_cyg_apt_rc
+        main_cyg_apt_rc = cwd_cyg_apt_rc
     elif os.path.exists(home_cyg_apt_rc):
         main_cyg_apt_rc = home_cyg_apt_rc
         
@@ -1297,7 +1324,7 @@ def main():
         sys.exit(1)
 
     if (main_command == "setup"):
-        cas.setup(home_cyg_apt_rc)
+        cas.setup()
     elif (main_command == "help"):
         cas.usage(main_cyg_apt_rc)
     elif (main_command == "update"):
