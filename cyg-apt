@@ -172,44 +172,26 @@ def get_setup_rc(location):
     last_cache = cygpath(last_cache)
     return (last_cache, last_mirror)
 
-ERROR_STR= """Error removing %(path)s, %(error)s """
-def rmgeneric(path, __func__):
-    try:
-        __func__(path)
-    except OSError, (errno, strerror):
-        print ERROR_STR % {'path' : path, 'error': strerror }
 
-
-def fix_broken_shutil(path):
-    if not os.path.isdir(path):
-        return
-    files = os.listdir(path)
-    for x in files:
-        fullpath = os.path.join(path, x)
-        os.chmod(fullpath, 0777)
-        if os.path.isdir(fullpath):
-            fix_broken_shutil(fullpath)
-            
-
-            
-def removeall(path):
-
-    if not os.path.isdir(path):
-        return
-    
-    files=os.listdir(path)
-
-    for x in files:
-        fullpath=os.path.join(path, x)
-        if os.path.isfile(fullpath):
+def rmtree_helper(path):
+    if os.path.isdir:
+        files = os.listdir(path)
+        for x in files:
+            fullpath = os.path.join(path, x)
             os.chmod(fullpath, 0777)
-            f=os.remove
-            rmgeneric(fullpath, f)
-        elif os.path.isdir(fullpath):
-            removeall(fullpath)
-            f=os.rmdir
-            rmgeneric(fullpath, f)
-    os.rmdir(path)
+            if os.path.isdir(fullpath):
+                rmtree_helper(fullpath)
+
+
+def rmtree(path):
+    if os.path.exists(path):
+        if os.path.isdir(path):
+            rmtree_helper(path)
+            shutil.rmtree(path)
+        else:
+            os.chmod(path, 0777)
+            os.remove(path)
+
 
 def cygpath(path):
     return os.popen("cygpath \"%s\"" % path).read().strip()
@@ -863,10 +845,9 @@ class CygApt:
                     if os.path.exists(path):
                         os.chmod(path, 0777)
                         os.remove(path)
-                    shutil.copy(tempdir + "/" + m.name, path)
+                    shutil.move(tempdir + "/" + m.name, path)
         finally:
-            fix_broken_shutil(tempdir)
-            shutil.rmtree(tempdir)
+            rmtree(tempdir)
     
     def do_install(self):
         ball = self.get_ball()
@@ -928,12 +909,13 @@ class CygApt:
             return False
         elif not os.path.isdir(file) and file not in noremoves:
             return True
-       
-                 
+
+
     def do_uninstall(self):
         postremove_sh = self.postremove_dir + "/" + self.packagename + ".sh"
         postinstall_sh = self.postinstall_dir + "/" + self.packagename + ".sh"
         preremove_sh = self.preremove_dir + "/" + self.packagename + ".sh"
+
         postinstall_done = self.postinstall_dir + "/" + self.packagename + ".sh.done"
         suppression_msg =\
             "%s: postremove suppressed: \"%s postremove %s\" to complete." %\
@@ -963,6 +945,7 @@ class CygApt:
             if os.path.isdir(file):
                 continue
             if (self.uninstall_want_file_removed(file, noremoves, nowarns)):
+                os.chmod(file, 0777)
                 if os.remove(file):
                     raise IOError
         if not self.nopostremove:       
@@ -990,6 +973,7 @@ class CygApt:
     
     def remove(self):
         '''uninstall packages'''
+
         for self.packagename in self.files[1:]:
             if not self.installed[0].has_key(self.packagename):
                 sys.stderr.write('warning: %s not installed\n' % self.packagename)
@@ -1030,7 +1014,7 @@ class CygApt:
             if os.path.exists(ball):
                 print "%s: removing %s" % (self.scriptname, ball)
                 os.remove(ball)
-    
+
     
     def install(self):
         '''download and install packages with dependencies'''
@@ -1077,8 +1061,8 @@ class CygApt:
             if not self.cygwin_p:                    
                 print "To complete the installation, run "\
                 "\"cyg-apt postinstall %s\" from within\nCygwin." % self.packagename
-    
-    
+
+ 
     def upgrade(self):
         '''all installed packages: use with CAUTION'''
         self.files[1:] = self.get_new()

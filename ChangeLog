@@ -565,5 +565,19 @@ Improved parsing of .cyg-apt -- use a regex to be more tolerant of formatting fo
 Revision 95
 -----------
 
+Added a version of rmtree that, again, works on Windows and Cygwin.
+
+Speed up the Windows workaround for unpacking tarfiles into the tree (install): instead of unpacking into a temporary tree and then copying the tree to mapped paths, *move* the files in the tree to mapped paths, created directories as required. Use new rmtree to clean up temporary tree.
+
+Clean up unused code.
+
+Add chmod to do_uninstall to allow code to remove files under Windows and Cygwin -- more Python platform dependance.
+
+Revision 96
+-----------
+
+
+
+
 
 
