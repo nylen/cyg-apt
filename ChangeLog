@@ -587,7 +587,18 @@ Improved the user messages given when trying to act on a barred package with the
 Revision 97
 -----------
 
+Made the nopostinstall nopostremove flags public for those users brave enough to try reinstalling cygwin core components. 
 
+Show usage if given a bad option instead of exception.
+
+Give a error better message and exit if we fail to find a package on the mirror.
+
+Add ability to detect if postinstall scripts are present in the filelist and only warn if we expect them to be there on removal. No such similar detection for install -- not sure if needed.
+
+cyg-apt can now handle Cygwin Python and its dependants now (from DOS: reinstalled Cygwin python with cyg-apt successfully.)
+
+Revision 98
+-----------
 
 
 

@@ -103,7 +103,7 @@ class CygAptSetup:
             self.update(self.cyg_apt_rc) 
         
         
-    def usage(self, cyg_apt_rc):
+    def usage(self, cyg_apt_rc=None):
         print("%s [OPTION]... COMMAND [PACKAGE]..." % self.scriptname)
         if (cyg_apt_rc):
             print("Configuration: %s\n\n" % cyg_apt_rc)
@@ -115,13 +115,15 @@ class CygAptSetup:
         d = CygApt.__dict__
         sys.stdout.write(r'''
     Options:
-        -d,--download          download only
-        -h,--help              show brief usage
-        -m,--mirror=URL        use mirror
-        -t,--dist=NAME         set dist name (curr, test, prev)
-        -x,--no-deps           ignore dependencies
-        -s,--regexp            search as regex pattern
-        -f,--nobarred          add/remove packages cyg-apt depends on
+        -d, --download          download only
+        -h, --help              show brief usage
+        -m, --mirror=URL        use mirror
+        -t, --dist=NAME         set dist name (curr, test, prev)
+        -x, --no-deps           ignore dependencies
+        -s, --regexp            search as regex pattern
+        -f, --nobarred          add/remove packages cyg-apt depends on
+        -y, --nopostinstall     don't run postinstall scripts
+        -z, --nopostremove      don't run preremove/postremove scripts
     ''')        
 
 
@@ -505,7 +507,13 @@ class CygApt:
                 os.makedirs(dir)
             status = uri_get(dir, '%s/%s' % (self.mirror, url))
             if status:
-                raise IOError
+                sys.stderr.write("\n%s: didn't find %s "\
+                    "on mirror %s: possible mismatch between setup.ini and "\
+                    "mirror requiring %s update?"\
+                    % (self.scriptname, self.packagename, self.mirror,\
+                    self.scriptname))
+                sys.exit(1)
+                    
     
     
     def download(self):
@@ -800,7 +808,7 @@ class CygApt:
         print string.join(self.get_missing(), '\n')
     
     
-    def run_script(self, file_name):
+    def run_script(self, file_name, optional=True):
         if os.path.isfile(self.pm.map_path(file_name)):      
             sys.stderr.write('running: %(file_name)s\n' % vars())
             if self.cygwin_p:
@@ -810,10 +818,9 @@ class CygApt:
                mapped = self.pm.map_path(file_name)
                shutil.move(mapped, mapped + ".done")
         else:
-            if not file_name:
-                file_name = "(NULL)"
-            sys.stderr.write("%s: WARNING couldn't find %s.\n"\
-                % (self.scriptname,  file_name))
+            if not optional:
+                sys.stderr.write("%s: WARNING couldn't find %s.\n"\
+                    % (self.scriptname,  file_name))
 
     
     def run_all(self, dir):
@@ -925,12 +932,15 @@ class CygApt:
             "%s: postremove suppressed: \"%s postremove %s\" to complete." %\
             (self.scriptname, self.scriptname, self.packagename)
         
+        lst = self.get_filelist()
+        expect_preremove = preremove_sh[1:] in lst
+        expect_postremove = postremove_sh[1:] in lst
+                
         if not self.nopostremove:
-            self.run_script(preremove_sh)
+            if expect_preremove:
+                self.run_script(preremove_sh, optional=False)
         else:
             print >> sys.stdout, suppression_msg
-        
-        lst = self.get_filelist()
         
         # We don't expect these to be present: they are executed 
         # and moved to $(packagename).sh.done
@@ -952,8 +962,9 @@ class CygApt:
                 os.chmod(file, 0777)
                 if os.remove(file):
                     raise IOError
-        if not self.nopostremove:       
-            self.run_script(postremove_sh)
+        if not self.nopostremove:
+            if expect_postremove:
+                self.run_script(postremove_sh, optional=False)
             if os.path.isfile(postremove_sh):
                 if os.remove(postremove_sh):
                     raise IOError
@@ -1055,7 +1066,7 @@ class CygApt:
             if self.is_barred_package(self.packagename):
                 barred.append(self.packagename)
                 del missing[self.packagename]
-                
+             
         for self.packagename in missing.keys():
             self.download()
         if self.download_p:
@@ -1225,9 +1236,14 @@ def main():
     if (main_scriptname[-3:] == ".py"):
         main_scriptname = main_scriptname[:-3]
       
-    (main_options, main_files) = getopt.getopt(sys.argv[1:],
-        'dhm:t:xfyz', ('download', 'help', 'mirror=', 'dist=', 'no-deps',\
-        'regexp', 'nobarred')) 
+    try:
+        (main_options, main_files) = getopt.getopt(sys.argv[1:],
+            'dhm:t:xfyz', ('download', 'help', 'mirror=', 'dist=', 'no-deps',\
+            'regexp', 'nobarred', 'nopostinstall', 'nopostremove')) 
+    except getopt.GetoptError:
+        cas.usage()
+        sys.exit(1)
+        
 
     if len(main_files) > 0:
         main_command = main_files[0]
@@ -1255,11 +1271,10 @@ def main():
             main_regex_search = True
         elif o == '--nobarred' or o == '-f':
             main_nobarred = True
-        elif o == '-y':
+        elif o == '--nopostinstall' or o == '-y':
             main_nopostinstall = True
-        elif o == '-z':
+        elif o == '--nopostremove' or o == '-z':
             main_nopostremove = True
-            
     # Take most of our configuration from .cyg-apt 
     # preferring .cyg-apt in current directory over $(HOME)/.cyg-apt
     cyg_apt_rc = None
