@@ -576,6 +576,18 @@ Add chmod to do_uninstall to allow code to remove files under Windows and Cygwin
 Revision 96
 -----------
 
+Breakthrough: cyg-apt under dos can now fully install and remove packages: it uses Cygwin's bash to interpret postinstall/pre/postremove scripts. This is a big advance because it means that cyg-apt can now act on cygwin Python and the packages it depends on, no problem. It also means the core cygwin packages can be installed and removed, with the use of nopostinstall/nopostremove flags as required if bash is affected: it's hairy stuff though, strictly for advanced users.
+
+To do the above the way script paths are handled had to change: mapped and unmapped paths are both required: DOS python needs mapped paths, bash unmapped (cygwin native) script paths.
+
+Merged try_run_script into run_script: too many microfunctions in cyg-apt.
+
+Improved the user messages given when trying to act on a barred package with the assistance of a new common fn: barred_warn_if_need()
+
+Revision 97
+-----------
+
+
 
 
 

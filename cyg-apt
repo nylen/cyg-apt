@@ -649,8 +649,8 @@ class CygApt:
             for self.packagename in self.files[1:]:
                 self.preremove_sh = self.preremove_dir + "/" + self.packagename + ".sh"
                 self.postremove_sh = self.postremove_dir + "/" + self.packagename + ".sh"
-                self.try_run_script(self.preremove_sh)
-                self.try_run_script(self.postremove_sh)
+                self.run_script(self.preremove_sh)
+                self.run_script(self.postremove_sh)
         
     
     def get_version(self):
@@ -801,23 +801,26 @@ class CygApt:
     
     
     def run_script(self, file_name):
-         sys.stderr.write('running: %(file_name)s\n' % vars())
-         os.system('sh "%(file_name)s" && mv "%(file_name)s" "%(file_name)s.done"' % vars())
-    
-    
-    def try_run_script(self, file_name):
-        if os.path.isfile(file_name):      
+        if os.path.isfile(self.pm.map_path(file_name)):      
+            sys.stderr.write('running: %(file_name)s\n' % vars())
             if self.cygwin_p:
-                    self.run_script(file_name)
+               os.system('sh "%(file_name)s" && mv "%(file_name)s" "%(file_name)s.done"' % vars())
             else:
-                sys.stderr.write('Not running %(file_name)s under DOS.\n' % vars())
-    
+               os.system(self.dos_bash + " --login -c " + file_name)
+               mapped = self.pm.map_path(file_name)
+               shutil.move(mapped, mapped + ".done")
+        else:
+            if not file_name:
+                file_name = "(NULL)"
+            sys.stderr.write("%s: WARNING couldn't find %s.\n"\
+                % (self.scriptname,  file_name))
+
     
     def run_all(self, dir):
         if os.path.isdir(dir):
             lst = filter(lambda x: x[-3:] == '.sh', os.listdir(dir))
             for i in lst:
-                self.try_run_script('%s/%s' % (dir, i))
+                self.run_script('%s/%s' % (dir, i))
     
     
     def do_install_external(self, tf):
@@ -848,7 +851,8 @@ class CygApt:
                     shutil.move(tempdir + "/" + m.name, path)
         finally:
             rmtree(tempdir)
-    
+
+
     def do_install(self):
         ball = self.get_ball()
         if tarfile.is_tarfile(ball):
@@ -922,7 +926,7 @@ class CygApt:
             (self.scriptname, self.scriptname, self.packagename)
         
         if not self.nopostremove:
-            self.try_run_script(preremove_sh)
+            self.run_script(preremove_sh)
         else:
             print >> sys.stdout, suppression_msg
         
@@ -931,13 +935,13 @@ class CygApt:
         # We don't expect these to be present: they are executed 
         # and moved to $(packagename).sh.done
         nowarns = []
-        nowarns.append(postinstall_sh)
-        nowarns.append(preremove_sh)
+        nowarns.append(self.pm.map_path(postinstall_sh))
+        nowarns.append(self.pm.map_path(preremove_sh))
         
         noremoves = []
-        if not self.cygwin_p or self.nopostremove:
-            noremoves.append(preremove_sh)
-        noremoves.append(postremove_sh)
+        if self.nopostremove:
+            noremoves.append(self.pm.map_path(preremove_sh))
+        noremoves.append(self.pm.map_path(postremove_sh))
           
         # remove files
         for i in lst:
@@ -949,11 +953,10 @@ class CygApt:
                 if os.remove(file):
                     raise IOError
         if not self.nopostremove:       
-            self.try_run_script(postremove_sh)
-            if self.cygwin_p:
-                if os.path.isfile(postremove_sh):
-                    if os.remove(postremove_sh):
-                        raise IOError
+            self.run_script(postremove_sh)
+            if os.path.isfile(postremove_sh):
+                if os.remove(postremove_sh):
+                    raise IOError
     
         # We don't remove empty directories: the problem is are we sure no other
         # package is depending on them.
@@ -969,35 +972,33 @@ class CygApt:
         # update installed[]
         del(self.installed[0][self.packagename])
         self.write_installed()
-    
+
     
     def remove(self):
         '''uninstall packages'''
-
+        barred = []
         for self.packagename in self.files[1:]:
             if not self.installed[0].has_key(self.packagename):
                 sys.stderr.write('warning: %s not installed\n' % self.packagename)
                 continue
             if self.is_barred_package(self.packagename):
-                print >> sys.stderr, self.scriptname + ": NOT removing package " +\
-                    self.packagename + ": " + self.scriptname + " is dependent on it."
+                barred.append(self.packagename)
                 continue
             sys.stderr.write('uninstalling %s %s\n' \
                       % (self.packagename,
                          self.version_to_string(self.get_installed_version())))
             self.do_uninstall()
-            if not self.cygwin_p:
-                print "To complete package removal, run "\
-                    "\"cyg-apt postremove %s\" from within\nCygwin." % self.packagename
+        self.barred_warn_if_need(barred, "removing")
     
     
     def purge(self):
         '''purge package'''
+        barred = []
+
         for self.packagename in self.files[1:]:
             if self.installed[0].has_key(self.packagename):
                 if self.is_barred_package(self.packagename):
-                    print >> sys.stderr, self.scriptname + ": NOT purging package " +\
-                        self.packagename + ": " + self.scriptname + " is dependent on it."
+                    barred.append(self.packagename)
                     continue
                 sys.stderr.write('uninstalling %s %s\n' \
                     % (self.packagename,
@@ -1014,14 +1015,31 @@ class CygApt:
             if os.path.exists(ball):
                 print "%s: removing %s" % (self.scriptname, ball)
                 os.remove(ball)
+        self.barred_warn_if_need(barred, "purging")
 
-    
+
+    def barred_warn_if_need(self, barred, command):
+        num_barred = len(barred)
+        if num_barred > 0:
+            if num_barred == 1:
+                this_these = "this package"
+            else:
+                this_these = "these packages"
+            barredstr = " " + string.join(barred, ", ")
+            print >> sys.stderr, self.scriptname + ": NOT " + command +\
+                barredstr + ": " + self.scriptname + " is dependent on " +\
+                this_these + " under Cygwin."
+            if not self.cygwin_p:
+                print >> sys.stderr, "Use -f to override but proceed with caution."     
+
+                    
     def install(self):
         '''download and install packages with dependencies'''
         suppression_msg =\
             "%s: postinstall suppressed: \"%s postinstall\" to complete." %\
             (self.scriptname, self.scriptname)
         missing = {}
+        barred = []
         for self.packagename in self.files[1:]:
             missing.update(dict(map(lambda x: (x, 0), self.get_missing())))
         if len(missing) > 1:
@@ -1035,10 +1053,7 @@ class CygApt:
     
         for self.packagename in missing.keys():
             if self.is_barred_package(self.packagename):
-                print >> sys.stderr, self.scriptname + ": NOT installing " +\
-                    self.packagename + ": " + self.scriptname + " is dependent on it under Cygwin."
-                if not self.cygwin_p:
-                    print >> sys.stderr, "Use -f to override but proceed with caution."
+                barred.append(self.packagename)
                 del missing[self.packagename]
                 
         for self.packagename in missing.keys():
@@ -1058,9 +1073,7 @@ class CygApt:
                 print >> sys.stdout, suppression_msg
             else:        
                 self.run_all(self.postinstall_dir)
-            if not self.cygwin_p:                    
-                print "To complete the installation, run "\
-                "\"cyg-apt postinstall %s\" from within\nCygwin." % self.packagename
+        self.barred_warn_if_need(barred, "installing")
 
  
     def upgrade(self):
@@ -1149,8 +1162,7 @@ class CygApt:
                 v = result.group(2)
                 if k in self.rc_options:
                     self.__dict__[k] = eval(v)
-        h.close()
-                
+        h.close()        
         if not self.cache:
             print "%s: %s doesn't define cache. Exiting." % (self.scriptname, self.cyg_apt_rc)
             sys.exit(1)
@@ -1170,10 +1182,17 @@ class CygApt:
         self.cache = self.pm.map_path(self.cache)
         self.downloads = self.cache + '/' + urllib.quote(self.mirror, '').lower()
         self.installed_db = self.config + '/installed.db'
-        self.postinstall_dir = self.pm.map_path("/etc/postinstall")
-        self.postremove_dir = self.pm.map_path("/etc/postremove")
-        self.preremove_dir =  self.pm.map_path("/etc/preremove")
+        
+        # It might seem odd that we don't map these paths: we need
+        # to retain unmapped forms since under DOS we invoke Cygwin bash to
+        # run these scripts unless flagged not to
+        self.postinstall_dir = "/etc/postinstall"
+        self.postremove_dir = "/etc/postremove"
+        self.preremove_dir =  "/etc/preremove"
+        
         self.setup_ini = self.pm.map_path(self.setup_ini)
+        self.dos_bin_dir = self.pm.mountroot + "/bin"
+        self.dos_bash = self.pm.mountroot + "/bin/bash"
         return 0
     
     
@@ -1205,7 +1224,7 @@ def main():
     main_scriptname = os.path.basename(sys.argv[0])
     if (main_scriptname[-3:] == ".py"):
         main_scriptname = main_scriptname[:-3]
-            
+      
     (main_options, main_files) = getopt.getopt(sys.argv[1:],
         'dhm:t:xfyz', ('download', 'help', 'mirror=', 'dist=', 'no-deps',\
         'regexp', 'nobarred')) 
