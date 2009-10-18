@@ -175,6 +175,16 @@ class CygAptSetup:
             if os.path.exists(setup_ini):
                 shutil.copy(setup_ini, setup_ini + ".bak")
             shutil.copy(downloads + "/" + setup_ini_name, setup_ini)
+    
+    def get_pre17_last(self, location):
+        if not os.path.exists(location + "/last-mirror" or\
+            not os.path.exists(location + "/last-cache")):
+            return (None, None)
+        else:
+            last_cache = file(location + "/last-cache").read().strip()
+            last_cache = cygpath(last_cache)
+            last_mirror = file(location + "/last-mirror").read().strip()
+            return (last_cache, last_mirror)
 
 
     
@@ -495,7 +505,7 @@ class CygApt:
             if not install:
                 sys.stderr.write("warning: %s no install\n" \
                           % self.packagename)
-                return 0
+                raise LookupError
         else:
             install = self.dists[self.distname][self.packagename][self.INSTALL]
         file, size, md5 = string.split(install)
@@ -1121,17 +1131,6 @@ class CygApt:
         '''all installed packages: use with CAUTION'''
         self.files[1:] = self.get_new()
         self.install()
-    
-    
-    def get_pre17_last(self, location):
-        if not os.path.exists(location + "/last-mirror" or\
-            not os.path.exists(location + "/last-cache")):
-            return (None, None)
-        else:
-            last_cache = file(location + "/last-cache").read().strip()
-            last_cache = cygpath(last_cache)
-            last_mirror = file(location + "/last-mirror").read().strip()
-            return (last_cache, last_mirror)
     
 
     def printerr(self, err):

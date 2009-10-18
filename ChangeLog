@@ -607,11 +607,16 @@ Fix setup command: SetupCygApt was being passed the .cyg-apt location from main(
 
 Fix some typos/errors in .cyg-apt comments.
 
-Release: 1.0.2-1
 
 Revision 99
 -----------
 
+Fix a bug that had crept in under Cygwin 1.5: the 1.5 compatibility code needs to be in the CygAptSetup class now.
 
+Very slightly better error for purge command for non-existant packages: needs work.
 
+Release: 1.0.2-1
 
+Revision 100
+------------
+(100! Mhahaha!)
