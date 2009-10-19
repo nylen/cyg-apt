@@ -620,3 +620,20 @@ Release: 1.0.2-1
 Revision 100
 ------------
 (100! Mhahaha!)
+
+Editing the wiki bumps up revision numbers -- hence big gaps.
+
+Define execption class SetupIniError.
+Use SetupIniError to greatly improve error message for attempting to purge non-existant package.
+
+Improve DOS install: rather than copying the copies that Windows python creates for links, invoke Cygwin ln to create a real link. Can handle symbolic links (as heavily used in the "vim" package), not handling hard links yet: I expect they would still be copies.
+
+Make the Windows Python chmod klude for removing files in do_uninstall() Windows-only.
+
+Fix bogus warnings when removing symbolic links.
+Fix failure to remove symbolic links: os.path.exist() will report False for a link if its target has been removed, but the link itself remains. Fix is to use islink()
+
+Added a symbol link to the test package, but no matching test for it in test-cyg-apt yet.
+
+Revision 120
+------------

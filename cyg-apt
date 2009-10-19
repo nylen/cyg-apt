@@ -49,7 +49,8 @@ class CygAptSetup:
             "# Treat Cygwin core packages with CAUTION. (Not tested.)\n"\
             }
         self.scriptname = os.path.basename(sys.argv[0])
-        
+       
+ 
     def setup(self, flags=None):
         '''cygwin environment'''
         if "HOME" in os.environ:
@@ -335,6 +336,15 @@ class CygAptURLopener(urllib.FancyURLopener):
         sys.stdout.write("]\r")
         sys.stdout.flush()
 
+
+class SetupIniError(Exception):
+    def __init__(self, value):
+        self.msg = value
+        
+        
+    def __str__(self):
+        return repr(self.msg)
+
         
 class CygApt:
     def __init__(self,\
@@ -503,9 +513,7 @@ class CygApt:
                     sys.stderr.write("warning: using [%s]\n" % d)
                     break
             if not install:
-                sys.stderr.write("warning: %s no install\n" \
-                          % self.packagename)
-                raise LookupError
+                raise SetupIniError("no valid section for " +  self.packagename + " in " + self.setup_ini)
         else:
             install = self.dists[self.distname][self.packagename][self.INSTALL]
         file, size, md5 = string.split(install)
@@ -883,7 +891,11 @@ class CygApt:
                     if not os.path.exists(path):
                         os.makedirs(path, m.mode)
             for m in members:
-                if not m.isdir():
+                if m.isdir():
+                    path = self.pm.map_path("/" + m.name)
+                    if not os.path.exists(path):
+                        os.makedirs(path, m.mode)
+                else:
                     path = self.pm.map_path("/" + m.name)
                     dirname = os.path.dirname(path)
                     if not os.path.exists(dirname):
@@ -891,7 +903,12 @@ class CygApt:
                     if os.path.exists(path):
                         os.chmod(path, 0777)
                         os.remove(path)
-                    shutil.move(tempdir + "/" + m.name, path)
+                    if m.issym():
+                        link_filename = "/" + m.name
+                        link_target = m.linkname
+                        os.system(self.dos_ln + " -s " + link_target + " " + link_filename)
+                    else:
+                        shutil.move(tempdir + "/" + m.name, path)
         finally:
             rmtree(tempdir)
 
@@ -996,12 +1013,16 @@ class CygApt:
                 continue
             if (self.uninstall_want_file_removed(file, noremoves, nowarns)):
                 if os.path.exists(file):
-                    os.chmod(file, 0777)
+                    if self.cygwin_p:
+                        os.chmod(file, 0777)
                     if os.remove(file):
                         raise IOError
                 else:
-                    print "%s: internal error: expected to remove %s but it was"\
-                        " not there." % (self.scriptname, file)
+                    if os.path.islink(file):
+                        os.remove(file)
+                    else:
+                        print "%s: warning: expected to remove %s but it was"\
+                            " not there." % (self.scriptname, file)
         if not self.nopostremove:
             if expect_postremove:
                 self.run_script(postremove_sh, optional=False)
@@ -1047,25 +1068,30 @@ class CygApt:
         barred = []
 
         for self.packagename in self.files[1:]:
-            if self.installed[0].has_key(self.packagename):
-                if self.is_barred_package(self.packagename):
-                    barred.append(self.packagename)
-                    continue
-                sys.stderr.write('uninstalling %s %s\n' \
-                    % (self.packagename,
-                    self.version_to_string(self.get_installed_version())))
-                self.do_uninstall()
-            scripts = [self.postinstall_dir + "/%s.sh.done",\
-                self.preremove_dir + "/%s.sh.done",\
-                self.postremove_dir + "/%s.sh.done"]
-            scripts = [s % self.packagename for s in scripts]
-            for s in scripts:
-                if os.path.exists(s):
-                    os.remove(s)
-            ball = self.get_ball()
-            if os.path.exists(ball):
-                print "%s: removing %s" % (self.scriptname, ball)
-                os.remove(ball)
+            try:
+                if self.installed[0].has_key(self.packagename):
+                    if self.is_barred_package(self.packagename):
+                        barred.append(self.packagename)
+                        continue
+                    sys.stderr.write('uninstalling %s %s\n' \
+                        % (self.packagename,
+                        self.version_to_string(self.get_installed_version())))
+                    self.do_uninstall()
+                scripts = [self.postinstall_dir + "/%s.sh.done",\
+                    self.preremove_dir + "/%s.sh.done",\
+                    self.postremove_dir + "/%s.sh.done"]
+                scripts = [s % self.packagename for s in scripts]
+                for s in scripts:
+                    if os.path.exists(s):
+                        os.remove(s)
+                ball = self.get_ball()
+                if os.path.exists(ball):
+                    print "%s: removing %s" % (self.scriptname, ball)
+                    os.remove(ball)
+            except SetupIniError, (err):
+                sys.stderr.write(self.scriptname + ": " + err.msg +\
+                    " exiting.\n")
+                sys.exit(1)
         self.barred_warn_if_need(barred, "purging")
 
 
@@ -1232,7 +1258,8 @@ class CygApt:
         
         self.setup_ini = self.pm.map_path(self.setup_ini)
         self.dos_bin_dir = self.pm.mountroot + "/bin"
-        self.dos_bash = self.pm.mountroot + "/bin/bash"
+        self.dos_bash = self.pm.mountroot + "bin/bash"
+        self.dos_ln = self.pm.mountroot + "bin/ln"
         return 0
     
     
