@@ -153,13 +153,16 @@ class CygAptSetup:
             k, v = i.split('=', 2)
             if k in self.rc_options:
                 rc[k] = eval(v)
-        setup_ini = rc["setup_ini"]
+        if(self.cygwin_p):
+            pm = PathMapper("", True)
+        else:
+            pm = PathMapper(rc["ROOT"][:-1], False)
+        setup_ini = pm.map_path(rc["setup_ini"])
         if (main_mirror):
             mirror = main_mirror
         else:
             mirror = rc["mirror"]
-        setup_ini = rc["setup_ini"]
-        downloads = rc["cache"] + '/' + urllib.quote(mirror, '').lower()
+        downloads = pm.map_path(rc["cache"]) + '/' + urllib.quote(mirror, '').lower()
             
         setup_ini_name = os.path.basename(setup_ini)
         setup_ini_url = '%s/%s' % (mirror, setup_ini_name)
@@ -397,6 +400,12 @@ class CygApt:
         
         # Read in our configuration
         self.get_rc(open(self.cyg_apt_rc))
+        
+        # DOS specific
+        if not self.cygwin_p:
+            self.can_use_ln = os.path.exists(self.PREFIX_ROOT + "/bin/ln.exe")
+        else:
+            self.can_use_ln = True
         
         # Overrides to the .rc
         if (main_mirror):
@@ -875,6 +884,9 @@ class CygApt:
     
     
     def do_install_external(self, tf):
+        # Currently we use a temporary directory and extractall() then copy:
+        # this is very slow. The Python documentation warns more sophisticated
+        # approaches have pitfalls without specifying what they are.
         members = tf.getmembers()
         tempdir = os.path.basename(tf.name) + "-tmp"
         tempdir = tempdir.replace(".tar.bz2","")
@@ -903,10 +915,23 @@ class CygApt:
                     if os.path.exists(path):
                         os.chmod(path, 0777)
                         os.remove(path)
-                    if m.issym():
+                    # Windows extract() is robust but can't form Cygwin links
+                    # (It produces copies instead: bulky and bugbait.)
+                    # Convert to links if possible -- depends on coreutils being installed
+                    if m.issym() and not self.can_use_ln:
                         link_filename = "/" + m.name
                         link_target = m.linkname
                         os.system(self.dos_ln + " -s " + link_target + " " + link_filename)
+                    elif m.islnk() and not self.can_use_ln:
+                        # Hard link -- expect these to be very rare
+                        link_filename = "/" + m.name
+                        link_target = m.linkname
+                        mapped_target = self.pm.map_path("/" + m.linkname)
+                        # Must ensure target exists before forming hard link
+                        if not os.path.exists(mapped_target):
+                            shutil.move(tempdir + "/" + link_target, mapped_target)
+                        os.system(self.dos_ln + " /" + link_target + " " + link_filename) 
+                        
                     else:
                         shutil.move(tempdir + "/" + m.name, path)
         finally:

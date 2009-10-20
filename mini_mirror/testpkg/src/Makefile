@@ -7,7 +7,7 @@ all:
 	/usr/bin/cp postinstall-testpkg.sh $(BUILDDIR)/root/etc/postinstall/testpkg.sh
 	/usr/bin/cp preremove-testpkg.sh $(BUILDDIR)/root/etc/preremove/testpkg.sh
 	/usr/bin/cp postremove-testpkg.sh $(BUILDDIR)/root/etc/postremove/testpkg.sh
-	cd $(BUILDDIR)/root/usr/bin ; ln -s testpkg link_to_testpkg
+	cd $(BUILDDIR)/root/usr/bin ; ln -s testpkg.exe link_to_testpkg.exe; ln testpkg.exe hardlink_to_testpkg.exe
 	cd $(BUILDDIR)/root ; pwd ; tar --exclude=".svn" -jcf $(TARFILE) *;\
 cp $(TARFILE) ../release-2/testpkg;\
 cp $(TARFILE) ../release-2/testpkg/testpkg-0.0.1-0-src.tar.bz2;\

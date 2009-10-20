@@ -637,3 +637,17 @@ Added a symbol link to the test package, but no matching test for it in test-cyg
 
 Revision 120
 ------------
+
+Fix update command under DOS: use a one-off PathMapper object to map the necessary paths in update(): SetupCygApt is deliberately a separate object to CygApt and so doesn't get the benefits of CygApt's init -- nor the dependencies.
+
+Added support for reproducing hard links from tarballs under DOS.
+
+Added a fallback for the edge case where /bin/ln is not available: move the copies Windows Python creates in lieu of links. This applies to both hard and symbolic links. ln wouldn't be available when upgrading coreutils (or attempting to use cyg-apt to install Cygiwn from scratch -- not that that's really supported.) Very much an edge case but good to have.
+
+Added a symbolic link and a hard link to testpkg in the mini_mirror.
+
+Revision 121
+-----------
+
+
+
