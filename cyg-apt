@@ -48,20 +48,23 @@ class CygAptSetup:
             "these packages.\n"\
             "# Treat Cygwin core packages with CAUTION. (Not tested.)\n"\
             }
-        self.scriptname = os.path.basename(sys.argv[0])
+        self.sn = os.path.basename(sys.argv[0])
        
  
     def setup(self, flags=None):
         '''cygwin environment'''
+        if not self.cygwin_p:
+            print "%s: setup outside Cygwin not supported. Exiting." % self.sn
+            sys.exit(1)
         if "HOME" in os.environ:
-            self.cyg_apt_rc = os.environ['HOME'] + '/.' + self.scriptname
+            self.cyg_apt_rc = os.environ['HOME'] + '/.' + self.sn
         else:
             sys.stderr.write("%s: can't locate home directory. Setup "\
-                "failed, exiting.\n" % self.scriptname)
+                "failed, exiting.\n" % self.sn)
             sys.exit(1)
         if os.path.exists(self.cyg_apt_rc):
             sys.stderr.write("%s: %s exists, not overwriting. "\
-                "Setup failed, exiting.\n" % (self.scriptname, self.cyg_apt_rc))
+                "Setup failed, exiting.\n" % (self.sn, self.cyg_apt_rc))
             sys.exit(1)
            
         self.pm = PathMapper("", self.cygwin_p)
@@ -79,7 +82,7 @@ class CygAptSetup:
         
         if not self.cygwin_p:
             print >> sys.stderr, "%s: settup only supported under Cygwin. Exiting."\
-                % self.scriptname
+                % self.sn
             return
          
         (last_cache, last_mirror) = get_setup_rc(self.config)
@@ -87,7 +90,7 @@ class CygAptSetup:
             (last_cache, last_mirror) = self.get_pre17_last(self.config)
             if ((not last_cache) or (not last_mirror)):
                 print "%s: %s/setup.rc not found. Please edit %s to "\
-                "provide mirror and cache." % (self.scriptname, self.config, self.cyg_apt_rc)
+                "provide mirror and cache." % (self.sn, self.config, self.cyg_apt_rc)
                 last_cache = missing_cache_marker
                 last_mirror  = missing_mirror_marker
         self.mirror = last_mirror
@@ -105,7 +108,7 @@ class CygAptSetup:
                 h.write(self.rc_comments[i])
             h.write('%s="%s"\n\n' % (i, eval("self." + i)))
         h.close()
-        print "%s: creating %s." % (self.scriptname, self.cyg_apt_rc)
+        print "%s: creating %s." % (self.sn, self.cyg_apt_rc)
     
         if not os.path.isdir(self.ABSOLUTE_ROOT):
             sys.stderr.write('error: %s no root dir\n' % self.ABSOLUTE_ROOT)
@@ -123,7 +126,7 @@ class CygAptSetup:
         
         
     def usage(self, cyg_apt_rc=None):
-        print("%s [OPTION]... COMMAND [PACKAGE]..." % self.scriptname)
+        print("%s [OPTION]... COMMAND [PACKAGE]..." % self.sn)
         if (cyg_apt_rc):
             print("Configuration: %s\n\n" % cyg_apt_rc)
         print("    Commands:")
@@ -141,8 +144,6 @@ class CygAptSetup:
         -x, --no-deps           ignore dependencies
         -s, --regexp            search as regex pattern
         -f, --nobarred          add/remove packages cyg-apt depends on
-        -y, --nopostinstall     don't run postinstall scripts
-        -z, --nopostremove      don't run preremove/postremove scripts
     ''')        
 
 
@@ -174,7 +175,7 @@ class CygAptSetup:
         if err:
             print >> sys.stderr,\
                 "%s: failed to download setup.ini from %s, exiting." %\
-                (self.scriptname, setup_ini_url)
+                (self.sn, setup_ini_url)
         else:
             if os.path.exists(setup_ini):
                 shutil.copy(setup_ini, setup_ini + ".bak")
@@ -383,7 +384,7 @@ class CygApt:
         self.nopostremove = False
         
         # Init
-        self.scriptname = main_scriptname
+        self.sn = main_scriptname
         self.packagename = main_packagename
         self.files = main_files
         self.cygwin_p = main_cygwin_p
@@ -555,12 +556,11 @@ class CygApt:
                 sys.stderr.write("\n%s: didn't find %s "\
                     "on mirror %s: possible mismatch between setup.ini and "\
                     "mirror requiring %s update?"\
-                    % (self.scriptname, self.packagename, self.mirror,\
-                    self.scriptname))
+                    % (self.sn, self.packagename, self.mirror,\
+                    self.sn))
                 sys.exit(1)
                     
-    
-    
+
     def download(self):
         '''download package'''
         self.do_download()
@@ -673,19 +673,14 @@ class CygApt:
         '''installed files'''
         if not self.packagename:
             print >> sys.stderr,\
-                "%s: no package name given. Exiting.\n" % self.scriptname
+                "%s: no package name given. Exiting.\n" % self.sn
         else:
             print string.join(self.get_filelist(), '\n')
     
     
     def postinstall(self):
         ''' runs postinall scripts for package installed from DOS '''
-        if not self.cygwin_p:
-            print >> sys.stderr,\
-                "%s: postinstall must be run within Cygwin. Exiting." %\
-                (self.scriptname)
-        else:
-            self.run_all(self.postinstall_dir)        
+        self.run_all(self.postinstall_dir)        
     
     
     def postremove(self):
@@ -693,11 +688,7 @@ class CygApt:
         if len(self.files[1:]) == 0:
             print >> sys.stderr,\
                 "%s: must specify package to run postremove. Exiting." %\
-                (self.scriptname)
-        elif not self.cygwin_p:
-            print >> sys.stderr,\
-                "%s: postremove must be run within Cygwin. Exiting." %\
-                (self.scriptname)
+                (self.sn)
         else:
             for self.packagename in self.files[1:]:
                 self.preremove_sh = self.preremove_dir + "/" + self.packagename + ".sh"
@@ -830,7 +821,7 @@ class CygApt:
             print s + "\n"
             print ldesc
         else:
-            print "%s: not found in setup.ini: %s" % (self.scriptname, s)
+            print "%s: not found in setup.ini: %s" % (self.sn, s)
     
     
     def get_missing(self):
@@ -873,7 +864,7 @@ class CygApt:
         else:
             if not optional:
                 sys.stderr.write("%s: WARNING couldn't find %s.\n"\
-                    % (self.scriptname,  file_name))
+                    % (self.sn,  file_name))
 
     
     def run_all(self, dir):
@@ -893,7 +884,7 @@ class CygApt:
         if os.path.exists(tempdir):
             print >> sys.stderr,\
             "%s: tmpdir %s exists, won't overwrite.\nInstall "\
-            "of %s failed. exiting." % (self.scriptname, tempdir, self.packagename)
+            "of %s failed. exiting." % (self.sn, tempdir, self.packagename)
             sys.exit(1)
         try:
             tf.extractall(tempdir)
@@ -918,11 +909,11 @@ class CygApt:
                     # Windows extract() is robust but can't form Cygwin links
                     # (It produces copies instead: bulky and bugbait.)
                     # Convert to links if possible -- depends on coreutils being installed
-                    if m.issym() and not self.can_use_ln:
+                    if m.issym() and self.can_use_ln:
                         link_filename = "/" + m.name
                         link_target = m.linkname
                         os.system(self.dos_ln + " -s " + link_target + " " + link_filename)
-                    elif m.islnk() and not self.can_use_ln:
+                    elif m.islnk() and self.can_use_ln:
                         # Hard link -- expect these to be very rare
                         link_filename = "/" + m.name
                         link_target = m.linkname
@@ -946,10 +937,21 @@ class CygApt:
                 tf.extractall(self.ABSOLUTE_ROOT)
             else:
                 self.do_install_external(tf)
-            lst = tf.getnames()
+            # Another tarfile module bug
+            if self.cygwin_p:
+                lst = tf.getnames()
+            else:
+                # Oy vey, tarfile module :(
+                members = tf.getmembers()
+                lst = []
+                for m in members:
+                    if m.isdir():
+                        lst.append(m.name + "/")
+                    else:
+                        lst.append(m.name)
         else:
             print >> sys.stderr,\
-            "%s: bad tarball %s. Install failed, exiting." % (self.scriptname, ball)
+            "%s: bad tarball %s. Install failed, exiting." % (self.sn, ball)
             sys.exit(1)
         self.write_filelist(lst)
         self.installed[0][self.packagename] = os.path.basename(ball)
@@ -1008,7 +1010,7 @@ class CygApt:
         postinstall_done = self.postinstall_dir + "/" + self.packagename + ".sh.done"
         suppression_msg =\
             "%s: postremove suppressed: \"%s postremove %s\" to complete." %\
-            (self.scriptname, self.scriptname, self.packagename)
+            (self.sn, self.sn, self.packagename)
         
         lst = self.get_filelist()
         expect_preremove = preremove_sh[1:] in lst
@@ -1047,12 +1049,12 @@ class CygApt:
                         os.remove(file)
                     else:
                         print "%s: warning: expected to remove %s but it was"\
-                            " not there." % (self.scriptname, file)
+                            " not there." % (self.sn, file)
         if not self.nopostremove:
             if expect_postremove:
                 self.run_script(postremove_sh, optional=False)
-            if os.path.isfile(postremove_sh):
-                if os.remove(postremove_sh):
+            if os.path.isfile(self.pm.map_path(postremove_sh)):
+                if os.remove(self.pm.map_path(postremove_sh)):
                     raise IOError
     
         # We don't remove empty directories: the problem is are we sure no other
@@ -1063,8 +1065,8 @@ class CygApt:
         self.remove_filelist()
         
         # Clean up the postintall script: it's been moved to .done
-        if os.path.isfile(postinstall_done):
-            os.remove(postinstall_done)
+        if os.path.isfile(self.pm.map_path(postinstall_done)):
+            os.remove(self.pm.map_path(postinstall_done))
         
         # update installed[]
         del(self.installed[0][self.packagename])
@@ -1106,15 +1108,16 @@ class CygApt:
                     self.preremove_dir + "/%s.sh.done",\
                     self.postremove_dir + "/%s.sh.done"]
                 scripts = [s % self.packagename for s in scripts]
+                scripts = [self.pm.map_path(s) for s in scripts]
                 for s in scripts:
                     if os.path.exists(s):
                         os.remove(s)
                 ball = self.get_ball()
                 if os.path.exists(ball):
-                    print "%s: removing %s" % (self.scriptname, ball)
+                    print "%s: removing %s" % (self.sn, ball)
                     os.remove(ball)
             except SetupIniError, (err):
-                sys.stderr.write(self.scriptname + ": " + err.msg +\
+                sys.stderr.write(self.sn + ": " + err.msg +\
                     " exiting.\n")
                 sys.exit(1)
         self.barred_warn_if_need(barred, "purging")
@@ -1128,8 +1131,8 @@ class CygApt:
             else:
                 this_these = "these packages"
             barredstr = " " + string.join(barred, ", ")
-            print >> sys.stderr, self.scriptname + ": NOT " + command +\
-                barredstr + ": " + self.scriptname + " is dependent on " +\
+            print >> sys.stderr, self.sn + ": NOT " + command +\
+                barredstr + ": " + self.sn + " is dependent on " +\
                 this_these + " under Cygwin."
             if not self.cygwin_p:
                 print >> sys.stderr, "Use -f to override but proceed with caution."     
@@ -1139,7 +1142,7 @@ class CygApt:
         '''download and install packages with dependencies'''
         suppression_msg =\
             "%s: postinstall suppressed: \"%s postinstall\" to complete." %\
-            (self.scriptname, self.scriptname)
+            (self.sn, self.sn)
         missing = {}
         barred = []
         for self.packagename in self.files[1:]:
@@ -1239,7 +1242,7 @@ class CygApt:
     
     def set_root(self, root):
         if len(root) < 1 or root[-1] != "/":
-            print "%s: ROOT must end in a slash. Exiting." % self.scriptname
+            print "%s: ROOT must end in a slash. Exiting." % self.sn
             sys.exit(1)
         self.PREFIX_ROOT = root[:-1]
         self.ABSOLUTE_ROOT = root
@@ -1255,10 +1258,10 @@ class CygApt:
                     self.__dict__[k] = eval(v)
         h.close()        
         if not self.cache:
-            print "%s: %s doesn't define cache. Exiting." % (self.scriptname, self.cyg_apt_rc)
+            print "%s: %s doesn't define cache. Exiting." % (self.sn, self.cyg_apt_rc)
             sys.exit(1)
         if not self.mirror:
-            print "%s: %s doesn't define mirror. Exiting." %(self.scriptname, self.cyg_apt_rc)
+            print "%s: %s doesn't define mirror. Exiting." %(self.sn, self.cyg_apt_rc)
             sys.exit(1)
         
         # We want ROOT + "/etc/setup" and cd(ROOT) to work: 

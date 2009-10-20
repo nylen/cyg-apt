@@ -9,16 +9,19 @@ import sys
 import tarfile
 import re
 import md5
+import string
 from pdb import set_trace as stra
 import shutil
 
-global verbose
+
+global dostest
 
 class TestCygApt(unittest.TestCase):
 
     def setUp(self):
         # Verbose: echos cyg-apt commands and results
-        self.v = verbose
+        self.v =  ("-vv" in sys.argv)
+        self.dostest = dostest
         self.package_name = "testpkg"
         self.package_name_2 = "testpkg-lib"
         self.package_search_regex = "testpkg(-lib)?"
@@ -106,6 +109,9 @@ class TestCygApt(unittest.TestCase):
                 break
         self.assert_(found)
         self.rc_regex = re.compile("^\s*(\w+)\s*=\s*(.*)\s*$")
+        self.symlink_location = "/usr/bin/link_to_testpkg"
+        self.hard_link_location = "/usr/bin/hardlink_to_testpkg"
+        
 
     def init_from_dot_cyg_apt(self):
         self.opts = {}
@@ -143,6 +149,10 @@ class TestCygApt(unittest.TestCase):
 
 
     def testsetup(self):
+        if self.dostest:
+            setupout = self.launchtest("cyg-apt setup", self.v)[0]
+            self.assert_(" setup outside Cygwin not supported" in setupout)
+            return
         if os.path.exists(self.cwd_cyg_apt):        
             self.assert_fyes(self.cwd_cyg_apt_bak)
             utilpack.popen_ext("rm %s" % self.cwd_cyg_apt)
@@ -163,11 +173,13 @@ class TestCygApt(unittest.TestCase):
     
     
     def testball(self):
-        ballpath = utilpack.popen_ext\
+        ballpath = self.launchtest\
             ("cyg-apt ball " + self.package_name, self.v)[0]
         ballpath = ballpath.strip()
         # The tarball location is:
         # cache + mirror + releasename + packagename + tarfile_name
+        if self.dostest:
+            ballpath = os.popen("cygpath " + ballpath).read().strip()
         self.assert_(self.expected_ballpath == ballpath)
         
         
@@ -175,9 +187,9 @@ class TestCygApt(unittest.TestCase):
         # First test ability to recognise package that is already 
         #present: download twice to make sure it is there on the second 
         #attempt: independent unittests.
-        download_out = utilpack.popen_ext\
+        download_out = self.launchtest\
             ("cyg-apt download " + self.package_name, self.v)[0]
-        download_out = utilpack.popen_ext\
+        download_out = self.launchtest\
             ("cyg-apt download " + self.package_name, self.v)[0]
         download_out = download_out.split("\n")
         self.assert_(download_out[1] == download_out[2])
@@ -187,7 +199,7 @@ class TestCygApt(unittest.TestCase):
         # not present in the cache and download it.
         os.remove(self.expected_ballpath)
         self.assert_fno(self.expected_ballpath)
-        download_out = utilpack.popen_ext\
+        download_out = self.launchtest\
             ("cyg-apt download " + self.package_name, self.v)[0]
         download_out = download_out.split("\n")
         download_out = [x for x in download_out if x != ""]
@@ -196,8 +208,8 @@ class TestCygApt(unittest.TestCase):
         
     
     def testfilelist(self):
-        utilpack.popen_ext("cyg-apt install " + self.package_name, self.v)[0]
-        filelistout = utilpack.popen_ext\
+        self.launchtest("cyg-apt install " + self.package_name, self.v)[0]
+        filelistout = self.launchtest\
            ("cyg-apt filelist " + self.package_name, self.v)[0]
         filelistout = filelistout.split()
         
@@ -214,7 +226,7 @@ class TestCygApt(unittest.TestCase):
 
     def testfind(self):
         # the find command equates with dpkg -S /path/to/file
-        utilpack.popen_ext("cyg-apt install " + self.package_name, self.v)[0]
+        self.launchtest("cyg-apt install " + self.package_name, self.v)[0]
         if tarfile.is_tarfile(self.expected_ballpath):
             input_tarfile = tarfile.open(self.expected_ballpath)
             contents = input_tarfile.getnames()
@@ -226,32 +238,33 @@ class TestCygApt(unittest.TestCase):
             if not found:
                 self.assert_(False)
             findout =\
-                utilpack.popen_ext("cyg-apt find " + "/" + f, self.v)[0]
+                self.launchtest("cyg-apt find " + "/" + f, self.v)[0]
             findout = findout.split()
             out_package_name = findout[0].split(":")[0]
             self.assert_(out_package_name == self.package_name)     
         else:
             self.assert_(False)
+
        
     def testbarred(self):
         # Test the safety mechanism which prevents the installation or 
         # removal of packages which cyg-apt itself depends on        
         try:
-            utilpack.popen_ext("cyg-apt purge " + self.package_name, self.v)[0]
+            purgeout = self.launchtest("cyg-apt purge " + self.package_name, self.v)[0]
             self.patch_cyg_apt_rc(self.cyg_apt_rc_file, "barred",\
                 "testpkg", op="add")
-            installout = utilpack.popen_ext("cyg-apt install " +\
+            installout = self.launchtest("cyg-apt install " +\
                 self.package_name, self.v)[1]
             self.assert_("NOT installing" in installout)
             self.confirm_remove_clean(self.package_name)
             self.patch_cyg_apt_rc(self.cyg_apt_rc_file, None, None,\
                 None, revert=True)
-            installout = utilpack.popen_ext("cyg-apt install " +\
+            installout = self.launchtest("cyg-apt install " +\
                 self.package_name, self.v)[0]
             self.confirm_installed(self.package_name)                
             self.patch_cyg_apt_rc(self.cyg_apt_rc_file, "barred",\
                 "testpkg", op="add")
-            removeout = utilpack.popen_ext("cyg-apt remove " +\
+            removeout = self.launchtest("cyg-apt remove " +\
                 self.package_name, self.v)[1]
             self.assert_("NOT removing" in removeout)
             self.confirm_installed(self.package_name)
@@ -267,8 +280,8 @@ class TestCygApt(unittest.TestCase):
         regexes[1] = re.compile("([0-9a-z.-]+)")
         regexes[2] = re.compile("(\([\w.-]+\))")
         
-        utilpack.popen_ext("cyg-apt install " + self.package_name, self.v)[0]
-        listout = utilpack.popen_ext("cyg-apt list", self.v)[0]
+        self.launchtest("cyg-apt install " + self.package_name, self.v)[0]
+        listout = self.launchtest("cyg-apt list", self.v)[0]
         listout = listout.split("\n")
         listout = [x.strip() for x in listout if x.strip()   != ""]
         found_names = []
@@ -293,8 +306,8 @@ class TestCygApt(unittest.TestCase):
         
         
     def testmd5(self):
-        utilpack.popen_ext("cyg-apt install " + self.package_name, self.v)[0]
-        md5out = utilpack.popen_ext\
+        self.launchtest("cyg-apt install " + self.package_name, self.v)[0]
+        md5out = self.launchtest\
             ("cyg-apt md5 " + self.package_name, self.v)[0]
         md5out = md5out.splitlines()
         md5out = [x.split() for x in md5out]
@@ -318,16 +331,16 @@ class TestCygApt(unittest.TestCase):
         # not a great test, but this isn't a great command IMO:
         # there's little facility for separate source dependency tracking in
         # Cygwin, or so it appears.
-        utilpack.popen_ext("cyg-apt install " + self.package_name, self.v)[0]
-        requiresout = utilpack.popen_ext\
+        self.launchtest("cyg-apt install " + self.package_name, self.v)[0]
+        requiresout = self.launchtest\
             ("cyg-apt buildrequires " + self.package_name, self.v)[0].split()
         self.assert_(self.package_name_2 in requiresout)
 
 
     def testmissing(self):
-        utilpack.popen_ext("cyg-apt install " + self.package_name, self.v)[0]
-        utilpack.popen_ext("cyg-apt remove " + self.package_name_2, self.v)[0]
-        missingout = utilpack.popen_ext\
+        self.launchtest("cyg-apt install " + self.package_name, self.v)[0]
+        self.launchtest("cyg-apt remove " + self.package_name_2, self.v)[0]
+        missingout = self.launchtest\
             ("cyg-apt missing " + self.package_name, self.v)[0].split()
         self.assert_(self.package_name_2 in missingout)
         
@@ -368,15 +381,15 @@ class TestCygApt(unittest.TestCase):
         
         
     def testversion(self):
-        utilpack.popen_ext("cyg-apt install " + self.package_name, self.v)[0]
-        versionout = utilpack.popen_ext\
-        ("cyg-apt version " + self.package_name)[0]
+        self.launchtest("cyg-apt install " + self.package_name, self.v)[0]
+        versionout = self.launchtest\
+            ("cyg-apt version " + self.package_name, self.v)[0]
         self.assert_(self.ver in versionout)
         
 
     def testnew(self):
         self.new_upgrade_test_setup(False)
-        newout = utilpack.popen_ext("cyg-apt new", self.v)[0]
+        newout = self.launchtest("cyg-apt new", self.v)[0]
         self.new_upgrade_test_cleanup()
         self.assert_(self.package_name in newout)
         
@@ -384,44 +397,43 @@ class TestCygApt(unittest.TestCase):
     def testupgrade(self):
         self.new_upgrade_test_setup(True)
         try:
-            upgradeout = utilpack.popen_ext("cyg-apt upgrade", self.v)[0]
+            upgradeout = self.launchtest("cyg-apt upgrade", self.v)[0]
             self.assert_fyes(self.version_2_marker)
         finally:
             self.new_upgrade_test_cleanup()
   
   
     def testcmdline_dist(self):
-        utilpack.popen_ext("cyg-apt purge " + self.package_name, self.v)[0]
+        self.launchtest("cyg-apt purge " + self.package_name, self.v)[0]
         self.assert_fno(self.version_2_marker)
-        installout = utilpack.popen_ext\
+        installout = self.launchtest\
             ("cyg-apt --dist=test install " + self.package_name, self.v)[0]
         try:
             self.assert_fyes(self.version_2_marker)
         finally:
-            utilpack.popen_ext("cyg-apt purge " + self.package_name, self.v)[0]
+            self.launchtest("cyg-apt purge " + self.package_name, self.v)[0]
             
         
     def testcmdline_nodeps(self):
-        utilpack.popen_ext\
-        ("cyg-apt remove " + self.package_name + " " + self.package_name_2,\
-        self.v)[0]
-        utilpack.popen_ext("cyg-apt -x install " + self.package_name, self.v)[0]
-        listout = utilpack.popen_ext("cyg-apt list", self.v)[0]
+        self.launchtest("cyg-apt remove " + self.package_name + " " +\
+            self.package_name_2,self.v)[0]
+        self.launchtest("cyg-apt -x install " + self.package_name, self.v)[0]
+        listout = self.launchtest("cyg-apt list", self.v)[0]
         try:
             self.assert_(self.package_name in listout)
             self.assert_(self.package_name_2 not in listout)
             self.assert_fno(self.testpkg_lib_marker)
         finally:
-            utilpack.popen_ext("cyg-apt remove " + self.package_name, self.v)[0]
+            self.launchtest("cyg-apt remove " + self.package_name, self.v)[0]
                 
 
     def testcmdline_regexp(self):
-        utilpack.popen_ext("cyg-apt install " + self.package_name, self.v)[0]
-        searchout = utilpack.popen_ext("cyg-apt --regexp search "\
+        self.launchtest("cyg-apt install " + self.package_name, self.v)[0]
+        searchout = self.launchtest("cyg-apt --regexp search "\
             + self.package_search_regex, self.v)[0]
         self.assert_("testpkg - is a test package" in searchout)
         self.assert_("testpkg-lib - supports test package" in searchout)
-        findout = utilpack.popen_ext("cyg-apt --regexp find "\
+        findout = self.launchtest("cyg-apt --regexp find "\
             + self.package_find_regex, self.v)[0]
         self.assert_("/usr/bin/testpkg.exe" in findout)
     
@@ -436,7 +448,7 @@ class TestCygApt(unittest.TestCase):
         cmd += self.tarname + " 0.0.1-0 0.0.2-0"
         utilpack.popen_ext(cmd)
         utilpack.popen_ext("patch " + setup_ini + " " + setup_ini_basename_diff)
-        update = utilpack.popen_ext("cyg-apt " + command_line + " update", self.v)[0]
+        update = self.launchtest("cyg-apt " + command_line + " update", self.v)[0]
         diffout = utilpack.popen_ext\
         (\
             "diff " + self.opts["setup_ini"] + " " +\
@@ -450,23 +462,22 @@ class TestCygApt(unittest.TestCase):
             self.do_testupdate()
         finally:
             # Clean up in case failed test clobbered setup.ini
-            utilpack.popen_ext("cyg-apt update", self.v)
+            self.launchtest("cyg-apt update", self.v)
 
 
     def testshow(self):
-        utilpack.popen_ext("cyg-apt install " + self.package_name, self.v)[0]
-        showout = utilpack.popen_ext\
+        self.launchtest("cyg-apt install " + self.package_name, self.v)[0]
+        showout = self.launchtest\
             ("cyg-apt show " + self.package_name, self.v)[0]
         self.assert_("testpkg - is a test package" in showout)
 
         
     def testsource(self):
-        utilpack.popen_ext("cyg-apt source " + self.package_name, self.v)[0]
-        # This may be confusing: the sourcemarker is a file in the  source package
-        # build that we need to know is there in the build before we can confidently
-        # expect it in the "installed" ie downloaded, unpacked source package from
-        # the mini_mirror. It might be less confusing if I hadn't duplicated the
-        # files from the "binary" build.
+        self.launchtest("cyg-apt source " + self.package_name, self.v)[0]
+        # This may be confusing: the sourcemarker is a file in the  source 
+        # package build that we need to know is there in the build before we 
+        # can confidently expect it in the "installed" ie downloaded, unpacked # source package from the mini_mirror. It might be less confusing if I 
+        # hadn't duplicated the files from the "binary" build.
         self.assert_fyes(self.sourcemarker)
         self.assert_fyes(self.sourcename)
         self.assert_fyes(self.source_unpack_marker)
@@ -474,14 +485,14 @@ class TestCygApt(unittest.TestCase):
     
     
     def testsearch(self):
-        utilpack.popen_ext("cyg-apt install " + self.package_name, self.v)[0]
-        searchout = utilpack.popen_ext\
+        self.launchtest("cyg-apt install " + self.package_name, self.v)[0]
+        searchout = self.launchtest\
             ("cyg-apt search " + self.package_name, self.v)[0]
         self.assert_("testpkg - is a test package" in searchout)
         
         
     def testurl(self):
-        utilpack.popen_ext("cyg-apt install " + self.package_name, self.v)
+        self.launchtest("cyg-apt install " + self.package_name, self.v)
         urlout = utilpack.popen_ext\
             ("cyg-apt url " + self.package_name, self.v)[0].strip()
         expect = self.opts["mirror"] + "/" + self.tarpath + self.tarname
@@ -489,9 +500,9 @@ class TestCygApt(unittest.TestCase):
         
             
     def testpurge(self):
-        utilpack.popen_ext("cyg-apt install " + self.package_name, self.v)
+        self.launchtest("cyg-apt install " + self.package_name, self.v)
         self.confirm_installed(self.package_name);        
-        utilpack.popen_ext("cyg-apt purge " + self.package_name, self.v)[0]
+        purgeout = self.launchtest("cyg-apt purge " + self.package_name, self.v)[0]
         self.confirm_remove_clean(self.package_name)
         # Purge is a superset of remove clean cleanliness
         self.assert_fno(self.expected_ballpath)
@@ -526,70 +537,94 @@ class TestCygApt(unittest.TestCase):
         h.close()
         os.rename(self.cyg_apt_rc_file, self.cyg_apt_rc_file + ".testbak")
         os.rename(self.cyg_apt_rc_file + ".testtmp", self.cyg_apt_rc_file)
-        
-        
-    def do_install_remove_test(self, command_line=""):
-        utilpack.popen_ext\
-            ("cyg-apt %s remove %s" % (command_line, self.package_name), self.v)
+
+    
+    def testpostinstall(self):
+        self.launchtest\
+            ("cyg-apt remove " + self.package_name, self.v)
         self.confirm_remove_clean(self.package_name)
-        utilpack.popen_ext\
-            ("cyg-apt %s install %s" %\
-            (command_line, self.package_name), self.v)
+        # -y is an undocumented option to cyg-apt: suppresses postinstall
+        self.launchtest\
+            ("cyg-apt -y install " + self.package_name, self.v)
+        self.confirm_installed(self.package_name, nopostinstall=True)
+        self.launchtest("cyg-apt postinstall", self.v)
+        self.confirm_installed(self.package_name, nopostinstall=False)
+
+    
+    def testpostremove(self):
+        self.launchtest\
+            ("cyg-apt install " + self.package_name, self.v)
         self.confirm_installed(self.package_name)
-        utilpack.popen_ext\
-            ("cyg-apt %s remove %s" % (command_line, self.package_name), self.v)
+        # -z is an undocumented option to cyg-apt: suppresses postremove
+        self.launchtest\
+            ("cyg-apt -z remove " + self.package_name, self.v)
+        self.confirm_remove_clean(self.package_name, nopostremove=True)
+        self.launchtest("cyg-apt postremove " + self.package_name, self.v)
+        self.confirm_remove_clean(self.package_name, nopostremove=False)
+    
+    
+    def testinstall_remove(self):
+        self.launchtest\
+            ("cyg-apt remove " + self.package_name, self.v)
+        self.confirm_remove_clean(self.package_name)
+        self.launchtest\
+            ("cyg-apt install " + self.package_name, self.v)
+        self.assert_(os.path.islink(self.symlink_location))
+        # 3 == st_nlink, should be a named field: bugprone, easy to break
+        # Test the hard link is actually a hard link -- note testpkg
+        # will give the same result if hard link correctly formed
+        self.assert_(os.stat(self.hard_link_location)[3] == 2)     
+        self.confirm_installed(self.package_name)
+        self.launchtest\
+            ("cyg-apt remove " + self.package_name, self.v)
         self.confirm_remove_clean(self.package_name)
         # At the end of this sequence we can expect scripts to reflect
         # the "freshly removed" state. Note we can't expect that after
         # the first remove since we don't know if the package was
         # ever present (or perhaps it was purged)
         self.assert_fyes(self.pre_remove_script_done)
-        self.assert_fyes(self.post_remove_script_done) 
+        self.assert_fyes(self.post_remove_script_done)
+
+   
 
     
-    def testpostinstall(self):
-        utilpack.popen_ext\
-            ("cyg-apt remove " + self.package_name, self.v)
-        self.confirm_remove_clean(self.package_name)
-        # -y is an undocumented option to cyg-apt: suppresses postinstall
-        utilpack.popen_ext\
-            ("cyg-apt -y install " + self.package_name, self.v)
-        self.confirm_installed(self.package_name, nopostinstall=True)
-        utilpack.popen_ext("cyg-apt postinstall", self.v)
-        self.confirm_installed(self.package_name, nopostinstall=False)
-
-    
-    def testpostremove(self):
-        utilpack.popen_ext\
-            ("cyg-apt install " + self.package_name, self.v)
-        self.confirm_installed(self.package_name)
-        # -z is an undocumented option to cyg-apt: suppresses postremove
-        utilpack.popen_ext\
-            ("cyg-apt -z remove " + self.package_name, self.v)
-        self.confirm_remove_clean(self.package_name, nopostremove=True)
-        utilpack.popen_ext("cyg-apt postremove " + self.package_name, self.v)
-        self.confirm_remove_clean(self.package_name, nopostremove=False)
-    
-    
-    def testinstall_remove(self):
-        self.do_install_remove_test()
-
+    def launchtest(self, cmd, v=False):
+        # This is a horrible hack but allows us to test DOS from Cygwin
+        # in an automated way and with moderate confidence, without maintaining
+        # a separate script.
+        # The idea is to reset the child DOS shell back to a clean 
+        # (non Cygwin) environment before running the test
+        if not self.dostest:
+            return utilpack.popen_ext(cmd, v)
+        else:
+            th_bat = file("test-harness.bat","w")
+            th_bat.write("call reset.bat\n")
+            th_bat.write("python " + cmd)
+            th_bat.close()
+            out = utilpack.popen_ext("cmd /c test-harness.bat", v)
+            # Filter out the echo of our DOS environment reset batch file
+            filt0 = out[0].split("\r\n")[2:]
+            filt0 = string.join(filt0, "\n")
+            filt1 = out[1].split("\r\n")
+            filt1 = string.join(filt1, "\n")
+            return filt0, filt1
+        
 
     def testcmdline_mirror(self):
-        update_out = utilpack.popen_ext\
+        update_out = self.launchtest\
             ("cyg-apt --mirror=bad update", self.v)[1]
         self.assert_("failed to download setup.ini" in update_out)
         try:
             self.do_testupdate(command_line="--mirror=%s" % self.opts["mirror"])
         finally:
             # Clean up in case failed test clobbered setup.ini
-            utilpack.popen_ext("cyg-apt update", self.v)
+            self.launchtest("cyg-apt update", self.v)
         
 
     def testcmdline_download_only(self):
-        purge_out = utilpack.popen_ext\
+        purge_out = self.launchtest\
             ("cyg-apt purge " + self.package_name, self.v)[1]
-        install_out = utilpack.popen_ext\
+        install_out = self.launchtest\
             ("cyg-apt --download install " + self.package_name, self.v)[1]
         self.confirm_remove_clean(self.package_name)
           
@@ -597,7 +632,9 @@ class TestCygApt(unittest.TestCase):
     def assert_fyes(self, f):
             self.assert_(os.path.exists(f) is True)
     
+    
     def assert_fno(self, f):
+            #print ">> " + f + " ===> " + str(os.path.exists(f)) + "!"
             self.assert_(os.path.exists(f) is False)    
     
     def tar_do(self, tarball, fn, notest=None):
@@ -671,5 +708,9 @@ class TestCygApt(unittest.TestCase):
             self.assert_fno(self.post_install_script_done)
         
 if __name__ == '__main__':
-    verbose = ("-vv" in sys.argv)
-    unittest.main()
+    if "-d" in sys.argv:
+        dostest = True
+        sys.argv.remove("-d")
+    else:
+        dostest = False
+    unittest.main(argv = sys.argv)

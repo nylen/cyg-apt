@@ -649,5 +649,28 @@ Added a symbolic link and a hard link to testpkg in the mini_mirror.
 Revision 121
 -----------
 
+Fixed a nasty Python bug, again in tarfile: under cmd shell getnames omits the trailing / for directories.
+
+Fixed a bug in do_uninstall under cmd shell: the final uses of postremove_sh and postinstall_done weren't getting mapped for os.remove (which needs windows paths -- unlike bash which needs Cygwin paths for the same scripts.)
+
+Added an error message: setup under cmd shell not supported.
+
+Renamed scriptname to sn: lots of long lines have it and it's not critical for clarity: just "cyg-apt" for error message and warnings.
+
+Enable separate postinstall/postremove under cmd shell -- but remove it from the help message again -- now it's only for edge cases its presence is actually kinda confusing.
+
+Fixed link formation under cmd shell -- logic wrong way around.
+Added cmd shell testing to test-cyg-apt: the whole test suite can now target windows instead of Cygwin. The method is pretty hacky, but works well: generate a batch file on the fly to reset the child cmd shell environment back to straight Windows from Cygwin on entrance, then run cyg-apt and pipe back the results.
+
+Unfortuntely the test suite becomes ever harder to set up on another machine: based off a static file for the "clean" cmd shell environment.
+
+Added special casing where required to reflect the slightly lesser capabilities of of cmd shell cyg-apt and translate paths before testing them against known-good paths were required.
+
+Add specific tests for creating symbolic/hard links from package tarballs in testinstall_remove.
+
+Revision 122
+------------
+
+
 
 
