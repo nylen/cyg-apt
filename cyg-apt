@@ -144,6 +144,8 @@ class CygAptSetup:
         -x, --no-deps           ignore dependencies
         -s, --regexp            search as regex pattern
         -f, --nobarred          add/remove packages cyg-apt depends on
+        -y, --nopostinstall     don't run postinstall scripts
+        -z, --nopostremove      don't run preremove/postremove scripts
     ''')        
 
 
@@ -679,12 +681,10 @@ class CygApt:
     
     
     def postinstall(self):
-        ''' runs postinall scripts for package installed from DOS '''
         self.run_all(self.postinstall_dir)        
     
     
     def postremove(self):
-        ''' runs postremove scripts for package installed from DOS '''
         if len(self.files[1:]) == 0:
             print >> sys.stderr,\
                 "%s: must specify package to run postremove. Exiting." %\
