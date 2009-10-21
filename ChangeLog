@@ -671,6 +671,21 @@ Add specific tests for creating symbolic/hard links from package tarballs in tes
 Revision 122
 ------------
 
+Fix update command. Ironically it hadn't been updated to the new .cyg-apt format (which allows comments)
+
+Add a basic safety check: if setup.exe is running it warns and aborts cyg-apt.
+Not going to help users who rename setup.exe but hopefully these are few.
+
+Fix test-cyg-apt for the new .cyg-apt format -- and update the testing .cyg-apt.
+
+Update the wiki. Still not happy with the way wiki editing chews up so many revision numbers.
+
+New release: don't like doing so many, but this is important.
+
+Revision 128
+------------
+
+
 
 
 

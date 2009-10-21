@@ -1,6 +1,23 @@
+# The root of your Cygwin installation as a windows path
 ROOT="E:/cygwin_1_7/"
+
+# URL of your Cygwin mirror: example http://mirror.internode.on.net/pub/cygwin/
 mirror="http://wanda/~chrisc"
+
+# Your package cache as a POSIX path: example /e/home/cygwin_package_cache
 cache="/e/home/develop/code/cyg-apt/local_cache"
+
+# setup.ini lists available packages and is downloaded from the top level
+# of the downloaded mirror. Standard location is /etc/setup/setup.ini,
+# seutp-2.ini for Cygwin 1.7 Beta
 setup_ini="/etc/setup/setup-2.ini"
+
+# The distribution, current previous or test [curr, prev, test].
+# Usually you want the "curr" version of a package.
 distname="curr"
+
+# Packages which cyg-apt can't change under Cygwin since it depends on them.
+# Run cyg-apt under DOS with -f (force) option to change these packages.
+# Treat Cygwin core packages with CAUTION. (Not tested.)
 barred="python cygwin base-cygwin coreutils bash zlib libreadline"
+

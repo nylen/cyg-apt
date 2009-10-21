@@ -22,6 +22,8 @@ class TestCygApt(unittest.TestCase):
         # Verbose: echos cyg-apt commands and results
         self.v =  ("-vv" in sys.argv)
         self.dostest = dostest
+        self.rc_regex = re.compile("^\s*(\w+)\s*=\s*(.*)\s*$")
+        self.rc_options = ['ROOT', 'mirror', 'cache', 'setup_ini', 'distname', 'barred']
         self.package_name = "testpkg"
         self.package_name_2 = "testpkg-lib"
         self.package_search_regex = "testpkg(-lib)?"
@@ -59,6 +61,7 @@ class TestCygApt(unittest.TestCase):
             self.package_name,\
             self.tarname)
         self.ver = "0.0.1-0"
+
             
         setup_rc_filename  = "/etc/setup/setup.rc"
         old_last_mirror = "/etc/setup/last-mirror"
@@ -108,7 +111,6 @@ class TestCygApt(unittest.TestCase):
                 found = True
                 break
         self.assert_(found)
-        self.rc_regex = re.compile("^\s*(\w+)\s*=\s*(.*)\s*$")
         self.symlink_location = "/usr/bin/link_to_testpkg"
         self.hard_link_location = "/usr/bin/hardlink_to_testpkg"
         
@@ -117,8 +119,12 @@ class TestCygApt(unittest.TestCase):
         self.opts = {}
         rc = file(self.cyg_apt_rc_file).readlines()
         for i in rc:
-            k, v = i.split ('=', 2)
-            self.opts[k] = eval (v)
+            result = self.rc_regex.search(i)
+            if result:
+                k = result.group(1)
+                v = result.group(2)
+                if k in self.rc_options:
+                    self.opts[k] = eval(v)
         self.mirror_esc = urllib.quote(self.opts["mirror"], "").lower()
 
 
@@ -523,8 +529,14 @@ class TestCygApt(unittest.TestCase):
             'barred']        
         rc = file(cyg_apt_rc).readlines()
         for i in rc:
-            k, v = i.split ('=', 2)
-            opts[k] = eval (v)
+            result = self.rc_regex.search(i)
+            if result:
+                k = result.group(1)
+                v = result.group(2)
+                if k in self.rc_options:
+                    opts[k] = eval(v)            
+            
+            
         if op == "replace":
             opts[option] = new_val
         elif op == "add":

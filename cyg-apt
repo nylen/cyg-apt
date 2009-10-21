@@ -49,6 +49,7 @@ class CygAptSetup:
             "# Treat Cygwin core packages with CAUTION. (Not tested.)\n"\
             }
         self.sn = os.path.basename(sys.argv[0])
+        self.rc_regex = re.compile("^\s*(\w+)\s*=\s*(.*)\s*$")
        
  
     def setup(self, flags=None):
@@ -153,9 +154,13 @@ class CygAptSetup:
         '''setup.ini'''
         rc = {}
         for i in open(cyg_apt_rc).readlines():
-            k, v = i.split('=', 2)
-            if k in self.rc_options:
-                rc[k] = eval(v)
+            result = self.rc_regex.search(i)
+            if result:
+                k = result.group(1)
+                v = result.group(2)
+                if k in self.rc_options:
+                    rc[k] = eval(v)
+                
         if(self.cygwin_p):
             pm = PathMapper("", True)
         else:
@@ -343,13 +348,23 @@ class CygAptURLopener(urllib.FancyURLopener):
         sys.stdout.flush()
 
 
-class SetupIniError(Exception):
+class CygAptError(Exception):
     def __init__(self, value):
         self.msg = value
         
         
     def __str__(self):
-        return repr(self.msg)
+        return self.msg
+
+
+class AppConflictError(CygAptError):
+    def __init__(self, *args):
+        CygAptError.__init__(self, *args)
+
+
+class SetupIniError(CygAptError):
+    def __init__(self, *args):
+        CygAptError.__init__(self, *args)
 
         
 class CygApt:
@@ -370,7 +385,7 @@ class CygApt:
         main_dists,\
         main_installed,\
         main_scriptname):
-    
+        
         # Define constants
         self.installed_db_magic = 'INSTALLED.DB 2\n'
         self.INSTALL = 'install'
@@ -404,6 +419,9 @@ class CygApt:
         # Read in our configuration
         self.get_rc(open(self.cyg_apt_rc))
         
+        # Now we have a path mapper, check setup.exe is not running
+        self.check_for_setup_exe()
+        
         # DOS specific
         if not self.cygwin_p:
             self.can_use_ln = os.path.exists(self.PREFIX_ROOT + "/bin/ln.exe")
@@ -427,6 +445,15 @@ class CygApt:
             self.get_setup_ini()
             self.get_installed()
 
+
+    def check_for_setup_exe(self):
+        # It's far from bulletpoof, but it's surprisingly hard to detect 
+        # setup.exe running since it doesn't lock any files.
+        psout = os.popen(self.pm.map_path("/usr/bin/ps -W")).readlines()
+        for l in psout:
+            if "setup.exe" in l or "setup-1.7.exe" in l:
+                raise AppConflictError("%s: Please close setup.exe while "\
+                "running cyg-apt. Exiting." % self.sn)
     
     def version_to_string(self, t):
         def try_itoa(x):
@@ -1384,22 +1411,26 @@ def main():
     elif (main_command == "update"):
         cas.update(main_cyg_apt_rc, main_mirror = main_mirror)
     elif main_command and main_command in dir(CygApt):
-        cyg_apt = CygApt(main_packagename,\
-            main_files,\
-            main_cyg_apt_rc,\
-            main_cygwin_p,\
-            main_download_p,\
-            main_mirror,\
-            main_downloads,\
-            main_distname,\
-            main_nodeps_p,\
-            main_regex_search,\
-            main_nobarred,\
-            main_nopostinstall,\
-            main_nopostremove,\
-            main_dists,\
-            main_installed,\
-            main_scriptname)
+        try:
+            cyg_apt = CygApt(main_packagename,\
+                main_files,\
+                main_cyg_apt_rc,\
+                main_cygwin_p,\
+                main_download_p,\
+                main_mirror,\
+                main_downloads,\
+                main_distname,\
+                main_nodeps_p,\
+                main_regex_search,\
+                main_nobarred,\
+                main_nopostinstall,\
+                main_nopostremove,\
+                main_dists,\
+                main_installed,\
+                main_scriptname)
+        except CygAptError, exp:
+            print exp
+            sys.exit(1)
         # Launch!
         getattr(cyg_apt, main_command)()
     else:
