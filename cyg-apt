@@ -173,7 +173,11 @@ class CygAptSetup:
         downloads = pm.map_path(rc["cache"]) + '/' + urllib.quote(mirror, '').lower()
             
         setup_ini_name = os.path.basename(setup_ini)
-        setup_ini_url = '%s/%s' % (mirror, setup_ini_name)
+        if not mirror[-1] == "/":
+            sep = "/"
+        else:
+            sep = ""
+        setup_ini_url = '%s%s%s' % (mirror, sep, setup_ini_name)
         
         if not os.path.exists(downloads):
             os.makedirs(downloads)
@@ -255,7 +259,7 @@ def uri_get(dir, uri):
         shutil.copy(uri[7:], dir)
         print "cp %s %s" % (uri[7:], dir)
         ret = 0
-    elif up.scheme == "http":
+    elif up.scheme == "http" or up.scheme == "ftp":
         url_base = os.path.basename(up.path)
         old_cwd = os.getcwd()
         os.chdir(dir)

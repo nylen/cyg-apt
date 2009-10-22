@@ -680,12 +680,16 @@ Fix test-cyg-apt for the new .cyg-apt format -- and update the testing .cyg-apt.
 
 Update the wiki. Still not happy with the way wiki editing chews up so many revision numbers.
 
-New release: don't like doing so many, but this is important.
+New release cyg-apt-1.0.4-1 : don't like doing so many, but this is important.
 
-Revision 128
+Revision 129
 ------------
 
+Add support for ftp.
+Fix additional "/" in setup.ini URL.
 
+Revision 130
+------------
 
 
 
