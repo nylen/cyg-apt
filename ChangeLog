@@ -687,8 +687,9 @@ Revision 129
 
 Add support for ftp.
 Fix additional "/" in setup.ini URL.
+Release 1.0.5-1
 
-Revision 130
+Revision 131
 ------------
 
 
