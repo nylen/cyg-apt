@@ -721,8 +721,16 @@ Simplify moving postinstall scripts to ".done" extension, fixing bug in the proc
 
 Fix cyg-apt Makefile: postinstall script was called "postinstall-cyg-apt.sh" not "cyg-apt.sh" (in /etc/postinstall.)
 
-Release 1.0.6-1
-
 Revsion 134
 -----------
+
+Make the old release process work with the new gpg and Cygwin key installation requirement with the aid of a temporary old-style release installation script.
+(releases/install-cyg-apt.sh). The sooner cyg-apt becomes a proper package, the better.
+
+Release 1.0.6-1
+
+Revision 135
+------------
+
+
 

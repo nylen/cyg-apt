@@ -49,6 +49,8 @@ def main():
     
     os.makedirs(reldir)
     shutil.copy("../cyg-apt",reldir)
+    shutil.copy("install-cyg-apt.sh", reldir)
+    shutil.copy("../cygwin.sig", reldir)
     shutil.copy("README.txt", reldir)
     print "tar -jcf " + relfn + " " + reldir
     os.system("tar -jcf " + relfn + " " + reldir)

@@ -7,14 +7,13 @@ REQUIREMENTS
 ------------
 
 * A base Cygwin installation.
-* Cygwin Python. Currently this package is at Python 2.5.
+* Cygwin gnupg package, under Utilities
+* Cygwin Python, under Python. Currently this package is at Python 2.5.
   Python 3.0 is not currently  supported.
 
 INSTALL
 -------
-
-1. Place the cyg-apt script in your path.
-2. $ cyg-apt setup
+$ ./install-cyg-apt.sh
 
 HELP
 ----

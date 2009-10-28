@@ -24,4 +24,4 @@ cyg-apt-1.0.5-1.tar.bz2
 (At svn revision 131)
 
 cyg-apt-1.0.6-1.tar.bz2
-(At svn revision 134)
+(At svn revision 135)
