@@ -692,5 +692,30 @@ Release 1.0.5-1
 Revision 131
 ------------
 
+Build cyg-apt as a package: Makefile at the top level.
+
+Added signature verification to update command in line with setup.exe, using Cygwin gpg package. Added gpg to set of barred pacakges.
+
+Started a  man page for cyg-apt : added preinstall script which adds Cygwin's public key to gpg's keyring, and calls cyg-apt setup.
+
+Added a test for update signing to test-cyg-apt.py
+
+Handle update under DOS shell: can't verify -- gpg is unfortuntely Cygwin dependent. setup.exe is better in that it contains a statically linked crypto library. Following suit is nontrivial.
+
+Watered down message for not overwriting ~/.cyg-apt: it might not be an error, it might just be a reinstall.
+
+Provide a better error for ball command on non-found package.
+
+Fix a bug in get_requires. Bug in the error reporting code >.< not using the class namespace for destname.
+
+Fix a bug in main: regex search didn't really support -s flag.
+
+Add -X option in line with setup.exe to ignore signatures.
+
+Add setup.ini gpg signing code to all the build processes: testpkg, testpkg-lib and cyg-apt.
+
+Revision 132
+------------
+
 
 

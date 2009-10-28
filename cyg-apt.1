@@ -1,0 +1,222 @@
+.\"     Title: cyg-apt
+.\"    Author: Christopher Cormie
+.\"      Date: 27 October 2009
+.TH CYG-APT 1
+.SH NAME
+cyg-apt \- A Cygwin Package Manager
+.SH SYNOPSIS
+.B cyg-apt [OPTION] [COMMAND] [PACKAGE]
+
+cyg-apt [-dhmtxsfyz] {[install | remove | purge | source | ball | download | requires | missing | show | url | requires | show | filelist | search | md5 | version ] pkg } | setup | upgrade | list | new | help | {find file}
+
+.SH DESCRIPTION
+\fBcyg\-apt\fR is a Cygwin package manager.
+
+\fBcyg\-apt\fR allows you to install and remove packages on the command line, and conduct other package management operations.
+
+.SH USAGE
+.PP
+Examples:
+.PP
+\fB$ cyg\-apt\fR install gdb
+.PP
+\fB$ cyg\-apt\fR remove gdb
+.PP
+\fB$ cyg\-apt\fR list
+
+.SH COMMANDS
+.PP
+setup
+.RS 4
+setup
+is run automatically when \fBcyg\-apt\fR is installed. If for any reason you wish to reset your ~/.cyg-apt configuration file, you can delete it and run setup manually. The configuration information therein is taken from your last Cygwin setup.exe run.
+.RE
+.PP
+install
+.RS 4
+install
+is followed by one or more packages to install or upgrade. If the package is not present, it is downloaded and installed. If there is a newer version of an existing package, it will be upgraded. If there are required packages that are not installed, these packages will be installed in a fully recursive manner.
+.RE
+.PP
+remove
+.RS 4
+remove
+is followed by one or more packages to remove. The given packages are uninstalled from the system, but remain in the package cache. If you reinstall a removed package it will be taken from the cache unless a newer version exists on the server. Packages that the given package depend on are not removed. To completely remove a package use the purge command.
+.RE
+.PP
+purge
+.RS 4
+purge
+is followed by one or more packages to uninstall and completely clear from the system. Given packages are uninstalled and removed from the package cache.
+.RE
+.PP
+upgrade
+.RS 4
+upgrade
+all the installed packages \fBcyg\-apt\fR can handle. Use with caution. There are small number of packages \fBcyg\-apt\fR cannot install, see LIMITATIONS.
+.RE
+.PP
+list
+.RS 4
+list
+the installed packages, their versions and newer versions if available.
+.RE
+.PP
+new
+.RS 4
+new
+shows upgradable packages available on the Cygwin mirror.
+.RE
+.PP
+filelist
+.RS 4
+filelist
+is followed by a package to investigate: the files the package installs are listed.
+.RE
+.PP
+find
+.RS 4
+find
+is followed by a file to locate the package for: the package the file belongs to will be printed, if it can be found. This works for files installed directly from a tarball, but not for files created after the package is installed or by a postinstall script.
+.RE
+.PP
+search
+.RS 4
+search
+is followed by a package name to find. A partial name can be given: "term" will match "terminfo" and "termcap". With the --regexp flag a regular expression search will be conducted.
+.RE
+.PP
+source
+.RS 4
+source
+downloads the source release of a package, if available. The source is downloaded to the current directory in a directory named by concatenating the package name and its version. The Cygwin patching process is not currently automated by \fBcyg\-apt\fR.
+.RE
+.PP
+requires
+.RS 4
+requires
+lists the required packages for a given package.
+.RE
+.PP
+download
+.RS 4
+download
+a given package to the package cache but do not install it.
+.RE
+.PP
+show
+.RS 4
+show
+the information for a package, as found in the setup.ini database.
+.RE
+.PP
+ball
+.RS 4
+ball
+shows the path to the tarball for the given package.
+.RE
+.PP
+url
+.RS 4
+url
+shows the URL for a given package's tarball.
+.RE
+.PP
+version
+.RS 4
+version
+shows the installed version of a given package.
+.RE
+.PP
+md5
+.RS 4
+md5
+checks the md5 checksum of a package in the cache against the expected md5 given in the setup.ini database.
+.RE
+.PP
+
+.SH OPTIONS
+
+These options may be given on the command line. Most options are command specific.
+
+\fB\-d\fR, \fB\-\-download\-only\fR
+.RS 4
+Download the package only, do not install.
+.RE
+.PP
+
+\fB\-h\fR, \fB\-\-help\fR
+.RS 4
+Show a short usage summary\&.
+.RE
+.PP
+
+\fB\-m\fR, \fB\-\-mirror=URL\fR
+.RS 4
+Use the given download mirror\&. Be sure to give the complete URL: the correct URL will be a directory containing the server's setup.ini
+.RE
+.PP
+
+\fB\-t\fR, \fB\-\-dist=NAME\fR
+.RS 4
+set dist name (curr, test, prev)\&.
+.RE
+.PP
+
+\fB\-x\fR, \fB\-\-no-deps\fR
+.RS 4
+ignore dependencies on install\&.
+.RE
+.PP
+
+\fB\-s\fR, \fB\-\-regexp\fR
+.RS 4
+search, using the search string as regular expression.\&. Example:
+.PP
+$ \fBcyg\-apt\fR --regexp search "p.thon"
+
+.RE
+.PP
+
+\fB\-f\fR, \fB\-\-nobarred\fR
+.RS 4
+add/remove packages cyg-apt itself depends on.\&.
+.RE
+.PP
+
+\fB\-y\fR, \fB\-\-nopostinstall\fR
+.RS 4
+do not run postinstall scripts when installing.\&.
+.RE
+.PP
+
+\fB\-y\fR, \fB\-\-nopostremove\fR
+.RS 4
+do not run preremove or postremove scripts when removing.\&.
+.RE
+.PP
+
+.SH CONFIGURATION: .cyg-apt
+cyg-apt is designed to be configured by this file alone. The syntax of the file is straightforward and there are additional comments to help you edit the file. The file lives in your home directory. If you have need of additional configurations, you can copy the file and place it in the current directory: .cyg-apt in the current working directory is taken as the configuration over ~/.cyg-apt.
+
+The key fields of .cyg-apt are:
+ROOT
+The path to your Cygwin installation.
+mirror
+URL of your Cygwin mirror:
+cache
+The path to your package cache.
+
+.SH LIMITATIONS
+.PP
+\fBcyg\-apt\fR, running within Cygwin, cannot alter packages it itself depends on: python cygwin base-cygwin coreutils bash zlib libreadline gpg. It is possible to run cyg-apt in and Windows command shell, but a more convenient workaround is to use the standard setup.exe installer to update these packages.
+
+.SH SECURITY
+\fBcyg\-apt\fR follows setup.exe in verifying downloaded setup.ini files using Cygwin's public key. This verification is performing using the Cygwin port of gpg package. This provides some assurance that the mirror is not providing malware versions of Cygwin packages, since any changes to setup.ini such as changes to package md5sum values will cause the signature not to match the file. An attacker able to edit cyg-apt or replace gpg with their own package can subvert this protection.
+
+.SH MORE INFORMATION:
+.PP
+http://code.google.com/p/cyg-apt/
+
+.SH ACKNOWLEDGMENTS
+The original cyg-apt was written by Jan Nieuwenhuizen. Additional development by Christopher Cormie. Questions and feedback to cjcormie@gmail.com.

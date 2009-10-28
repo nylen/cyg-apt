@@ -1,4 +1,4 @@
-cyg-apt has a very lightweight release process:
+cyg-apt original had a lightweight release process:
 /trunk $cp cyg-apt release
 /trunk $tar -jcf release/cyg-apt-X.X.X.X.tar.bz2   release/cyg-apt
 (Major.Minor.Bugfix-CygwinPortNo)
@@ -13,3 +13,12 @@ cyg-apt-1.0.1-1.tar.bz2
 
 cyg-apt-1.0.2-1.tar.bz2
 (At svn revision 99)
+
+cyg-apt-1.0.3-1.tar.bz2
+(At svn revision 122)
+
+cyg-apt-1.0.4-1.tar.bz2
+(At svn revision 129)
+
+cyg-apt-1.0.5-1.tar.bz2
+(At svn revision 131)

@@ -7,7 +7,7 @@ all:
 	/usr/bin/cp postinstall-testpkg.sh $(BUILDDIR)/root/etc/postinstall/testpkg.sh
 	/usr/bin/cp preremove-testpkg.sh $(BUILDDIR)/root/etc/preremove/testpkg.sh
 	/usr/bin/cp postremove-testpkg.sh $(BUILDDIR)/root/etc/postremove/testpkg.sh
-	cd $(BUILDDIR)/root/usr/bin ; ln -s testpkg.exe link_to_testpkg.exe; ln testpkg.exe hardlink_to_testpkg.exe
+	cd $(BUILDDIR)/root/usr/bin ; ln -sf testpkg.exe link_to_testpkg.exe; ln -f testpkg.exe hardlink_to_testpkg.exe
 	cd $(BUILDDIR)/root ; pwd ; tar --exclude=".svn" -jcf $(TARFILE) *;\
 cp $(TARFILE) ../release-2/testpkg;\
 cp $(TARFILE) ../release-2/testpkg/testpkg-0.0.1-0-src.tar.bz2;\
@@ -32,8 +32,9 @@ rm etc/ver2_marker;\
 	$(TOOLS)setup_ini_diff_make.py ../../setup-2.ini testpkg install md5 --section=test --field-input=../build/release-2/testpkg/testpkg-0.0.2-0.tar.bz2
 	patch ../../setup-2.ini setup-2.ini.diff
 
-
-	scp ../../setup-2.ini chrisc@wanda:~/public_html/setup-2.ini
+	/usr/bin/rm -f ../../setup-2.ini.sig 
+	gpg -u "cyg-apt"  --output ../../setup-2.ini.sig --detach-sig ../../setup-2.ini
+	scp ../../setup-2.ini ../../setup-2.ini.sig chrisc@wanda:~/public_html/
 	/usr/bin/rm -rf testpkg-0.0.1-0-src.tar.bz2.diff
 	/usr/bin/rm -rf setup-2.ini.diff
 	/usr/bin/rm -rf testpkg-0.0.1-0.tar.bz2.diff	

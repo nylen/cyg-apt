@@ -18,7 +18,9 @@ mv $(TARFILE) ../release-2/testpkg-lib;\
 	$(TOOLS)setup_ini_diff_make.py ../../setup-2.ini testpkg-lib install md5 --field-input=../build/release-2/testpkg-lib/testpkg-lib-0.0.1-1.tar.bz2
 	patch ../../setup-2.ini setup-2.ini.diff
 
-	scp ../../setup-2.ini chrisc@wanda:~/public_html/setup-2.ini
+	/usr/bin/rm -f ../../setup-2.ini.sig 
+	gpg -u "cyg-apt"  --output ../../setup-2.ini.sig --detach-sig ../../setup-2.ini
+	scp ../../setup-2.ini ../../setup-2.ini.sig chrisc@wanda:~/public_html/
 	/usr/bin/rm -rf setup-2.ini.diff	
 
 clean:
