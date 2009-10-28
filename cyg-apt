@@ -930,7 +930,8 @@ class CygApt:
         if os.path.isfile(self.pm.map_path(file_name)):      
             sys.stderr.write('running: %(file_name)s\n' % vars())
             if self.cygwin_p:
-               os.system('sh "%(file_name)s" && mv "%(file_name)s" "%(file_name)s.done"' % vars())
+               os.system("sh " + file_name)
+               shutil.move(file_name, file_name + ".done")
             else:
                os.system(self.dos_bash + " --login -c " + file_name)
                mapped = self.pm.map_path(file_name)

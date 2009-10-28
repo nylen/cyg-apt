@@ -11,7 +11,7 @@ all:
 	$(CP) cyg-apt $(BUILDDIR)/root/usr/bin
 	$(GZIP) -c cyg-apt.1 > cyg-apt.1.gz
 	$(MV) cyg-apt.1.gz $(BUILDDIR)/root/usr/share/man/man1/cyg-apt/
-	$(CP) postinstall-cyg-apt.sh $(BUILDDIR)/root/etc/postinstall/
+	$(CP) postinstall-cyg-apt.sh $(BUILDDIR)/root/etc/postinstall/cyg-apt.sh
 	$(CP) cygwin.sig $(BUILDDIR)/root/usr/share/cyg-apt
 	cd $(BUILDDIR)/root ; pwd ; tar --exclude=".svn" -jcf $(TARFILE) *;\
 mv $(TARFILE) ../release-2/cyg-apt;

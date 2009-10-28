@@ -717,5 +717,12 @@ Add setup.ini gpg signing code to all the build processes: testpkg, testpkg-lib 
 Revision 132
 ------------
 
+Simplify moving postinstall scripts to ".done" extension, fixing bug in the process: cyg-apt's own postinstall script wasn't being moved.
 
+Fix cyg-apt Makefile: postinstall script was called "postinstall-cyg-apt.sh" not "cyg-apt.sh" (in /etc/postinstall.)
+
+Release 1.0.6-1
+
+Revsion 134
+-----------
 
