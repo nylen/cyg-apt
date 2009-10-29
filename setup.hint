@@ -1,9 +1,6 @@
-sdesc: "cyg-apt: a Cygwin package manager."
-ldesc: "cyg-apt: a Cygwin package manager. Cyg-apt feature an interface
-inspired by apt-get and dpkg. It allows you to install and remove packages on
-the command line, with automatic downloading and installation of packages and
-their required packages. It also features an array of package manage functions,
-such as determining which package a file belongs to and listing the files
-belonging to a package."
 category: Utils
-requires: cygwin python gnupg
+requires: cygwin coreutils python gnupg
+sdesc: "A Cygwin package manager"
+ldesc: "A Cygwin package manager.
+Allows you to install and remove packages on the command line, and provides other package management functions. It has a command syntax similar to apt-get and dpkg.
+

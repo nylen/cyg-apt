@@ -100,6 +100,8 @@ class TestCygApt(unittest.TestCase):
         if os.path.exists(self.home_cyg_apt):
             self.home_cyg_apt_bak = self.home_cyg_apt + ".bak"
             utilpack.popen_ext("cp %s %s" % (self.home_cyg_apt, self.home_cyg_apt_bak))
+        else:
+            self.home_cyg_apt_bak = None
             
         found = False
         mountout = utilpack.popen_ext("mount")[0].split("\n")
@@ -143,7 +145,7 @@ class TestCygApt(unittest.TestCase):
     
     
     def do_testsetup(self):
-        setup_out = utilpack.popen_ext("./cyg-apt setup", self.v)[0]
+        setup_out = utilpack.popen_ext("./cyg-apt setup", self.v)[1]
         self.assert_fyes(self.home_cyg_apt)
         cyg_apt_rc = file(self.home_cyg_apt, "r").readlines()
         rc_dict = {}
@@ -165,8 +167,7 @@ class TestCygApt(unittest.TestCase):
         if os.path.exists(self.cwd_cyg_apt):        
             self.assert_fyes(self.cwd_cyg_apt_bak)
             utilpack.popen_ext("rm %s" % self.cwd_cyg_apt)
-        if os.path.exists(self.home_cyg_apt):            
-            self.assert_fyes(self.home_cyg_apt_bak)
+        if os.path.exists(self.home_cyg_apt):
             utilpack.popen_ext("rm %s" % self.home_cyg_apt)
         try:
             self.do_testsetup()
@@ -201,7 +202,8 @@ class TestCygApt(unittest.TestCase):
         download_out = self.launchtest\
             ("./cyg-apt download " + self.package_name, self.v)[0]
         download_out = download_out.split("\n")
-        self.assert_(download_out[1] == download_out[2])
+        download_out = [x for x in download_out if x != ""]
+        self.assert_(download_out[-1] == download_out[-2])
         self.assert_fyes(self.expected_ballpath)
         
         # Second test: test we can recognise a package is 
@@ -221,7 +223,6 @@ class TestCygApt(unittest.TestCase):
         filelistout = self.launchtest\
            ("./cyg-apt filelist " + self.package_name, self.v)[0]
         filelistout = filelistout.split()
-        
         if tarfile.is_tarfile(self.expected_ballpath):
             input_tarfile = tarfile.open(self.expected_ballpath)
             contents = input_tarfile.getnames()
@@ -398,7 +399,8 @@ class TestCygApt(unittest.TestCase):
 
     def testnew(self):
         self.new_upgrade_test_setup(False)
-        newout = self.launchtest("./cyg-apt new", self.v)[0]
+        # -a flag overides always-update
+        newout = self.launchtest("./cyg-apt -a new", self.v)[0]
         self.new_upgrade_test_cleanup()
         self.assert_(self.package_name in newout)
         
@@ -406,7 +408,7 @@ class TestCygApt(unittest.TestCase):
     def testupgrade(self):
         self.new_upgrade_test_setup(True)
         try:
-            upgradeout = self.launchtest("./cyg-apt upgrade", self.v)[0]
+            upgradeout = self.launchtest("./cyg-apt -a upgrade", self.v)[0]
             self.assert_fyes(self.version_2_marker)
         finally:
             self.new_upgrade_test_cleanup()

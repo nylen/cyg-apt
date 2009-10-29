@@ -732,5 +732,41 @@ Release 1.0.6-1
 Revision 135
 ------------
 
+Always download setup.ini unless told not to when executing commands that use it. Users typically want the most recent versions of packages and this ensures they have the most up-to-date information. Added the options to .cyg-apt so users can revert to the manual system if the time and bandwidth burden of constantly downloading setup.ini isn't worth the convenience of not having to remember to call cyg-apt update to synch with the mirror.
+
+Clean up the mini_mirror makefiles: use more macros.
+Add CYGAPT_TESTMIRROR to all makefiles: everything can now build in the absence of testing mirror: useful for new developers -- and the test mirror is set by the environment.
+
+Updated the README for new developers.
+
+Added configure.sh: a small script to set up the build environment for new developers.
+
+Added control of mini_mirror build to the toplevel makefile.
+
+Added cleaning targets to aid source builds
+
+Added a source build target: the whole tree (sans wiki) as a tarball.
+
+Fixed a usage() bug: the CygAptSetup hosted commands weren't reported.
+
+Moved CygAptSetup's rc parsing code into CygAptSetup's namespace.
+
+Added support (and preference for) bz2 compressed setup.ini files
+Turn off verification under DOS: Cygwin gpg won't run. Warn users.
+
+Added silencing option to uri_get: it's too noisy to have cyg-apt telling you it's downloading setup.ini all the time.
+
+Fix bug in uri_get() where failing to download a file wouldn't reset the current working directory.
+
+Change uri_get to throw an exception on not finding a file instead of exiting.
+
+Added undocumented option -a to turn off the always update function since some tests patch setup.ini. The proper way to do it is to edit .cyg-apt -- possibly should have done that instead.
+
+Fix bugs in TestCygApt.testsetup: wasn't handling the case when ~/.cyg-apt is missing to start with.
+
+Made TestCygApt.testdownload slightly more robust: looks for md5 matches using the last two lines of output rather than expecting a particular number of output lines.
+
+Revision 139
+------------
 
 
