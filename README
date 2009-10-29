@@ -1,4 +1,6 @@
 This is the source for building and testing the cyg-apt package manager.
+Note that the most recent cyg-apt source is available by anonymous subverison check out:
+http://code.google.com/p/cyg-apt/source/checkout
 
 Being a standalone script, cyg-apt doesn't require building as such: the build creates the cyg-apt Cygwin package:
 

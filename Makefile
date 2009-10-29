@@ -1,6 +1,6 @@
 BUILDDIR =  build
-TARFILE = cyg-apt-1.0.6-1.tar.bz2
-SRCTARFILE = cyg-apt-1.0.6-1-src.tar.bz2
+TARFILE = cyg-apt-1.0.7-1.tar.bz2
+SRCTARFILE = cyg-apt-1.0.7-1-src.tar.bz2
 TOOLS = tools
 CP = /usr/bin/cp -f
 RM = /usr/bin/rm -f
@@ -11,7 +11,7 @@ TMP = tmp
 all:
 	$(CP) cyg-apt $(BUILDDIR)/root/usr/bin
 	$(GZIP) -c cyg-apt.1 > cyg-apt.1.gz
-	$(MV) cyg-apt.1.gz $(BUILDDIR)/root/usr/share/man/man1/cyg-apt/
+	$(MV) cyg-apt.1.gz $(BUILDDIR)/root/usr/share/man/man1/
 	$(CP) postinstall-cyg-apt.sh $(BUILDDIR)/root/etc/postinstall/cyg-apt.sh
 	$(CP) cygwin.sig $(BUILDDIR)/root/usr/share/cyg-apt
 	cd $(BUILDDIR)/root ; pwd ; tar --exclude=".svn" -jcf $(TARFILE) *;\
@@ -34,6 +34,11 @@ ifdef CYGAPT_TESTMIRROR
 endif
 	$(TOOLS)/hasfiles.py $(BUILDDIR)/root svn
 
+install:
+	$(CP) $(BUILDDIR)/release-2/cyg-apt/$(TARFILE) /
+	cd /; tar -xf /$(TARFILE)
+	/etc/postinstall/cyg-apt.sh
+	$(MV) /etc/postinstall/cyg-apt.sh /etc/postinstall/cyg-apt.sh.done
 
 testpackages:
 	cd mini_mirror/testpkg/src/; make

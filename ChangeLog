@@ -768,5 +768,26 @@ Made TestCygApt.testdownload slightly more robust: looks for md5 matches using t
 
 Revision 139
 ------------
+Added filelist and md5 to commands not needing update.
+Made the automatic ini update noisy again: the silent version looks too much like a hang.
 
+Clean up the download progress bar when done.
+
+Add a "-- Installed packages ---" header line when listing installed packages.
+
+Fix up tests to cope with noisy automatic ini update command.
+
+Added install target to makefile for standardisation: not a proper install (not in installe.db), but there for compatibility with testers
+configure; make; make install sequence.
+
+Exit without error in setup if ~/.cyg-apt exists.
+
+Move configure.sh to configure.
+
+Move manpage to correct directory.
+
+1.0.7-1 release.
+
+Revision 140
+------------
 

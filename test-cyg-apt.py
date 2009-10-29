@@ -294,6 +294,11 @@ class TestCygApt(unittest.TestCase):
         listout = self.launchtest("./cyg-apt list", self.v)[0]
         listout = listout.split("\n")
         listout = [x.strip() for x in listout if x.strip()   != ""]
+        for l,index in zip(listout, range(len(listout))):
+            if "--- Installed packages ---" in l:
+                break
+        self.assert_(index < len(listout) - 1)
+        listout = listout[index + 1:]
         found_names = []
         found_vers = []
         for l in listout:
@@ -531,6 +536,10 @@ class TestCygApt(unittest.TestCase):
         self.launchtest("./cyg-apt install " + self.package_name, self.v)
         urlout = utilpack.popen_ext\
             ("./cyg-apt url " + self.package_name, self.v)[0].strip()
+        urlout = urlout.split("\n")
+        urlout = urlout[-1]
+        urlout = urlout.split("\r")
+        urlout = urlout[-1]
         expect = self.opts["mirror"] + "/" + self.tarpath + self.tarname
         self.assert_(urlout == expect)
         

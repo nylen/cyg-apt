@@ -59,7 +59,7 @@ class CygAptSetup:
         else:
             self.tmpdir = "/usr/share/cyg-apt"
         self.gpg_good_sig_msg = "1169 DF9F 2273 4F74 3AA5  9232 A9A2 62FF 6760 41BA"    
-       
+        #self.gpg_good_sig_msg = "Good signature"    
        
     def get_setup_rc(self, location):
         if not (os.path.exists(location + "/" + "setup.rc")):
@@ -90,7 +90,7 @@ class CygAptSetup:
         if os.path.exists(self.cyg_apt_rc):
             sys.stderr.write("%s: %s exists, not overwriting. "\
                 "\n" % (self.sn, self.cyg_apt_rc))
-            sys.exit(1)
+            sys.exit(0)
 
         self.pm = PathMapper("", self.cygwin_p)
         self.ROOT = self.pm.mountroot
@@ -213,7 +213,7 @@ class CygAptSetup:
             setup_ini_url = '%s%s%s' % (mirror, sep, setup_ini_name)
             err = None
             try:
-                uri_get(self.tmpdir, setup_ini_url, verbose=False)
+                uri_get(self.tmpdir, setup_ini_url, verbose=True)
             except CygAptError, (err):
                 # Failed to find a possible .ini
                 if index == len(setup_ini_names) - 1:
@@ -241,7 +241,7 @@ class CygAptSetup:
         if verify:
             sig_name = setup_ini_name + ".sig"
             sig_url = "%s%s%s" % (mirror, sep, sig_name)
-            err = uri_get(self.tmpdir, sig_url, verbose=False)
+            err = uri_get(self.tmpdir, sig_url, verbose=True)
             if err:
                 print >> sys.stderr,\
                     "%s: failed to download signature %s Use -X to ignore "\
@@ -339,7 +339,7 @@ def uri_get(dir, uri, verbose=True):
         except IOError:
             opener.errcode = 1
         if verbose:
-            print "",
+            print "                                               \r",
         if (opener.errcode == 200):
             rename(url_base + ".tmp", url_base)
             ret = 0
@@ -772,6 +772,7 @@ class CygApt:
     
     def list(self):
         '''installed packages'''
+        print "--- Installed packages ---"
         for self.packagename in self.psort(self.installed[0].keys()):
             ins = self.get_installed_version()
             new = 0
@@ -1450,7 +1451,8 @@ def main():
     
     main_cygwin_p = (sys.platform == "cygwin")
     cas = CygAptSetup(main_cygwin_p)
-    update_not_needed = ["ball", "find", "help", "purge", "remove", "version", "update", "setup"]
+    update_not_needed = ["ball", "find", "help", "purge", "remove", "version",\
+        "filelist", "update", "setup", "md5"]
 
     main_scriptname = os.path.basename(sys.argv[0])
     if (main_scriptname[-3:] == ".py"):

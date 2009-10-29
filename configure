@@ -1,0 +1,9 @@
+#!/usr/bin/sh
+
+echo "If setting up the test harness, uncomment this line, replacing the given server with a URL to a server you have scp access to. Alternatively you might want to move this line to your .bashrc"
+echo "#export CYGAPT_TESTMIRROR=chrisc@wanda:~/public_html"
+#export CYGAPT_TESTMIRROR=chrisc@wanda:~/public_html
+
+echo "Install Python module used by test-cyg-apt.py"
+cd tools/utilpack/
+python setup.py install
