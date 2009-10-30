@@ -340,16 +340,6 @@ class TestCygApt(unittest.TestCase):
         requiresout = utilpack.popen_ext\
             ("./cyg-apt requires " + self.package_name, self.v)[0].split()
         self.assert_(self.package_name_2 in requiresout)
-        
-        
-    def testbuildrequires(self):
-        # not a great test, but this isn't a great command IMO:
-        # there's little facility for separate source dependency tracking in
-        # Cygwin, or so it appears.
-        self.launchtest("./cyg-apt install " + self.package_name, self.v)[0]
-        requiresout = self.launchtest\
-            ("./cyg-apt buildrequires " + self.package_name, self.v)[0].split()
-        self.assert_(self.package_name_2 in requiresout)
 
 
     def testmissing(self):

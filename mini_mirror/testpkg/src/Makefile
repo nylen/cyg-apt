@@ -38,8 +38,9 @@ endif # CYGAPT_TESTMIRROR
 
 	/usr/bin/rm -f ../../setup-2.ini.sig 
 	gpg -u "cyg-apt"  --output ../../setup-2.ini.sig --detach-sig ../../setup-2.ini
+	bzip2 -k -c ../../setup-2.ini > ../../setup-2.bz2
 ifdef CYGAPT_TESTMIRROR
-	scp ../../setup-2.ini ../../setup-2.ini.sig $(CYGAPT_TESTMIRROR)
+	scp ../../setup-2.ini ../../setup-2.ini.sig ../../setup-2.bz2 $(CYGAPT_TESTMIRROR)
 endif # CYGAPT_TESTMIRROR
 	$(RM) testpkg-0.0.1-0-src.tar.bz2.diff
 	$(RM) setup-2.ini.diff

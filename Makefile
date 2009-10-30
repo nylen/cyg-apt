@@ -1,6 +1,7 @@
 BUILDDIR =  build
-TARFILE = cyg-apt-1.0.7-1.tar.bz2
-SRCTARFILE = cyg-apt-1.0.7-1-src.tar.bz2
+VERSION = 1.0.7-1
+TARFILE = cyg-apt-$(VERSION).tar.bz2
+SRCTARFILE = cyg-apt-$(VERSION)-src.tar.bz2
 TOOLS = tools
 CP = /usr/bin/cp -f
 RM = /usr/bin/rm -f
@@ -30,7 +31,8 @@ endif
 	$(RM) mini_mirror/setup-2.ini.sig 
 	gpg -u "cyg-apt"  --output mini_mirror/setup-2.ini.sig --detach-sig mini_mirror/setup-2.ini
 ifdef CYGAPT_TESTMIRROR
-	scp mini_mirror/setup-2.ini mini_mirror/setup-2.ini.sig $(CYGAPT_TESTMIRROR)
+	bzip2 -k -c mini_mirror/setup-2.ini > mini_mirror/setup-2.bz2
+	scp mini_mirror/setup-2.ini mini_mirror/setup-2.ini.sig mini_mirror/setup-2.bz2 $(CYGAPT_TESTMIRROR)
 endif
 	$(TOOLS)/hasfiles.py $(BUILDDIR)/root svn
 
@@ -49,7 +51,9 @@ distclean: clean
 	cd mini_mirror/testpkg-lib/src/; make clean
 
 source:
-	tar -jcf $(BUILDDIR)/release-2/cyg-apt/$(SRCTARFILE) . --exclude=".svn" --exclude="local_cache" --exclude="$(SRCTARFILE)"
+	mkdir -p build/cyg-apt-$(VERSION)
+	tools/copy.py * -e build -d build/cyg-apt-$(VERSION)
+	cd $(BUILDDIR); tar -jcf release-2/cyg-apt/$(SRCTARFILE) cyg-apt-$(VERSION) --exclude=".svn" --exclude="local_cache" --exclude="$(SRCTARFILE)"
 
 clean:
 	$(RM) $(BUILDDIR)/root/*.bz2

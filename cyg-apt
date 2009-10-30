@@ -77,7 +77,7 @@ class CygAptSetup:
     
     
     def setup(self, flags=None):
-        '''cygwin environment'''
+        '''create cyg-apt configuration file'''
         if not self.cygwin_p:
             print "%s: setup outside Cygwin not supported. Exiting." % self.sn
             sys.exit(1)
@@ -127,6 +127,7 @@ class CygAptSetup:
             self.setup_ini = self.config + "/setup-2.ini"
         else:
             self.setup_ini = self.config + "/setup.ini"
+        self.cygwin_version = float(cygwin_version)
         distname = "curr"
         h = open(self.cyg_apt_rc, "w")
         for i in self.rc_options:
@@ -173,14 +174,14 @@ class CygAptSetup:
         -x, --no-deps           ignore dependencies
         -s, --regexp            search as regex pattern
         -f, --nobarred          add/remove packages cyg-apt depends on
-        -X, --no-verify         don't verify setup.ini signatures
-        -y, --nopostinstall     don't run postinstall scripts
-        -z, --nopostremove      don't run preremove/postremove scripts
+        -X, --no-verify         do not verify setup.ini signatures
+        -y, --nopostinstall     do not run postinstall scripts
+        -z, --nopostremove      do not run preremove/postremove scripts
     ''')        
 
 
     def update(self, cyg_apt_rc, verify, main_mirror=None):
-        '''setup.ini'''
+        '''fetch current package database from mirror'''
         rc = {}
         sig_name = None
         for i in open(cyg_apt_rc).readlines():
@@ -226,13 +227,16 @@ class CygAptSetup:
             # Take the first one we find
             break       
 
-
         if setup_ini_name[-4:] == ".bz2":
-            compressed = file(self.tmpdir + "/" + setup_ini_name).read()
+            compressed = file(self.tmpdir + "/" + setup_ini_name, "rb").read()
             decomp = bz2.decompress(compressed)
             os.remove(self.tmpdir + "/" + setup_ini_name)
             setup_ini_name =  os.path.basename(setup_ini)
-            file(self.tmpdir + "/" + setup_ini_name,"w").write(decomp)
+            if self.cygwin_p:
+                mode = "w"
+            else:
+                mode = "wb"
+            file(self.tmpdir + "/" + setup_ini_name, mode).write(decomp)
         
         if not self.cygwin_p:
             sys.stderr.write("WARNING can't verify setup.ini outside Cygwin.\n")
@@ -248,7 +252,14 @@ class CygAptSetup:
                     "signatures. Exiting" %\
                     (self.sn, sig_url)
                 sys.exit(1)
-            cmd = pm.map_path("/usr/local/bin/gpg ") + "--verify --no-secmem-warning "
+            if self.cygwin_p:
+                gpg_path = "gpg "
+            else:
+                if self.cygwin_version < 1.7:
+                    gpg_path = "/usr/bin/gpg "
+                else:
+                    gpg_path = "/usr/local/bin/gpg "
+            cmd = gpg_path + "--verify --no-secmem-warning "
             cmd += self.tmpdir + "/" + sig_name + " "
             cmd += self.tmpdir + "/" + setup_ini_name
             verify = os.popen3(cmd)[2].read()
@@ -338,8 +349,6 @@ def uri_get(dir, uri, verbose=True):
                 (uri, url_base + ".tmp", reporthook = opener.dlProgress)
         except IOError:
             opener.errcode = 1
-        if verbose:
-            print "                                               \r",
         if (opener.errcode == 200):
             rename(url_base + ".tmp", url_base)
             ret = 0
@@ -412,16 +421,20 @@ class CygAptURLopener(urllib.FancyURLopener):
         barmax = self.barmax
         ratio = min((count * blockSize), totalSize) / float(totalSize)
         bar = int(barmax * ratio)
-        print "[",
-        for i in range(barmax):
-            if i < bar:
-                sys.stdout.write("=")
-            elif i == bar:
-                sys.stdout.write(">")
-            else:
-                sys.stdout.write(" ")
-        sys.stdout.write("]\r")
-        sys.stdout.flush()
+        if ratio == 1.0:
+            sys.stdout.write(" "*70 + "\r")
+            sys.stdout.flush()
+        else:
+            print "[",
+            for i in range(barmax):
+                if i < bar:
+                    sys.stdout.write("=")
+                elif i == bar:
+                    sys.stdout.write(">")
+                else:
+                    sys.stdout.write(" ")
+            sys.stdout.write("]\r")
+            sys.stdout.flush()
 
 
 class CygAptError(Exception):
@@ -573,7 +586,7 @@ class CygApt:
         
     
     def help(self, ):
-        '''help COMMAND'''
+        '''this help message'''
         if len(self.files) < 2:
             self.usage()
             sys.exit()
@@ -633,7 +646,7 @@ class CygApt:
                     sys.stderr.write("warning: using [%s]\n" % d)
                     break
             if not install:
-                raise SetupIniError(self.packagename + " is not in " + self.setup_ini)
+                raise SetupIniError(str(self.packagename) + " is not in " + self.setup_ini)
         else:
             install = self.dists[self.distname][self.packagename][self.INSTALL]
         file, size, md5 = string.split(install)
@@ -642,6 +655,8 @@ class CygApt:
     
     def url(self):
         '''print tarball url'''
+        if not self.packagename:
+            raise CygAptError("url command requires a package name")
         print self.mirror + "/" + self.get_url()[0]
     
     
@@ -652,12 +667,7 @@ class CygApt:
     
     def ball(self):
         '''print tarball name'''
-        try:
-            print self.get_ball()
-        except SetupIniError, (err):
-            sys.stderr.write(self.sn + ": " + err.msg +\
-                ", exiting.\n")
-            sys.exit(1)
+        print self.get_ball()
     
         
     def do_download(self):
@@ -677,23 +687,23 @@ class CygApt:
                     
 
     def download(self):
-        '''download package'''
+        '''download package (only, do not install)'''
         self.do_download()
         self.ball()
         self.md5()
     
             
-    def no_package(self, s='error'):
+    def no_package(self):
         sys.stderr.write \
-        ("%s: %s not in [%s]\n" % (s, self.packagename, self.distname))
+        ("%s:  %s is not on mirror %s in [%s]\n" % (self.sn, self.packagename,\
+            self.mirror, self.distname))
     
     
     def get_requires(self):
         # Looking for dependencies on curr not prev or test
         dist = self.dists["curr"]
         if not self.dists[self.distname].has_key(self.packagename):
-            self.no_package('error')
-            #return []
+            self.no_package()
             sys.exit(1)
         if self.nodeps_p:
             return [self.packagename]
@@ -724,12 +734,6 @@ class CygApt:
     
     def requires(self):
         '''print requires: for package'''
-        print string.join(self.get_requires(), '\n')
-    
-    
-    def buildrequires(self):
-        '''print buildrequires: for package'''
-        self.INSTALL = 'source'
         print string.join(self.get_requires(), '\n')
     
     
@@ -771,7 +775,7 @@ class CygApt:
     
     
     def list(self):
-        '''installed packages'''
+        '''list installed packages'''
         print "--- Installed packages ---"
         for self.packagename in self.psort(self.installed[0].keys()):
             ins = self.get_installed_version()
@@ -786,7 +790,7 @@ class CygApt:
     
     
     def filelist(self):
-        '''installed files'''
+        '''list files installed by given packages'''
         if not self.packagename:
             print >> sys.stderr,\
                 "%s: no package name given. Exiting.\n" % self.sn
@@ -832,9 +836,7 @@ class CygApt:
         '''print installed version'''
         if self.packagename:
             if not self.installed[0].has_key(self.packagename):
-                self.distname = 'installed'
-                self.no_package()
-                sys.exit(1)
+                raise CygAptError(self.packagename + " is not installed")
             print self.version_to_string(self.get_installed_version())
         else:
             for self.packagename in self.psort(self.installed[0].keys()):
@@ -878,10 +880,10 @@ class CygApt:
     
         
     def md5(self):
-        '''check md5 sum'''
+        '''check md5 sum of cached package against database'''
         if not os.path.exists(self.get_ball()):
             sys.stderr.write("%s: %s not installed. Exiting.\n"\
-                % (os.path.basename(sys.argv[0]), packagename))
+                % (os.path.basename(sys.argv[0]), self.packagename))
             return 1
         url, md5 = self.get_url()
         ball = os.path.basename(url)
@@ -892,7 +894,9 @@ class CygApt:
     
         
     def search(self):
-        '''search package list'''
+        '''search all package descriptions for string'''
+        if not self.packagename:
+            raise CygAptError("search command requires a string to search for")
         if not self.regex_search:
             regexp = re.escape(self.packagename)
         else:
@@ -925,7 +929,7 @@ class CygApt:
     
     
     def show(self):
-        '''print information for package'''
+        '''print package description'''
         s = self.packagename
         d = self.get_field('sdesc') 
         if d:
@@ -958,7 +962,7 @@ class CygApt:
     
     
     def missing(self):
-        '''print missing dependencies'''
+        '''print missing dependencies for package'''
         missing = self.get_missing()
         if len(missing) > 0:
             print string.join(missing, '\n')
@@ -1075,6 +1079,12 @@ class CygApt:
     
     def get_filelist(self):
         filelist_file = "%s/%s.lst.gz" % (self.config, self.packagename)
+        if not os.path.exists(filelist_file):
+            if self.packagename not in self.installed[0]:
+                raise CygAptError(self.packagename + " is not installed")
+            else:
+                raise CygAptError(self.packagename + " is installed, but " +\
+                    filelist_file + " is missing")
         lst = gzip.GzipFile(filelist_file).readlines()
         lst = [x.strip() for x in lst]
         return lst
@@ -1206,7 +1216,7 @@ class CygApt:
     
     
     def purge(self):
-        '''purge package'''
+        '''uninstall packages and delete from cache'''
         barred = []
 
         for self.packagename in self.files[1:]:
@@ -1297,7 +1307,7 @@ class CygApt:
 
  
     def upgrade(self):
-        '''all installed packages: use with CAUTION'''
+        '''all installed packages'''
         self.files[1:] = self.get_new()
         self.install()
     
@@ -1329,7 +1339,7 @@ class CygApt:
                   
               
     def source(self):
-        '''download/unpack source tarball'''
+        '''download source package'''
         self.INSTALL = 'source'
         for self.packagename in self.files[1:]:
             self.download()
@@ -1338,7 +1348,7 @@ class CygApt:
     
     
     def find(self):
-        '''package containing file'''
+        '''find package containing file'''
         if self.regex_search:
             file_to_find = self.packagename
         else:
@@ -1441,7 +1451,7 @@ def main():
     main_files = None
     main_dists = 0
     main_installed = 0
-    main_packagename = 0
+    main_packagename = None
     main_command = 'help'
     main_cyg_apt_rc = None
     main_scriptname = None
@@ -1557,7 +1567,11 @@ def main():
             sys.exit(1)
             
         # Launch!
-        getattr(cyg_apt, main_command)()
+        try:
+            getattr(cyg_apt, main_command)()
+        except CygAptError, (err):
+            sys.stderr.write(main_scriptname + ": " + err.msg +\
+                ", exiting.\n")
     else:
         cas.usage(main_cyg_apt_rc)
 

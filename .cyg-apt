@@ -4,4 +4,4 @@ cache="/e/home/develop/code/cyg-apt/local_cache"
 setup_ini="/etc/setup/setup-2.ini"
 distname="curr"
 barred="python cygwin base-cygwin coreutils bash zlib libreadline"
-always_update=True
+always_update=False

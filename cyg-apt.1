@@ -7,7 +7,7 @@ cyg-apt \- A Cygwin Package Manager
 .SH SYNOPSIS
 .B cyg-apt [OPTION] [COMMAND] [PACKAGE]
 
-cyg-apt [-dhmtxsfyz] {[install | remove | purge | source | ball | download | requires | missing | show | url | requires | show | filelist | search | md5 | version ] pkg } | setup | upgrade | list | new | help | {find file}
+cyg-apt [-dhmtxsfyz] {[install | remove | purge | source | ball | download | requires | missing  | url | requires | show | filelist | search | md5 | version ] pkg } | setup | update | upgrade | list | new | help | {find file}
 
 .SH DESCRIPTION
 \fBcyg\-apt\fR is a Cygwin package manager.
@@ -41,7 +41,7 @@ is followed by one or more packages to install or upgrade. If the package is not
 remove
 .RS 4
 remove
-is followed by one or more packages to remove. The given packages are uninstalled from the system, but remain in the package cache. If you reinstall a removed package it will be taken from the cache unless a newer version exists on the server. Packages that the given package depend on are not removed. To completely remove a package use the purge command.
+is followed by one or more packages to remove. The given packages are uninstalled from the system, but remain in the package cache. If you reinstall a removed package it will be taken from the cache unless a newer version exists on the server. To completely remove a package use the purge command. Packages that the given package depend on are not removed.
 .RE
 .PP
 purge
@@ -53,7 +53,7 @@ is followed by one or more packages to uninstall and completely clear from the s
 upgrade
 .RS 4
 upgrade
-all the installed packages \fBcyg\-apt\fR can handle. Use with caution. There are small number of packages \fBcyg\-apt\fR cannot install, see LIMITATIONS.
+all the installed packages. Use with caution. There are small number of packages \fBcyg\-apt\fR will not upgrade, see LIMITATIONS.
 .RE
 .PP
 list
@@ -83,19 +83,19 @@ is followed by a file to locate the package for: the package the file belongs to
 search
 .RS 4
 search
-is followed by a package name to find. A partial name can be given: "term" will match "terminfo" and "termcap". With the --regexp flag a regular expression search will be conducted.
+is followed by string to find in the package descriptions. All packages are searched, including packages that are available but not installed. Use the --regexp flag for a regular expression search.
 .RE
 .PP
 source
 .RS 4
 source
-downloads the source release of a package, if available. The source is downloaded to the current directory in a directory named by concatenating the package name and its version. The Cygwin patching process is not currently automated by \fBcyg\-apt\fR.
+downloads the source release of a package, if available. The source is downloaded to the current directory in a directory named by concatenating the package name and its version.
 .RE
 .PP
 requires
 .RS 4
 requires
-lists the required packages for a given package.
+lists the packages a given package requires.
 .RE
 .PP
 download
@@ -107,7 +107,7 @@ a given package to the package cache but do not install it.
 show
 .RS 4
 show
-the information for a package, as found in the setup.ini database.
+the package description, as found in the setup.ini database.
 .RE
 .PP
 ball
@@ -125,7 +125,7 @@ shows the URL for a given package's tarball.
 version
 .RS 4
 version
-shows the installed version of a given package.
+shows the installed version of a given package. If no packages is given, the versions of all packages are displayed.
 .RE
 .PP
 md5
@@ -197,7 +197,7 @@ do not run preremove or postremove scripts when removing.\&.
 .PP
 
 .SH CONFIGURATION: .cyg-apt
-cyg-apt is designed to be configured by this file alone. The syntax of the file is straightforward and there are additional comments to help you edit the file. The file lives in your home directory. If you have need of additional configurations, you can copy the file and place it in the current directory: .cyg-apt in the current working directory is taken as the configuration over ~/.cyg-apt.
+cyg-apt is designed to be configured by this file alone. The syntax of the file is straightforward and there are additional comments to help you edit the file. The file lives in your home directory. For additional configurations, copy the file and place it in the current directory, then edit it: ./.cyg-apt is used over ~/.cyg-apt.
 
 The key fields of .cyg-apt are:
 ROOT
@@ -206,6 +206,9 @@ mirror
 URL of your Cygwin mirror:
 cache
 The path to your package cache.
+
+.SH SPEED
+cyg-apt runs much faster if it does not download setup.ini each time. You can turn this off by setting always_update=False in ~/.cyg-apt The downside is that you will need to run cyg-apt update yourself to stay in sync with the latest packages your mirror is offering.
 
 .SH LIMITATIONS
 .PP

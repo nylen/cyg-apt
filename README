@@ -2,16 +2,23 @@ This is the source for building and testing the cyg-apt package manager.
 Note that the most recent cyg-apt source is available by anonymous subverison check out:
 http://code.google.com/p/cyg-apt/source/checkout
 
-Being a standalone script, cyg-apt doesn't require building as such: the build creates the cyg-apt Cygwin package:
+Build requirements: cygwin, coreutils, python, tar, gnupg.
+Being a standalone script, cyg-apt doesn't require compilation: "make" creates the cyg-apt Cygwin package, making a tarball from the script, manpage and postinstall script.
 
+BUILDING:
+$ make
 
-The bulk of the source in this release is for the test harness.
+The bulk of the source in this release supports testing cyg-apt.
 
-configure.sh
+INSTALLATION:
+$ make install
+
+configure
 =============
+Configures the environment for building the test packages.
 Edit configure.sh to provide the URL of a scp accessable web server.
 $ configure.sh
-Configures the environment for building the test packages.
+
 
 Makefile
 ========
@@ -50,12 +57,3 @@ Python utilites used by the test harness build process and test-cyg-apt.py
 release
 =======
 Support files for old-style releases (not as Cygwin package.)
-
-
--------------------------------------------------------------------------------
-COMPATABILITY NOTE:
-As it stands this source is aimed at Cygwin 1.7 compatibility though the
-differences to 1.5 are not great; under 1.7:
-setup.ini is setup-2.ini
-If .apt-get not available and no cmd line overide: default mirror is pulled from /etc/setup.rc if available.
-If .apg-get not available and no cmd line overide: default cache is pulled from /etc/setup.rc if available.

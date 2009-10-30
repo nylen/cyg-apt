@@ -786,8 +786,30 @@ Move configure.sh to configure.
 
 Move manpage to correct directory.
 
-1.0.7-1 release.
-
 Revision 140
 ------------
 
+Generate setup-2.bz in the mini_mirror and the main build (when the main build is exporting cyg-apt to the test server.)
+
+Work on the manpage.
+
+Improve the error handling of several commands when given no package or a non-existant package.
+
+Improve the README for new developers.
+
+Fixed a bug in handling compressed setup.ini (setup.bz2) -- was being opened in text mode, causing truncations in Windows Python.
+
+Fixed Windows mode bug: decompressed setip.ini from setup.bz2 was being written out with Windows line endings. Workaround is ugly but effective: write out in binary mode.
+
+Fixed Cygwin 1.5 bug under cmd shell: gpg has changed path: weakness of needing to use stuff in Cygwin from the DOS shell. I'm no longer sure cmd shell support is worth it.
+
+Rework the clearing of the progress bar after a download completes.
+
+Fix a bug in main() where packagename was set to 0, not None, preventing correct detection of no package given.
+
+Catch and display exceptions at the top level. Much cleaner.
+
+Ditch unused buildrequires() test.
+
+Revision 141
+------------
