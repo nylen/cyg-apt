@@ -889,7 +889,8 @@ class CygApt:
         print '%s  %s' % (md5, ball)
         actual_md5 = self.get_md5()
         print '%s  %s' % (actual_md5, ball)
-        assert(actual_md5 == md5)
+        if actual_md5 != md5:
+            raise CygAptError("md5sum of cached package doesn't match md5 in setup.ini from mirror")
     
         
     def search(self):
