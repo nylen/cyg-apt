@@ -126,10 +126,7 @@ class CygAptSetup:
         self.cache = last_cache
 
         cygwin_version = os.uname()[2][:3]
-        if cygwin_version == "1.7":
-            self.setup_ini = self.config + "/setup-2.ini"
-        else:
-            self.setup_ini = self.config + "/setup.ini"
+        self.setup_ini = self.config + "/setup.ini"
         self.cygwin_version = float(cygwin_version)
         distname = "curr"
         h = open(self.cyg_apt_rc, "w")
