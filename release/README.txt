@@ -8,7 +8,7 @@ REQUIREMENTS
 
 * A base Cygwin installation.
 * Cygwin gnupg package, under Utilities
-* Cygwin Python, under Python. Currently this package is at Python 2.5.
+* Cygwin Python, under Python. Currently this package is at Python 2.6.
   Python 3.0 is not currently  supported.
 
 INSTALL
