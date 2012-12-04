@@ -149,7 +149,7 @@ class CygAptSetup:
             self.write_installed()
         if not os.path.isfile(self.setup_ini):
             sys.stderr.write('getting %s\n' % self.setup_ini)
-            self.update(self.cyg_apt_rc) 
+            self.update(self.cyg_apt_rc, True)
         
         
     def usage(self, cyg_apt_rc=None):
