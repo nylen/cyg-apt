@@ -155,29 +155,27 @@ class CygAptSetup:
     def usage(self, cyg_apt_rc=None):
         print("%s [OPTION]... COMMAND [PACKAGE]..." % self.sn)
         if (cyg_apt_rc):
-            print("Configuration: %s\n\n" % cyg_apt_rc)
-        print("    Commands:")
-        for m in inspect.getmembers(CygAptSetup):
-            if type(m[1]) == type(self.usage):
-                if m[1].__doc__:
-                    print "    " + m[0] + " - " + m[1].__doc__        
-        for m in inspect.getmembers(CygApt):
-            if type(m[1]) == type(self.usage):
-                if m[1].__doc__:
-                    print "    " + m[0] + " - " + m[1].__doc__
+            print("Configuration: %s" % cyg_apt_rc)
+        print("\n  Commands:")
+        members = [m
+                for m in inspect.getmembers(CygAptSetup) + inspect.getmembers(CygApt)
+                if type(m[1]) == type(self.usage) and m[1].__doc__]
+        pad = max(len(m[0]) for m in members)
+        for m in members:
+            print "    " + m[0].ljust(pad) + " : " + m[1].__doc__
         sys.stdout.write(r'''
-    Options:
-        -d, --download          download only
-        -h, --help              show brief usage
-        -m, --mirror=URL        use mirror
-        -t, --dist=NAME         set dist name (curr, test, prev)
-        -x, --no-deps           ignore dependencies
-        -s, --regexp            search as regex pattern
-        -f, --nobarred          add/remove packages cyg-apt depends on
-        -X, --no-verify         do not verify setup.ini signatures
-        -y, --nopostinstall     do not run postinstall scripts
-        -z, --nopostremove      do not run preremove/postremove scripts
-    ''')        
+  Options:
+    -d, --download       download only
+    -h, --help           show brief usage
+    -m, --mirror=URL     use mirror
+    -t, --dist=NAME      set dist name (curr, test, prev)
+    -x, --no-deps        ignore dependencies
+    -s, --regexp         search as regex pattern
+    -f, --nobarred       add/remove packages cyg-apt depends on
+    -X, --no-verify      do not verify setup.ini signatures
+    -y, --nopostinstall  do not run postinstall scripts
+    -z, --nopostremove   do not run preremove/postremove scripts
+''')
 
 
     def update(self, cyg_apt_rc, verify, main_mirror=None):
