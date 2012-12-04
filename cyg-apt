@@ -57,7 +57,7 @@ class CygAptSetup:
             }
         self.sn = os.path.basename(sys.argv[0])
         self.rc_regex = re.compile("^\s*(\w+)\s*=\s*(.*)\s*$")
-        if os.environ['TMP']: 
+        if 'TMP' in os.environ:
             self.tmpdir = os.environ['TMP']
         else:
             self.tmpdir = "/usr/share/cyg-apt"
