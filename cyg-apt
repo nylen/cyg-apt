@@ -264,7 +264,7 @@ class CygAptSetup:
                     stderr=subprocess.PIPE).stderr.read()
             if not self.gpg_good_sig_msg in verify:
                 sys.stderr.write("%s: %s not signed by Cygwin's public key. "\
-                    "Use -X to ignore sigatures. Exiting.\n" % \
+                    "Use -X to ignore signatures. Exiting.\n" % \
                     (self.sn, setup_ini_url))
                 sys.exit(1)
                 
@@ -694,7 +694,7 @@ class CygApt:
             
     def no_package(self):
         sys.stderr.write \
-        ("%s:  %s is not on mirror %s in [%s]\n" % (self.sn, self.packagename,\
+        ("%s: %s is not on mirror %s in [%s]\n" % (self.sn, self.packagename,\
             self.mirror, self.distname))
     
     
