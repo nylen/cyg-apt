@@ -704,7 +704,7 @@ class CygApt:
         ("%s: %s is not on mirror %s in [%s]\n" % (self.sn, self.packagename,\
             self.mirror, self.distname))
     
-    
+    # return an array contents all dependencies of self.packagename
     def get_requires(self):
         # Looking for dependencies on curr not prev or test
         dist = self.dists["curr"]
@@ -712,7 +712,7 @@ class CygApt:
             self.no_package()
             sys.exit(1)
         if self.nodeps_p:
-            return [self.packagename]
+            return []
         reqs = {self.packagename:0}
         if self.INSTALL == 'source' \
             and dist[self.packagename].has_key('external-source'):
@@ -733,6 +733,8 @@ class CygApt:
                     continue
                 update_list = [(x,0) for x in string.split(p['requires'])]
                 reqs.update(update_list)
+        # Delete the ask package it is not require by it self (joke)
+        reqs.pop(self.packagename)
         rlist = reqs.keys()
         rlist.sort()
         return rlist
@@ -740,7 +742,11 @@ class CygApt:
     
     def requires(self):
         '''print requires: for package'''
-        print string.join(self.get_requires(), '\n')
+        reqs = self.get_requires()
+        if len(reqs) == 0:
+            print 'No dependencies for package %s' % self.packagename
+        else:
+            print string.join(reqs, '\n')
     
     
     def get_installed(self):
@@ -805,7 +811,7 @@ class CygApt:
     
     
     def postinstall(self):
-        self.run_all(self.postinstall_dir)        
+        self.run_all(self.postinstall_dir)
     
     
     def postremove(self):
@@ -948,24 +954,26 @@ class CygApt:
         else:
             print "%s: not found in setup.ini: %s" % (self.sn, s)
     
-    
+    # return an array with all packages that must to be install
     def get_missing(self):
         reqs = self.get_requires()
-        lst = []
+        missingreqs = [] # List of missing package on requires list
         for i in reqs:
             if not self.installed[0].has_key(i):
-                lst.append(i)
-        if lst and self.packagename not in lst:
-            sys.stderr.write('warning: missing packages: %s\n' % string.join(lst))
-        elif self.installed[0].has_key(self.packagename):
+                missingreqs.append(i)
+        if not self.installed[0].has_key(self.packagename):
+            missingreqs.append(self.packagename)
+        if missingreqs and self.packagename not in missingreqs:
+            sys.stderr.write('warning: missing packages: %s\n' % string.join(missingreqs))
+        elif self.installed[0].has_key(self.packagename): # Check version
             ins = self.get_installed_version()
             new = self.get_version()
             if ins >= new:
                 sys.stderr.write('%s is already the newest version\n' % self.packagename)
-                #lst.remove(packagename)
-            elif self.packagename not in lst:
-                lst.append(self.packagename)
-        return lst
+                #missingreqs.remove(self.packagename)
+            elif self.packagename not in missingreqs:
+                missingreqs.append(self.packagename)
+        return missingreqs
     
     
     def missing(self):
@@ -1279,6 +1287,7 @@ class CygApt:
         barred = []
         for self.packagename in self.files[1:]:
             missing.update(dict(map(lambda x: (x, 0), self.get_missing())))
+            
         if len(missing) > 1:
             sys.stderr.write('to install: \n')
             sys.stderr.write('    %s' % string.join(missing.keys()))
@@ -1286,7 +1295,7 @@ class CygApt:
     
         for self.packagename in missing.keys():
             if not self.get_url():
-                del missing[self.packagename]     
+                del missing[self.packagename]
     
         for self.packagename in missing.keys():
             if self.is_barred_package(self.packagename):
@@ -1309,7 +1318,8 @@ class CygApt:
             if self.nopostinstall:
                 print >> sys.stdout, suppression_msg
             else:
-                self.run_all(self.postinstall_dir)
+                self.postinstall
+        
         self.barred_warn_if_need(barred, "installing")
 
  
