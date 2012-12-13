@@ -1,7 +1,0 @@
-@ testpkg-lib
-sdesc: "supports test package"
-ldesc: "supports requirements testing with the test package"
-category: Utils
-requires: cygwin
-version: 0.0.1-1
-install: release-2/testpkg/testpkg-lib-0.0.1-1.tar.bz2 3140 fbbe05f50b9273be640c312857f70619

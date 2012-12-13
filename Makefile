@@ -1,78 +1,71 @@
-BUILDDIR =  build
-VERSION = 1.0.7-1
+EXEC = cyg-apt
+VERSION = v1.0.9
 VERSION_FILE = VERSION-FILE
+SRC = cyg-apt
+GPG_CYGWIN_PUBKEY = cygwin.sig
+
+# The default target of this Makefile is...
+all: $(EXEC)
 
 version-file:
 	@$(SHELL_PATH) ./VERSION-GEN
 -include $(VERSION_FILE)
 
-TARFILE = cyg-apt-$(VERSION).tar.bz2
-SRCTARFILE = cyg-apt-$(VERSION)-src.tar.bz2
-TOOLS = tools
+
+PREFIX = /usr
+BUILDDIR = build
+
 CP = /usr/bin/cp -f
-RM = /usr/bin/rm -f
+RM = /usr/bin/rm -f --preserve-root
 MV = /usr/bin/mv
+MKDIR = /usr/bin/mkdir -p
 GZIP = /usr/bin/gzip
-TMP = tmp
-
-all:
-	$(CP) cyg-apt $(BUILDDIR)/root/usr/bin
-	$(GZIP) -c cyg-apt.1 > cyg-apt.1.gz
-	$(MV) cyg-apt.1.gz $(BUILDDIR)/root/usr/share/man/man1/
-	$(CP) postinstall-cyg-apt.sh $(BUILDDIR)/root/etc/postinstall/cyg-apt.sh
-	$(CP) cygwin.sig $(BUILDDIR)/root/usr/share/cyg-apt
-	cd $(BUILDDIR)/root ; pwd ; tar --exclude=".svn" -jcf $(TARFILE) *;\
-mv $(TARFILE) ../release-2/cyg-apt;
-	$(CP) setup.hint $(BUILDDIR)/release-2/cyg-apt
-	$(TOOLS)/md5.sum.py -f $(BUILDDIR)/release-2/cyg-apt/ $(BUILDDIR)/release-2/cyg-apt/md5.sum
-ifdef CYGAPT_TESTMIRROR
-	scp $(BUILDDIR)/release-2/cyg-apt/* $(CYGAPT_TESTMIRROR)/release-2/cyg-apt
-endif
-	$(TOOLS)/setup_ini_diff_make.py mini_mirror/setup-2.ini cyg-apt install md5 --field-input=$(BUILDDIR)/release-2/cyg-apt/$(TARFILE)
-	patch mini_mirror/setup-2.ini setup-2.ini.diff
-ifdef CYGAPT_TESTMIRROR
-	scp mini_mirror/setup-2.ini $(CYGAPT_TESTMIRROR)/setup-2.ini
-endif
-	$(RM) *.diff
-	$(RM) mini_mirror/setup-2.ini.sig 
-	gpg -u "cyg-apt"  --output mini_mirror/setup-2.ini.sig --detach-sig mini_mirror/setup-2.ini
-ifdef CYGAPT_TESTMIRROR
-	bzip2 -k -c mini_mirror/setup-2.ini > mini_mirror/setup-2.bz2
-	scp mini_mirror/setup-2.ini mini_mirror/setup-2.ini.sig mini_mirror/setup-2.bz2 $(CYGAPT_TESTMIRROR)
-endif
-	$(TOOLS)/hasfiles.py $(BUILDDIR)/root svn
-
-install:
-	$(CP) $(BUILDDIR)/release-2/cyg-apt/$(TARFILE) /
-	cd /; tar -xf /$(TARFILE)
-	/etc/postinstall/cyg-apt.sh
-	$(MV) /etc/postinstall/cyg-apt.sh /etc/postinstall/cyg-apt.sh.done
-
-testpackages:
-	cd mini_mirror/testpkg/src/; make
-	cd mini_mirror/testpkg-lib/src/; make
-
-distclean: clean
-	cd mini_mirror/testpkg/src/; make clean
-	cd mini_mirror/testpkg-lib/src/; make clean
-
-source: version-file
-	mkdir -p build/cyg-apt-$(VERSION)
-	tools/copy.py * -e build -d build/cyg-apt-$(VERSION)
-	cd $(BUILDDIR); tar -jcf release-2/cyg-apt/$(SRCTARFILE) cyg-apt-$(VERSION) --exclude=".svn" --exclude="local_cache" --exclude="$(SRCTARFILE)"
 
 version-file-clean:
-	$(RM) $(VERSION_FILE)
+	$(RM) $(VERSION-FILE)
 
-clean: version-file-clean
-	$(RM) $(BUILDDIR)/root/*.bz2
-	$(RM) $(BUILDDIR)/release-2/cyg-apt/*
-	$(RM) $(BUILDDIR)/setup-2.ini
-	$(RM) $(BUILDDIR)/root/usr/bin/*
+$(EXEC)-skel:
+	$(MKDIR) $(BUILDDIR)/root$(PREFIX)/bin
+	$(MKDIR) $(BUILDDIR)/root/etc/postinstall
+	$(MKDIR) $(BUILDDIR)/root$(PREFIX)/share/man/man1
+	$(MKDIR) $(BUILDDIR)/root/etc/bash_completion.d
+	$(MKDIR) $(BUILDDIR)/root$(PREFIX)/share/$(EXEC)
+
+$(EXEC): $(EXEC)-skel
+	$(CP) $(SRC) $(BUILDDIR)/root$(PREFIX)/bin/$(EXEC)
+	@$(SHELL_PATH) ./$(SRC)-postinstall-gen.sh > $(BUILDDIR)/root/etc/postinstall/$(EXEC).sh
+	$(GZIP) -c $(SRC).1 > $(BUILDDIR)/root$(PREFIX)/share/man/man1/$(EXEC).1.gz
+	$(CP) $(SRC).bash_completion $(BUILDDIR)/root/etc/bash_completion.d/$(EXEC)
+	$(CP) $(GPG_CYGWIN_PUBKEY) $(BUILDDIR)/root$(PREFIX)/share/$(EXEC)/$(GPG_CYGWIN_PUBKEY)
+
+$(EXEC)-install: $(EXEC)
+	install $(BUILDDIR)/root$(PREFIX)/bin/$(EXEC) $(PREFIX)/bin
+	install $(BUILDDIR)/root/etc/postinstall/$(EXEC).sh /etc/postinstall
+	install $(BUILDDIR)/root$(PREFIX)/share/man/man1/$(EXEC).1.gz $(PREFIX)/share/man/man1
+	install $(BUILDDIR)/root/etc/bash_completion.d/$(EXEC) /etc/bash_completion.d
+	install $(BUILDDIR)/root$(PREFIX)/share/$(EXEC)/$(GPG_CYGWIN_PUBKEY) $(PREFIX)/share/$(EXEC)
+	/etc/postinstall/$(EXEC).sh
+	$(MV) /etc/postinstall/$(EXEC).sh /etc/postinstall/$(EXEC).sh.done
+
+install: $(EXEC)-install
+
+$(EXEC)-package: version-file $(EXEC)
+	$(MKDIR) $(BUILDDIR)/$(EXEC)-$(VERSION)
+	cd $(BUILDDIR)/root ; pwd ; tar -jcf ../$(EXEC)-$(VERSION)/$(EXEC)-$(VERSION).tar.bz2 *
+	git archive --prefix="$(EXEC)-$(VERSION)/" --format=tar HEAD | bzip2 -c > $(BUILDDIR)/$(EXEC)-$(VERSION)/$(EXEC)-$(VERSION)-src.tar.bz2
+
+package: version-file $(EXEC)-package
+
+.PHONY: $(EXEC)-clean clean mrproper version-file-clean
+
+$(EXEC)-clean:
+	$(RM) $(BUILDDIR)/root$(PREFIX)/bin/*
 	$(RM) $(BUILDDIR)/root/etc/postinstall/*
-	$(RM) $(BUILDDIR)/root/usr/share/cyg-apt/*
-	$(RM) $(BUILDDIR)/root/usr/share/man/man1/cyg-apt/*
-	$(TOOLS)/hasfiles.py $(BUILDDIR) svn
-	$(RM) *.diff
+	$(RM) $(BUILDDIR)/root$(PREFIX)/share/man/man1/*
+	$(RM) $(BUILDDIR)/root/etc/bash_completion.d/*
+	$(RM) $(BUILDDIR)/root$(PREFIX)/share/$(EXEC)/*
 
-.PHONY: version-file-clean
+clean: $(EXEC)-clean version-file-clean
+
+mrproper: clean
+	$(RM) -r $(BUILDDIR)

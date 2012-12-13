@@ -44,3 +44,5 @@ test "$VN" = "$VC" || {
 	echo >&2 "VERSION = $VN"
 	echo "VERSION = $VN" >$VF
 }
+
+exit 0;

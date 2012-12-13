@@ -1,8 +1,0 @@
-The test suite / mini_mirror has several requirements. Some of them are satified by the tools and packages here:
-
-INSTALL
--------
-$cd /setup/utilpack
-$python setup.up install
-
-To install utilpack utilies used by test-cyg-apt.py and mini_mirror.
