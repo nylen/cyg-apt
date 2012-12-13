@@ -1,5 +1,11 @@
 BUILDDIR =  build
 VERSION = 1.0.7-1
+VERSION_FILE = VERSION-FILE
+
+version-file:
+	@$(SHELL_PATH) ./VERSION-GEN
+-include $(VERSION_FILE)
+
 TARFILE = cyg-apt-$(VERSION).tar.bz2
 SRCTARFILE = cyg-apt-$(VERSION)-src.tar.bz2
 TOOLS = tools
@@ -50,12 +56,15 @@ distclean: clean
 	cd mini_mirror/testpkg/src/; make clean
 	cd mini_mirror/testpkg-lib/src/; make clean
 
-source:
+source: version-file
 	mkdir -p build/cyg-apt-$(VERSION)
 	tools/copy.py * -e build -d build/cyg-apt-$(VERSION)
 	cd $(BUILDDIR); tar -jcf release-2/cyg-apt/$(SRCTARFILE) cyg-apt-$(VERSION) --exclude=".svn" --exclude="local_cache" --exclude="$(SRCTARFILE)"
 
-clean:
+version-file-clean:
+	$(RM) $(VERSION_FILE)
+
+clean: version-file-clean
 	$(RM) $(BUILDDIR)/root/*.bz2
 	$(RM) $(BUILDDIR)/release-2/cyg-apt/*
 	$(RM) $(BUILDDIR)/setup-2.ini
@@ -65,3 +74,5 @@ clean:
 	$(RM) $(BUILDDIR)/root/usr/share/man/man1/cyg-apt/*
 	$(TOOLS)/hasfiles.py $(BUILDDIR) svn
 	$(RM) *.diff
+
+.PHONY: version-file-clean

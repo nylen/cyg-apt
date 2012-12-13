@@ -3,4 +3,4 @@
 /tools/utilpack/build
 *.bak
 *.diff
-
+/VERSION-FILE
