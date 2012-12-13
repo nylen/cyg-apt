@@ -28,8 +28,9 @@ from pdb import set_trace as stra
 
 
 class CygAptSetup:
-    def __init__(self, cygwin_p):
+    def __init__(self, cygwin_p, verbose):
         self.cygwin_p = cygwin_p
+        self.verbose = verbose
         self.rc_options = ['ROOT', 'mirror', 'cache', 'setup_ini', 'distname',\
             'barred', 'always_update']
         self.rc_comments = {\
@@ -63,7 +64,10 @@ class CygAptSetup:
             self.tmpdir = "/usr/share/cyg-apt"
         self.gpg_good_sig_msg = "1169 DF9F 2273 4F74 3AA5  9232 A9A2 62FF 6760 41BA"    
         #self.gpg_good_sig_msg = "Good signature"    
-       
+    
+    def set_verbose(self, verbose):
+        self.verbose = verbose
+    
     def get_setup_rc(self, location):
         if not (os.path.exists(location + "/" + "setup.rc")):
             return (None, None)
@@ -175,6 +179,7 @@ class CygAptSetup:
     -X, --no-verify      do not verify setup.ini signatures
     -y, --nopostinstall  do not run postinstall scripts
     -z, --nopostremove   do not run preremove/postremove scripts
+    -v, --verbose        Verbose mode. Increase the verbosity.
 ''')
 
 
@@ -212,7 +217,7 @@ class CygAptSetup:
             setup_ini_url = '%s%s%s' % (mirror, sep, setup_ini_name)
             err = None
             try:
-                uri_get(self.tmpdir, setup_ini_url, verbose=True)
+                uri_get(self.tmpdir, setup_ini_url, verbose=self.verbose)
             except CygAptError, (err):
                 # Failed to find a possible .ini
                 if index == len(setup_ini_names) - 1:
@@ -243,7 +248,7 @@ class CygAptSetup:
         if verify:
             sig_name = setup_ini_name + ".sig"
             sig_url = "%s%s%s" % (mirror, sep, sig_name)
-            err = uri_get(self.tmpdir, sig_url, verbose=True)
+            err = uri_get(self.tmpdir, sig_url, verbose=self.verbose)
             if err:
                 print >> sys.stderr,\
                     "%s: failed to download signature %s Use -X to ignore "\
@@ -327,7 +332,7 @@ def rename(src, dest):
     os.rename(src, dest)
                 
         
-def uri_get(dir, uri, verbose=True):
+def uri_get(dir, uri, verbose=False):
     up = urlparse.urlparse(uri)
     opener = CygAptURLopener(verbose)
     scriptname = os.path.basename(sys.argv[0])
@@ -477,7 +482,8 @@ class CygApt:
         main_nopostremove,\
         main_dists,\
         main_installed,\
-        main_scriptname):
+        main_scriptname,\
+        main_verbose):
         
         # Define constants
         self.installed_db_magic = 'INSTALLED.DB 2\n'
@@ -508,6 +514,7 @@ class CygApt:
         self.dists = main_dists
         self.installed = main_installed
         self.cyg_apt_rc = main_cyg_apt_rc
+        self.verbose = main_verbose
         
         # Read in our configuration
         self.get_rc(open(self.cyg_apt_rc))
@@ -874,7 +881,7 @@ class CygApt:
         return digest
     
     
-    def check_md5(self, verbose=0):
+    def check_md5(self):
         return self.get_url()[1] == self.get_md5()
     
         
@@ -1458,9 +1465,10 @@ def main():
     home_cyg_apt_rc = None
     main_verify = True
     main_noupdate = False
+    main_verbose = False
     
     main_cygwin_p = (sys.platform == "cygwin")
-    cas = CygAptSetup(main_cygwin_p)
+    cas = CygAptSetup(main_cygwin_p, main_verbose)
     update_not_needed = ["ball", "find", "help", "purge", "remove", "version",\
         "filelist", "update", "setup", "md5"]
 
@@ -1469,8 +1477,8 @@ def main():
         main_scriptname = main_scriptname[:-3]
     try:
         (main_options, main_files) = getopt.getopt(sys.argv[1:],
-            'adhm:t:xfsXyz', ('download', 'help', 'mirror=', 'dist=', 'no-deps',\
-            'regexp', 'nobarred', 'no-verify', 'nopostinstall', 'nopostremove')) 
+            'adhm:t:xfsXyzv', ('download', 'help', 'mirror=', 'dist=', 'no-deps',\
+            'regexp', 'nobarred', 'no-verify', 'nopostinstall', 'nopostremove', 'verbose')) 
     except getopt.GetoptError:
         cas.usage()
         sys.exit(1)
@@ -1509,6 +1517,11 @@ def main():
             main_nopostinstall = True
         elif o == '--nopostremove' or o == '-z':
             main_nopostremove = True
+        elif o == '--verbose' or o == '-v':
+            main_verbose = True
+    
+    cas.set_verbose(main_verbose)
+    
     # Take most of our configuration from .cyg-apt 
     # preferring .cyg-apt in current directory over $(HOME)/.cyg-apt
     cyg_apt_rc = None
@@ -1527,7 +1540,7 @@ def main():
     elif (len(sys.argv) == 1 or sys.argv[1] != "setup"):
         print "cyg-apt: no .cyg-apt: run \"cyg-apt setup\" Exiting."
         sys.exit(1)
-
+    
     if (main_command == "setup"):
         cas.setup()
         sys.exit(0)
@@ -1561,7 +1574,8 @@ def main():
                 main_nopostremove,\
                 main_dists,\
                 main_installed,\
-                main_scriptname)
+                main_scriptname,\
+                main_verbose)
         except CygAptError, exp:
             print exp
             sys.exit(1)
