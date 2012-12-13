@@ -7,11 +7,14 @@ GPG_CYGWIN_PUBKEY = cygwin.sig
 # The default target of this Makefile is...
 all: $(EXEC)
 
-version-file:
+ifndef SHELL_PATH
+	SHELL_PATH = /bin/sh
+endif
+
+$(VERSION_FILE): FORCE
 	@$(SHELL_PATH) ./VERSION-GEN
 -include $(VERSION_FILE)
-
-
+    
 PREFIX = /usr
 BUILDDIR = build
 
@@ -21,10 +24,10 @@ MV = /usr/bin/mv
 MKDIR = /usr/bin/mkdir -p
 GZIP = /usr/bin/gzip
 
-version-file-clean:
+version-file-clean: 
 	$(RM) $(VERSION_FILE)
 
-$(EXEC)-skel:
+$(EXEC)-skel: 
 	$(MKDIR) $(BUILDDIR)/root$(PREFIX)/bin
 	$(MKDIR) $(BUILDDIR)/root/etc/postinstall
 	$(MKDIR) $(BUILDDIR)/root$(PREFIX)/share/man/man1
@@ -49,16 +52,16 @@ $(EXEC)-install: $(EXEC)
 
 install: $(EXEC)-install
 
-$(EXEC)-package: version-file $(EXEC)
+$(EXEC)-package: $(VERSION_FILE) $(EXEC)
 	$(MKDIR) $(BUILDDIR)/$(EXEC)-$(VERSION)
 	cd $(BUILDDIR)/root ; pwd ; tar -jcf ../$(EXEC)-$(VERSION)/$(EXEC)-$(VERSION).tar.bz2 *
 	git archive --prefix="$(EXEC)-$(VERSION)/" --format=tar HEAD | bzip2 -c > $(BUILDDIR)/$(EXEC)-$(VERSION)/$(EXEC)-$(VERSION)-src.tar.bz2
 
-package: version-file $(EXEC)-package
+package: $(VERSION_FILE) $(EXEC)-package
 
-.PHONY: $(EXEC)-clean clean mrproper version-file-clean
+.PHONY: $(EXEC)-clean clean mrproper version-file-clean FORCE
 
-$(EXEC)-clean:
+$(EXEC)-clean: 
 	$(RM) $(BUILDDIR)/root$(PREFIX)/bin/*
 	$(RM) $(BUILDDIR)/root/etc/postinstall/*
 	$(RM) $(BUILDDIR)/root$(PREFIX)/share/man/man1/*
