@@ -1,0 +1,6 @@
+/build
+/test
+/tools/utilpack/build
+*.bak
+*.diff
+
