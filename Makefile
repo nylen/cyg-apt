@@ -22,7 +22,7 @@ MKDIR = /usr/bin/mkdir -p
 GZIP = /usr/bin/gzip
 
 version-file-clean:
-	$(RM) $(VERSION-FILE)
+	$(RM) $(VERSION_FILE)
 
 $(EXEC)-skel:
 	$(MKDIR) $(BUILDDIR)/root$(PREFIX)/bin
