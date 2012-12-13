@@ -2,6 +2,8 @@ cyg-apt
 =======
 
 A Cygwin command line package management tool.
+It's a fork of svn repository http://code.google.com/p/cyg-apt/
+
 
 REQUIREMENTS
 ------------
@@ -11,20 +13,30 @@ REQUIREMENTS
 * Cygwin Python, under Python. Currently this package is at Python 2.6.
   Python 3.0 is not currently  supported.
 
+BUILDING
+--------
+
+* $ `make`
+
 INSTALL
 -------
 
-* Download the [latest release](cyg-apt/raw/master/release/cyg-apt-1.0.8-1.tar.bz2)
-* Unpack it: `tar -xf cyg-apt-1.0.8-1.tar.bz2`
-* Install it: `cyg-apt-1.0.8-1/install-cyg-apt.sh`
+* $ `make install`
 
 HELP
 ----
 
 * $ `cyg-apt --help`
-* http://code.google.com/p/cyg-apt/
+* $ `man cyg-apt`
 
-DEVELOPMENT
------------
+TODO
+----
 
-See the [original author's README](cyg-apt/blob/master/README).
+* Add Tests suite
+* Add cygport support
+* Add travis test
+
+ACKNOWLEDGMENTS
+---------------
+
+The original cyg-apt was written by Jan Nieuwenhuizen. Additional development by Christopher Cormie. Questions and feedback to cjcormie@gmail.com.
