@@ -8,7 +8,7 @@ GPG_CYGWIN_PUBKEY = cygwin.sig
 all: $(EXEC)
 
 ifndef SHELL_PATH
-	SHELL_PATH = /bin/sh
+  SHELL_PATH = /bin/sh
 endif
 
 $(VERSION_FILE): FORCE
@@ -45,9 +45,11 @@ $(EXEC)-install: $(EXEC)
 	install $(BUILDDIR)/root$(PREFIX)/bin/$(EXEC) $(PREFIX)/bin
 	install $(BUILDDIR)/root/etc/postinstall/$(EXEC).sh /etc/postinstall
 	install $(BUILDDIR)/root$(PREFIX)/share/man/man1/$(EXEC).1.gz $(PREFIX)/share/man/man1
+	install -d -m 755 /etc/bash_completion.d
 	install $(BUILDDIR)/root/etc/bash_completion.d/$(EXEC) /etc/bash_completion.d
+	install -d -m 755 $(PREFIX)/share/$(EXEC)
 	install $(BUILDDIR)/root$(PREFIX)/share/$(EXEC)/$(GPG_CYGWIN_PUBKEY) $(PREFIX)/share/$(EXEC)
-	/etc/postinstall/$(EXEC).sh
+	$(SHELL_PATH) /etc/postinstall/$(EXEC).sh
 	$(MV) /etc/postinstall/$(EXEC).sh /etc/postinstall/$(EXEC).sh.done
 
 install: $(EXEC)-install
