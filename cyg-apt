@@ -1315,10 +1315,10 @@ class CygApt:
                   % (self.packagename, self.version_to_string(self.get_version())))
             self.do_install()
             
-            if self.nopostinstall:
-                print >> sys.stdout, suppression_msg
-            else:
-                self.postinstall
+        if self.nopostinstall:
+            print >> sys.stdout, suppression_msg
+        else:
+            self.postinstall()
         
         self.barred_warn_if_need(barred, "installing")
 
@@ -1602,3 +1602,4 @@ def main():
       
 if __name__ == '__main__':
     main()
+
