@@ -1,0 +1,7 @@
+category: Admin Utils
+requires: cygwin coreutils python gnupg
+sdesc: "A Cygwin package manager"
+ldesc: "A Cygwin package manager.
+Allows you to install and remove packages on the command line, and provides other package management functions. It has a command syntax similar to apt-get and dpkg."
+
+

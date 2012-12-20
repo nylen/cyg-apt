@@ -58,6 +58,7 @@ $(EXEC)-package: $(VERSION_FILE) $(EXEC)
 	$(MKDIR) $(BUILDDIR)/$(EXEC)-$(VERSION)
 	cd $(BUILDDIR)/root ; pwd ; tar -jcf ../$(EXEC)-$(VERSION)/$(EXEC)-$(VERSION).tar.bz2 *
 	git archive --prefix="$(EXEC)-$(VERSION)/" --format=tar HEAD | bzip2 -c > $(BUILDDIR)/$(EXEC)-$(VERSION)/$(EXEC)-$(VERSION)-src.tar.bz2
+	$(CP) setup.hint $(BUILDDIR)/$(EXEC)-$(VERSION)
 
 package: $(VERSION_FILE) $(EXEC)-package
 
