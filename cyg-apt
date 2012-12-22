@@ -25,6 +25,7 @@ import shutil
 import inspect
 import bz2
 from pdb import set_trace as stra
+import cStringIO
 
 
 class CygAptSetup:
@@ -1114,9 +1115,19 @@ class CygApt:
     def write_filelist(self, lst):
         gz_filename = '%s/%s.lst.gz' % (self.config, self.packagename)
         lst_cr = [x + "\n" for x in lst]
-        gz = gzip.open(gz_filename, "wb")
-        gz.writelines(lst_cr)
-        gz.close()
+        
+        # create iostring and write in gzip
+        lst_io = cStringIO.StringIO()
+        lst_io_gz = gzip.GzipFile(fileobj=lst_io, mode='wb')
+        lst_io_gz.writelines(lst_cr)
+        lst_io_gz.close()
+        
+        # save it in the file
+        lst_gz = open(gz_filename, 'wb')
+        lst_gz.write(lst_io.getvalue())
+        lst_gz.close()
+        lst_io.close()
+        
         stat_struct =  os.stat(self.setup_ini)
         atime = stat_struct[7]
         mtime = stat_struct[8]
