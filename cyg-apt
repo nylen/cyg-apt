@@ -1072,18 +1072,14 @@ class CygApt:
                 tf.extractall(self.ABSOLUTE_ROOT)
             else:
                 self.do_install_external(tf)
-            # Another tarfile module bug
-            if self.cygwin_p:
-                lst = tf.getnames()
-            else:
-                # Oy vey, tarfile module :(
-                members = tf.getmembers()
-                lst = []
-                for m in members:
-                    if m.isdir():
-                        lst.append(m.name + "/")
-                    else:
-                        lst.append(m.name)
+            # Force slash to the end of each directories
+            members = tf.getmembers()
+            lst = []
+            for m in members:
+                if m.isdir() and not m.name.endswith("/"):
+                    lst.append(m.name + "/")
+                else:
+                    lst.append(m.name)
         else:
             print >> sys.stderr,\
             "%s: bad tarball %s. Install failed." % (self.sn, ball)
