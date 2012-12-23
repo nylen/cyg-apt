@@ -1313,7 +1313,7 @@ class CygApt:
             self.download()
         if self.download_p:
             sys.exit(0)
-        for self.packagename in missing.keys():            
+        for self.packagename in missing.keys():
             if self.installed[0].has_key(self.packagename):
                 sys.stderr.write('preparing to replace %s %s\n' \
                     % (self.packagename, self.version_to_string(self.get_installed_version())))
@@ -1329,7 +1329,65 @@ class CygApt:
         
         self.barred_warn_if_need(barred, "installing")
 
- 
+        incomplete = self.check(missing)
+
+
+    def check(self, checklist=[]):
+        '''show installed version of PACKAGE and verify integrity
+                (or for all installed packages if none specified)
+        '''
+
+        if len(checklist) == 0:
+            checklist = self.files[1:]
+
+        options = "-c "
+        if self.verbose:
+            options += '-v '
+
+        pkg_lst = string.join(checklist)
+        command = ''
+        if not self.cygwin_p:
+            command += self.dos_bash + ' --login -c '
+            command += "'"
+        command += 'cygcheck '
+        command += options
+        command += pkg_lst
+        if not self.cygwin_p:
+            command += "'"
+
+        outputlines = os.popen(command).readlines()
+
+        unformat = ''
+        start = False
+        incomplete = []
+        for res in outputlines:
+            try:
+                res_split = res.split()
+                package, version, status = res_split
+            except ValueError as e:
+                if len(res_split) > 0:
+                    unformat += res
+                continue
+
+            if package == 'Package' and \
+               version == 'Version' and \
+                status == 'Status':
+                start = True
+                unformat = ''
+            elif not start:
+                continue
+
+            if start and status == 'Incomplete':
+                print res[:-2]
+                print unformat
+                unformat = ''
+                incomplete.append(package)
+            else:
+                print res[:-2]
+                unformat = ''
+
+        return incomplete
+
     def upgrade(self):
         '''all installed packages'''
         self.files[1:] = self.get_new()
@@ -1469,6 +1527,7 @@ class CygAptArgParser():
     def parse(self):
         commands = ['setup',
                     'update',
+                    'check',
                     'ball',
                     'download',
                     'filelist',
@@ -1674,7 +1733,7 @@ def main():
     main_cygwin_p = (sys.platform == "cygwin")
     cas = CygAptSetup(main_cygwin_p, main_verbose)
     update_not_needed = ["ball", "find", "help", "purge", "remove", "version",\
-        "filelist", "update", "setup", "md5"]
+        "filelist", "update", "setup", "md5", "check"]
 
     main_scriptname = os.path.basename(sys.argv[0])
     if (main_scriptname[-3:] == ".py"):
