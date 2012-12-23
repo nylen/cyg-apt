@@ -10,7 +10,6 @@
   License: GNU GPL
 '''
 
-import getopt
 import os
 import re
 import string
@@ -26,6 +25,7 @@ import inspect
 import bz2
 from pdb import set_trace as stra
 import cStringIO
+import argparse
 
 
 class CygAptSetup:
@@ -1463,9 +1463,196 @@ def parse_rc(cyg_apt_rc):
                 always_update = eval(v)
     h.close()
     return always_update
-    
 
+
+class CygAptArgParser():
+    def __init__(self, usage=None, scriptname=None):
+        self.usage = usage
+        self.scriptname = scriptname
+
+    def parse(self):
+        commands = ['setup',
+                    'update',
+                    'ball',
+                    'download',
+                    'filelist',
+                    'find',
+                    'help',
+                    'install',
+                    'list',
+                    'md5',
+                    'missing',
+                    'new',
+                    'purge',
+                    'remove',
+                    'requires',
+                    'search',
+                    'show',
+                    'source',
+                    'upgrade',
+                    'url',
+                    'version',
+                    ]
+
+        parser = argparse.ArgumentParser(prog=self.scriptname,
+                                         add_help=False,
+                                         usage=self.usage)
+
+        parser.add_argument('command',
+                            nargs='?',
+                            default='help',
+                            choices=commands
+                            )
+
+        parser.add_argument('package',
+                            nargs="*")
+
+        parser.add_argument('-v', '--verbose',
+                            action='count',
+                            default=False,
+                            help='increase the verbosity.')
+
+        parser.add_argument('-d', '--download',
+                            action='store_true',
+                            dest='download_p',
+                            help='download only')
+
+        parser.add_argument('-m', '--mirror',
+                            nargs=1,
+                            help='use mirror')
+
+        parser.add_argument('-t', '--dist',
+                            nargs=1,
+                            dest='distname',
+                            choices=['curr', 'test', 'prev'],
+                            help='set dist name')
+
+        parser.add_argument('-a',
+                            action='store_true',
+                            dest='noupdate',
+                            help='do not update')
+
+        parser.add_argument('-x', '--no-deps',
+                            action='store_true',
+                            dest='nodeps_p',
+                            help='ignore dependencies')
+
+        parser.add_argument('-s', '--regexp',
+                            action='store_true',
+                            dest='regex_search',
+                            help='search as regex pattern')
+
+        parser.add_argument('-f', '--nobarred',
+                            action='store_true',
+                            help='add/remove packages cyg-apt depends on')
+
+        parser.add_argument('-X', '--no-verify',
+                            action='store_false',
+                            dest='verify',
+                            help='do not verify setup.ini signatures')
+
+        parser.add_argument('-y', '--nopostinstall',
+                            action='store_true',
+                            help='do not run postinstall scripts')
+
+        parser.add_argument('-z', '--nopostremove',
+                            action='store_true',
+                            help='do not run preremove/postremove scripts')
+
+        parser.add_argument('-h', '--help',
+                            action='store_true',
+                            help='show brief usage')
+
+        args = parser.parse_args()
         
+        return args
+
+class CygAptOb:
+    ''' Output Buffering Control (like php)
+    The Output Control functions allow you to control
+    when output is sent from the script.
+    '''
+    def __init__(self, start=False):
+        self._state = False
+        self._buffer = None
+        self._value = None
+        self._stdout = None
+        if start:
+            self.start()
+
+    def start(self):
+        ''' Turn on output buffering '''
+        self._stdout = sys.stdout
+        sys.stdout = cStringIO.StringIO()
+        self._buffer = sys.stdout
+        self._state = True
+        self._value = None
+
+    def end(self):
+        ''' Turn off output buffering '''
+        self._buffer.close()
+        self._buffer = None
+        sys.stdout = self._stdout
+        self._state = False
+
+    def flush(self):
+        ''' Flush (send) the output buffer '''
+        self.clean()
+        if len(self._value) > 0:
+            self._stdout.write(self._value)
+        self._value = None
+
+    def get_flush(self):
+        ''' Flush the output buffer,
+            return it as a string and turn off output buffering
+        '''
+        self.clean()
+        self.end()
+        return self._value
+
+    def end_flush(self):
+        ''' Flush (send) the output buffer and turn off output buffering '''
+        self.flush()
+        self.end()
+
+    def clean(self):
+        ''' Clean (erase) the output buffer '''
+        self._value = self._buffer.getvalue()
+        self._buffer.truncate(0)
+
+    def get_clean(self):
+        ''' Get current buffer contents and delete current output buffer '''
+        if not self._state:
+            return False
+
+        content = self.get_contents()
+        self.end_clean()
+        return content
+
+    def end_clean(self):
+        ''' Clean (erase) the output buffer and turn off output buffering '''
+        self._value = None
+        self.end()
+
+    def implicit_flush(self, flag=True):
+        ''' Turn implicit flush on/off '''
+        if flag and self._state:
+            self.end()
+        elif not flag and not self._state:
+            self.start()
+
+    def get_contents(self):
+        ''' Return the contents of the output buffer '''
+        self._value = self._buffer.getvalue()
+        return self._value
+
+    def get_length(self):
+        ''' Return the length of the output buffer '''
+        if not self._state:
+            return False
+
+        return len(self.get_contents())
+
 def main():
     main_mirror = None
     main_downloads = None
@@ -1496,51 +1683,36 @@ def main():
     main_scriptname = os.path.basename(sys.argv[0])
     if (main_scriptname[-3:] == ".py"):
         main_scriptname = main_scriptname[:-3]
-    try:
-        (main_options, main_files) = getopt.getopt(sys.argv[1:],
-            'adhm:t:xfsXyzv', ('download', 'help', 'mirror=', 'dist=', 'no-deps',\
-            'regexp', 'nobarred', 'no-verify', 'nopostinstall', 'nopostremove', 'verbose')) 
-    except getopt.GetoptError:
-        cas.usage()
-        sys.exit(1)
-        
-    if len(main_files) > 0:
-        main_command = main_files[0]
-    if len(main_files) > 1:
-        main_packagename = main_files[1]
-     
-    main_nodeps_p = 0
-    main_download_p = 0
-    for i in main_options:
-        o = i[0]
-        a = i[1]
-        if 0:
-            pass
-        elif o == '-a':
-            main_noupdate = True
-        elif o == '--download' or o == '-d':
-            main_download_p = 1
-        elif o == '--help' or o == '-h':
-            main_command = 'help'
-        elif o == '--mirror' or o == '-m':
-            main_mirror = a
-        elif o == '--dist' or o == '-t':
-            main_distname = a
-        elif o == '--no-deps' or o == '-x':
-            main_nodeps_p = 1
-        elif o == '--regexp' or o == '-s':
-            main_regex_search = True
-        elif o == '--nobarred' or o == '-f':
-            main_nobarred = True
-        elif o == '--no-verify' or o == '-X':
-            main_verify = False
-        elif o == '--nopostinstall' or o == '-y':
-            main_nopostinstall = True
-        elif o == '--nopostremove' or o == '-z':
-            main_nopostremove = True
-        elif o == '--verbose' or o == '-v':
-            main_verbose = True
-    
+
+    ob = CygAptOb(True)
+    cas.usage()
+    usage = ob.get_flush()
+
+    cap = CygAptArgParser(usage=usage, scriptname=main_scriptname)
+    args = cap.parse()
+
+    main_command = args.command
+
+    main_files = args.package[:]
+    main_files.insert(0, main_command)
+    if len(args.package) > 0:
+        main_packagename = args.package[0]
+    else:
+        main_packagename = None
+
+    main_verbose = args.verbose
+    main_download_p = args.download_p
+    main_mirror = args.mirror
+    main_distname = args.distname
+    main_noupdate = args.noupdate
+    main_nodeps_p = args.nodeps_p
+    main_regex_search = args.regex_search
+    main_nobarred = args.nobarred
+    main_verify = args.verify
+    main_nopostinstall = args.nopostinstall
+    main_nopostremove = args.nopostremove
+
+
     cas.set_verbose(main_verbose)
     
     # Take most of our configuration from .cyg-apt 
