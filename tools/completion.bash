@@ -8,7 +8,7 @@ _cyg_apt()
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
-    cmds="setup update ball download filelist find help install list md5 missing new purge remove requires search show source upgrade url version"
+    cmds="setup update ball download filelist find help install list md5 missing new purge remove requires search show source upgrade url version check"
     long_opts="--verbose --download --help --mirror --dist --no-deps --regexp --nobarred --no-verify --nopostinstall --nopostremove"
     dist_opts="curr test prev"
     must_package="ball requires show download md5 purge search source url file list install missing remove version"

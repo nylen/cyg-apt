@@ -1,6 +1,5 @@
-/build
-/test
-/tools/utilpack/build
-*.bak
-*.diff
-/VERSION-FILE
+build
+dist
+*.pyc
+.*
+*~

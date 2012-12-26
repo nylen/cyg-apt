@@ -1,0 +1,13 @@
+TEST_SCRIPT = test_all.py
+
+PYTHONPATH += :$(SD_SRC)
+
+
+all:
+	@$(PYTHON) $(TEST_SCRIPT)
+
+clean: FORCE
+
+
+.PHONY: FORCE
+.EXPORT_ALL_VARIABLES:

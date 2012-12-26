@@ -1,13 +1,13 @@
 #!/bin/bash
 
-if [ -z "$PREFIX" ];
+if [ -z "$ID_DATA" ];
 then
-    PREFIX="/usr";
+    ID_DATA="usr/share";
 fi;
 
-if [ -z "$EXEC" ];
+if [ -z "$EXENAME" ];
 then
-    EXEC="cyg-apt";
+    EXENAME="cyg-apt";
 fi;
 
 if [ -z "$GPG_CYGWIN_PUBKEY" ];
@@ -17,10 +17,10 @@ fi;
 
 echo "#!/bin/bash
 # Add Cygwin's public key to the gpg keyring
-gpg --import --no-secmem-warning \"$PREFIX/share/$EXEC/$GPG_CYGWIN_PUBKEY\"
+gpg --import --no-secmem-warning \"$ID_ROOT/$ID_DATA/$EXENAME/$GPG_CYGWIN_PUBKEY\"
 
 # Initialize $EXEC
-cyg-apt setup
+$EXENAME setup
 ";
 
 exit 0;

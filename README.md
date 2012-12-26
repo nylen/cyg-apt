@@ -2,8 +2,11 @@ cyg-apt
 =======
 
 A Cygwin command line package management tool.
-It's a fork of svn repository http://code.google.com/p/cyg-apt/
+Allows you to install and remove packages on the command line, 
+and provides other package management functions. 
+It has a command syntax similar to apt-get and dpkg.
 
+It's a fork of svn repository http://code.google.com/p/cyg-apt/
 
 REQUIREMENTS
 ------------
@@ -32,9 +35,9 @@ HELP
 TODO
 ----
 
-* Add Tests suite
 * Add cygport support
 * Add travis test
+* Add missing tests
 
 ACKNOWLEDGMENTS
 ---------------

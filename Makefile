@@ -1,77 +1,85 @@
-EXEC = cyg-apt
-VERSION = v1.0.9
-VERSION_FILE = VERSION-FILE
-SRC = cyg-apt
-GPG_CYGWIN_PUBKEY = cygwin.sig
+# Default target
+all:: build tools doc
 
-# The default target of this Makefile is...
-all: $(EXEC)
+# Programs
+SHELL_PATH = /bin/sh
+CP = /bin/cp -f
+RM = /bin/rm -f --preserve-root
+MV = /bin/mv
+MKDIR = /bin/mkdir -p
+INSTALL = /bin/install
+GZ = /bin/gzip --best
+TAR = /bin/tar
+PYTHON = /usr/bin/python
+MAKE ?= /usr/bin/make
 
-ifndef SHELL_PATH
-  SHELL_PATH = /bin/sh
-endif
+# Source directories
+SD_ROOT = $(shell pwd)
+SD_BUILD = $(SD_ROOT)/build
+SD_SRC = $(SD_ROOT)/src
+SD_TEST = $(SD_ROOT)/test
+SD_DIST = $(SD_ROOT)/dist
+SD_DOC = $(SD_ROOT)/doc
+SD_TOOLS = $(SD_ROOT)/tools
 
+# source environement
+VERSION = 1.0.9
+VERSION_FILE = VERSION-FILE~
 $(VERSION_FILE): FORCE
 	@$(SHELL_PATH) ./VERSION-GEN
 -include $(VERSION_FILE)
-    
-PREFIX = /usr
-BUILDDIR = build
 
-CP = /usr/bin/cp -f
-RM = /usr/bin/rm -f --preserve-root
-MV = /usr/bin/mv
-MKDIR = /usr/bin/mkdir -p
-GZIP = /usr/bin/gzip
+# install environement
+EXENAME = cyg-apt
 
-version-file-clean: 
+# Install directories
+ID_ROOT = 
+ID_PREFIX = usr
+ID_LOCALSTATE = var
+ID_SYSCONF = etc
+ID_LIBEXEC = $(ID_PREFIX)/lib
+ID_EXEC = $(ID_PREFIX)/bin
+ID_DATA = $(ID_PREFIX)/share
+ID_MAN = $(ID_DATA)/man
+ID_INFO = $(ID_DATA)/info
+
+build: FORCE
+	@cd $(SD_SRC); $(MAKE)
+
+doc: FORCE
+	@cd $(SD_DOC); $(MAKE)
+
+tools: FORCE
+	@cd $(SD_TOOLS); $(MAKE)
+
+test: FORCE
+	@cd $(SD_TEST); $(MAKE)
+
+install: FORCE test
+	@cd $(SD_SRC); $(MAKE) $@
+	@cd $(SD_DOC); $(MAKE) $@
+	@cd $(SD_TOOLS); $(MAKE) $@
+
+$(SD_DIST)/$(EXENAME)-$(VERSION): build doc tools
+	$(MKDIR) $(SD_DIST)/$(EXENAME)-$(VERSION)
+	cd $(SD_BUILD); pwd; $(TAR) -jcf $(SD_DIST)/$(EXENAME)-$(VERSION)/$(EXENAME)-$(VERSION).tar.bz2 *
+	git archive --prefix="$(EXENAME)-$(VERSION)/" --format=tar HEAD | bzip2 -c > $(SD_DIST)/$(EXENAME)-$(VERSION)/$(EXENAME)-$(VERSION)-src.tar.bz2
+	$(CP) setup.hint $(SD_DIST)/$(EXENAME)-$(VERSION)
+
+package: $(SD_DIST)/$(EXENAME)-$(VERSION)
+
+packageclean:
+	$(RM) -r $(SD_DIST)
+
+clean: FORCE
+	@cd $(SD_TEST); $(MAKE) $@
+	@cd $(SD_SRC); $(MAKE) $@
+	@cd $(SD_DOC); $(MAKE) $@
+	@cd $(SD_TOOLS); $(MAKE) $@
 	$(RM) $(VERSION_FILE)
 
-$(EXEC)-skel: 
-	$(MKDIR) $(BUILDDIR)/root$(PREFIX)/bin
-	$(MKDIR) $(BUILDDIR)/root/etc/postinstall
-	$(MKDIR) $(BUILDDIR)/root$(PREFIX)/share/man/man1
-	$(MKDIR) $(BUILDDIR)/root/etc/bash_completion.d
-	$(MKDIR) $(BUILDDIR)/root$(PREFIX)/share/$(EXEC)
+mrproper: FORCE clean packageclean
+	$(RM) -r $(SD_BUILD)
 
-$(EXEC): $(EXEC)-skel
-	$(CP) $(SRC) $(BUILDDIR)/root$(PREFIX)/bin/$(EXEC)
-	@$(SHELL_PATH) ./$(SRC)-postinstall-gen.sh > $(BUILDDIR)/root/etc/postinstall/$(EXEC).sh
-	$(GZIP) -c $(SRC).1 > $(BUILDDIR)/root$(PREFIX)/share/man/man1/$(EXEC).1.gz
-	$(CP) $(SRC).bash_completion $(BUILDDIR)/root/etc/bash_completion.d/$(EXEC)
-	$(CP) $(GPG_CYGWIN_PUBKEY) $(BUILDDIR)/root$(PREFIX)/share/$(EXEC)/$(GPG_CYGWIN_PUBKEY)
-
-$(EXEC)-install: $(EXEC)
-	install $(BUILDDIR)/root$(PREFIX)/bin/$(EXEC) $(PREFIX)/bin
-	install $(BUILDDIR)/root/etc/postinstall/$(EXEC).sh /etc/postinstall
-	install $(BUILDDIR)/root$(PREFIX)/share/man/man1/$(EXEC).1.gz $(PREFIX)/share/man/man1
-	install -d -m 755 /etc/bash_completion.d
-	install $(BUILDDIR)/root/etc/bash_completion.d/$(EXEC) /etc/bash_completion.d
-	install -d -m 755 $(PREFIX)/share/$(EXEC)
-	install $(BUILDDIR)/root$(PREFIX)/share/$(EXEC)/$(GPG_CYGWIN_PUBKEY) $(PREFIX)/share/$(EXEC)
-	$(SHELL_PATH) /etc/postinstall/$(EXEC).sh
-	$(MV) /etc/postinstall/$(EXEC).sh /etc/postinstall/$(EXEC).sh.done
-
-install: $(EXEC)-install
-
-$(EXEC)-package: $(VERSION_FILE) $(EXEC)
-	$(MKDIR) $(BUILDDIR)/$(EXEC)-$(VERSION)
-	cd $(BUILDDIR)/root ; pwd ; tar -jcf ../$(EXEC)-$(VERSION)/$(EXEC)-$(VERSION).tar.bz2 *
-	git archive --prefix="$(EXEC)-$(VERSION)/" --format=tar HEAD | bzip2 -c > $(BUILDDIR)/$(EXEC)-$(VERSION)/$(EXEC)-$(VERSION)-src.tar.bz2
-	$(CP) setup.hint $(BUILDDIR)/$(EXEC)-$(VERSION)
-
-package: $(VERSION_FILE) $(EXEC)-package
-
-.PHONY: $(EXEC)-clean clean mrproper version-file-clean FORCE
-
-$(EXEC)-clean: 
-	$(RM) $(BUILDDIR)/root$(PREFIX)/bin/*
-	$(RM) $(BUILDDIR)/root/etc/postinstall/*
-	$(RM) $(BUILDDIR)/root$(PREFIX)/share/man/man1/*
-	$(RM) $(BUILDDIR)/root/etc/bash_completion.d/*
-	$(RM) $(BUILDDIR)/root$(PREFIX)/share/$(EXEC)/*
-
-clean: $(EXEC)-clean version-file-clean
-
-mrproper: clean
-	$(RM) -r $(BUILDDIR)
+.PHONY: FORCE
+.EXPORT_ALL_VARIABLES:
