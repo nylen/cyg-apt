@@ -173,7 +173,7 @@ class CygAptSetup:
     -X, --no-verify      do not verify setup.ini signatures
     -y, --nopostinstall  do not run postinstall scripts
     -z, --nopostremove   do not run preremove/postremove scripts
-    -v, --verbose        Verbose mode. Increase the verbosity.
+    -q, --quiet          Loggable output - no progress indicator.
 """)
 
     def update(self, cyg_apt_rc, verify, main_mirror=None):

@@ -53,10 +53,11 @@ class CygAptArgParser():
         parser.add_argument('package',
                             nargs="*")
 
-        parser.add_argument('-v', '--verbose',
-                            action='count',
-                            default=False,
-                            help='increase the verbosity.')
+        parser.add_argument('-q', '--quiet',
+                            action='store_false',
+                            default=True,
+                            help='Loggable output - no progress indicator',
+                            dest="verbose")
 
         parser.add_argument('-d', '--download',
                             action='store_true',

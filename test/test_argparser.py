@@ -22,7 +22,6 @@ class TestArgParser(unittest.TestCase):
     def test_parse(self):
         argv = sys.argv[:]
         sys.argv = sys.argv[:1]
-        sys.argv.append("-v")
         sys.argv.append("install")
         sys.argv.append("pkg")
         
