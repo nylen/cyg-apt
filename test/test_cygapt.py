@@ -67,10 +67,15 @@ class TestCygApt(TestCase):
                           self._var_verbose)
         
         # FIXME: set attributes
-    
+        self.obj.sn = self._var_exename
+        self.obj.pm.cygwin_p = False
+        self.obj.pm.mountroot = self._dir_mtroot
+        self.obj.pm.root = self._dir_mtroot[:-1]
+        self.obj.pm.map = {}
+
     def test___init__(self):
         self.assertTrue(isinstance(self.obj, CygApt))
-        
+
     def test_write_filelist(self):
         lst = ["file1", "file2/", "file3/dfd"]
         lstret = ["file1\n", "file2/\n", "file3/dfd\n"]
@@ -80,6 +85,16 @@ class TestCygApt(TestCase):
         self.obj.setup_ini = self._file_setup_ini
         self.obj.write_filelist(lst)
         self.assertEqual(gzip.GzipFile(gzfile, "r").readlines(), lstret)
-    
+
+    def test_run_script(self):
+        script = "/pkg.sh"
+        script_done = script + ".done"
+        map_script = self.obj.pm.map_path(script)
+        map_script_done = self.obj.pm.map_path(script_done)
+        open(map_script, "wb").write("#!/bin/bash\nexit 0;")
+
+        self.obj.run_script(script, False)
+        self.assertTrue(os.path.exists(map_script_done))
+
 if __name__ == "__main__":
     unittest.main()

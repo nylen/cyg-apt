@@ -509,19 +509,25 @@ class CygApt:
             print("All dependent packages for %s installed" % self.packagename)
 
     def run_script(self, file_name, optional=True):
-        if os.path.isfile(self.pm.map_path(file_name)):      
+        sh_option = "--norc --noprofile "
+        mapped_file = self.pm.map_path(file_name)
+        mapped_file_done = mapped_file + ".done"
+        if os.path.isfile(mapped_file):
             sys.stderr.write('running: %(file_name)s\n' % vars())
             if self.cygwin_p:
-                os.system("sh " + file_name)
-                shutil.move(file_name, file_name + ".done")
+                cmd = "sh " + sh_option + mapped_file
             else:
-                os.system(self.dos_bash + " --login -c " + file_name)
-                mapped = self.pm.map_path(file_name)
-                shutil.move(mapped, mapped + ".done")
+                cmd = self.dos_bash + sh_option + mapped_file
+            retval = os.system(cmd)
+
+            if os.path.exists(mapped_file_done):
+                os.remove(mapped_file_done)
+            if retval == 0:
+                shutil.move(mapped_file, mapped_file_done)
         else:
             if not optional:
                 sys.stderr.write("%s: WARNING couldn't find %s.\n"\
-                    % (self.sn, file_name))
+                    % (self.sn, mapped_file))
 
     def run_all(self, dirname):
         if os.path.isdir(dirname):
