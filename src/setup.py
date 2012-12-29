@@ -3,15 +3,12 @@
 
 from distutils.core import setup
 import os
-import sys
 
 realpathfile = os.path.realpath(os.path.dirname(__file__))
 realpathcwd = os.path.realpath(os.getcwd())
 
 if realpathfile != realpathcwd:
-    sys.stderr.write("{0} != {1}\n".format(realpathfile, realpathcwd))
-    sys.stderr.write("type `cd {0}`\n".format(realpathfile))
-    sys.exit(1)
+    os.chdir(realpathfile)
 
 try:
     version = os.environ['VERSION']
@@ -46,3 +43,5 @@ setup(name=pkgname,
           'Programming Language :: Python',
           ],
       )
+
+os.chdir(realpathcwd)
