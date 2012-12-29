@@ -7,7 +7,7 @@ cyg-apt \- A Cygwin Package Manager
 .SH SYNOPSIS
 .B cyg-apt [OPTION] [COMMAND] [PACKAGE]
 
-cyg-apt [-dhmtxsfyzv] {[install | remove | purge | source | ball | download | requires | missing  | url | requires | show | filelist | search | md5 | version | check ] pkg } | setup | update | upgrade | list | new | help | {find file}
+cyg-apt [-dhmtxsfyzv] {[install | remove | purge | source | ball | download | requires | missing  | url | requires | show | filelist | search | md5 | version ] pkg } | setup | update | upgrade | list | new | help | {find file}
 
 .SH DESCRIPTION
 \fBcyg\-apt\fR is a Cygwin package manager.
@@ -132,11 +132,6 @@ md5
 .RS 4
 md5
 checks the md5 checksum of a package in the cache against the expected md5 given in the setup.ini database.
-.RE
-.PP
-check
-.RS 4
-shows the installed version and verify \fBintegrity\fR of a given \fIpackage\fR. If no \fIpackages\fR is given, the versions and \fBintegrity\fR of all \fIpackages\fR are displayed.
 .RE
 .PP
 

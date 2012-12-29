@@ -33,7 +33,7 @@ class CygAptMain():
         main_cygwin_p = (sys.platform == "cygwin")
         cas = CygAptSetup(main_cygwin_p, main_verbose)
         update_not_needed = ["ball", "find", "help", "purge", "remove", "version",\
-            "filelist", "update", "setup", "md5", "check"]
+            "filelist", "update", "setup", "md5"]
     
         main_scriptname = os.path.basename(sys.argv[0])
         if (main_scriptname[-3:] == ".py"):

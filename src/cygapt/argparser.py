@@ -19,7 +19,6 @@ class CygAptArgParser():
     def parse(self):
         commands = ['setup',
                     'update',
-                    'check',
                     'ball',
                     'download',
                     'filelist',

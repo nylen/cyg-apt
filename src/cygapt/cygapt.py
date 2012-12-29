@@ -841,17 +841,10 @@ class CygApt:
         self.barred_warn_if_need(barred, "installing")
 
         # TODO: do somethings when installation fail
-        self.check(missing)
+        self._integrity_control(missing)
 
 
-    def check(self, checklist=[]):
-        """show installed version of PACKAGE and verify integrity
-                (or for all installed packages if none specified)
-        """
-
-        if len(checklist) == 0:
-            checklist = self.files[1:]
-
+    def _integrity_control(self, checklist):
         options = "-c "
         if self.verbose:
             options += '-v '
@@ -894,9 +887,6 @@ class CygApt:
                 print(unformat)
                 unformat = ''
                 incomplete.append(package)
-            else:
-                print(res[:-2])
-                unformat = ''
 
         return incomplete
 
