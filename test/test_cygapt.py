@@ -5,6 +5,8 @@ Created on 26 dec. 2012
 '''
 import unittest
 import sys
+import os
+import gzip
 
 from cygapt.cygapt import CygApt
 from cygapt.setup import CygAptSetup
@@ -68,6 +70,16 @@ class TestCygApt(TestCase):
     
     def test___init__(self):
         self.assertTrue(isinstance(self.obj, CygApt))
+        
+    def test_write_filelist(self):
+        lst = ["file1", "file2/", "file3/dfd"]
+        lstret = ["file1\n", "file2/\n", "file3/dfd\n"]
+        gzfile = os.path.join(self._dir_confsetup, "pkg.lst.gz")
+        self.obj.config = self._dir_confsetup
+        self.obj.packagename = "pkg"
+        self.obj.setup_ini = self._file_setup_ini
+        self.obj.write_filelist(lst)
+        self.assertEqual(gzip.GzipFile(gzfile, "r").readlines(), lstret)
     
 if __name__ == "__main__":
     unittest.main()

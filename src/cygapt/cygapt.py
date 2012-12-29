@@ -629,7 +629,7 @@ class CygApt:
         lst_cr = [x + "\n" for x in lst]
 
         # create iostring and write in gzip
-        lst_io = io.StringIO()
+        lst_io = io.BytesIO()
         lst_io_gz = gzip.GzipFile(fileobj=lst_io, mode='wb')
         lst_io_gz.writelines(lst_cr)
         lst_io_gz.close()

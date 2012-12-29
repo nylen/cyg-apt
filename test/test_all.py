@@ -13,7 +13,7 @@ from test_argparser import TestArgParser
 from test_ob import TestOb
 from test_path_mapper import TestPathMapper
 from test_setup import TestSetup
-from test_cygapt import TestCygApt
+from test_cygapt import TestCygApt as TestCygAptClass
 
 
 class TestCygApt(unittest.TestSuite):
@@ -25,7 +25,7 @@ class TestCygApt(unittest.TestSuite):
                       loader.loadTestsFromTestCase(TestOb),
                       loader.loadTestsFromTestCase(TestPathMapper),
                       loader.loadTestsFromTestCase(TestSetup),
-                      loader.loadTestsFromTestCase(TestCygApt),)
+                      loader.loadTestsFromTestCase(TestCygAptClass),)
 
 def main():
     argv = sys.argv[:]
