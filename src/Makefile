@@ -18,12 +18,12 @@ $(D_BUILD)/$(EXEC): $(SRC) $(D_BUILD) $(SRCLIB)
 	$(PYTHON) setup.py bdist --format=tar --plat-name=""
 	$(TAR) -C $(SD_BUILD) -xf dist/$(PYPKG)-$(VERSION)..tar
 	$(CP) $(GPG_CYGWIN_PUBKEY) $(SD_BUILD)/$(ID_DATA)/$(EXENAME)
-	$(CP) $< $@
+	$(CP) "$<" "$@"
 
 install: $(D_BUILD)/$(EXEC)
 	$(INSTALL) -d -m 755 $(ID_ROOT)/$(ID_DATA)/$(EXENAME)
 	$(INSTALL) $(GPG_CYGWIN_PUBKEY) $(ID_ROOT)/$(ID_DATA)/$(EXENAME)
-	$(INSTALL) -m 755 $< $(ID_ROOT)/$(ID_EXEC)
+	$(INSTALL) -m 755 "$<" $(ID_ROOT)/$(ID_EXEC)
 	$(PYTHON) setup.py install
 	$(INSTALL) $(SD_BUILD)/$(ID_SYSCONF)/postinstall/$(EXENAME).sh $(ID_ROOT)/$(ID_SYSCONF)/postinstall
 	$(SHELL_PATH) $(ID_ROOT)/$(ID_SYSCONF)/postinstall/$(EXENAME).sh

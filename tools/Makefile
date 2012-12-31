@@ -9,11 +9,11 @@ $(D_BUILD):
 	$(MKDIR) $(D_BUILD)
 
 $(D_BUILD)/$(EXEC): $(SRC) $(D_BUILD)
-	$(CP) $< $@
+	$(CP) "$<" "$@"
 
 install: $(D_BUILD)/$(EXEC)
 	$(INSTALL) -d -m 755 $(ID_ROOT)/$(ID_SYSCONF)/$(D_COMPLETION)
-	$(INSTALL) -m 755 $< $(ID_ROOT)/$(ID_SYSCONF)/$(D_COMPLETION)
+	$(INSTALL) -m 755 "$<" $(ID_ROOT)/$(ID_SYSCONF)/$(D_COMPLETION)
 
 clean: FORCE
 

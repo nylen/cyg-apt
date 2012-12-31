@@ -1,6 +1,9 @@
 # Default target
 all:: build tools doc
 
+# vars utils
+UTIL_SPACE := $() #
+
 # Programs
 SHELL_PATH = /bin/sh
 CP = /bin/cp -f
@@ -14,7 +17,7 @@ PYTHON = /usr/bin/python
 MAKE ?= /usr/bin/make
 
 # Source directories
-SD_ROOT = $(shell pwd)
+SD_ROOT = $(subst $(UTIL_SPACE),\$(UTIL_SPACE),$(shell pwd))
 SD_BUILD = $(SD_ROOT)/build
 SD_SRC = $(SD_ROOT)/src
 SD_TEST = $(SD_ROOT)/test
