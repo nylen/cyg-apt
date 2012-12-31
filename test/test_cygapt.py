@@ -95,6 +95,30 @@ class TestCygApt(TestCase):
 
         self.obj.run_script(script, False)
         self.assertTrue(os.path.exists(map_script_done))
+        
+    def test_version_to_string(self):
+        versiont = [1,12,3,1]
+        out = "1.12.3-1"
+        ret = self.obj.version_to_string(versiont)
+        self.assertEqual(ret, out)
+        
+    def test_string_to_version(self):
+        string = "1.12.3-1"
+        out = [1,12,3,1]
+        ret = self.obj.string_to_version(string)
+        self.assertEqual(list(ret), out)
+        
+    def test_split_ball(self):
+        input = "pkgball-1.12.3-1.tar.bz2"
+        output = ["pkgball", (1,12,3,1)]
+        ret = self.obj.split_ball(input)
+        self.assertEqual(list(ret), output)
+        
+    def test_join_ball(self):
+        input = ["pkgball", [1,12,3,1]]
+        output = "pkgball-1.12.3-1"
+        ret = self.obj.join_ball(input)
+        self.assertEqual(ret, output)
 
 if __name__ == "__main__":
     unittest.main()
