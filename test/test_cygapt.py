@@ -7,17 +7,15 @@ import unittest
 import sys
 import os
 import gzip
+import string
 
 from cygapt.cygapt import CygApt
 from cygapt.setup import CygAptSetup
+import cygapt.utilstest
 
-
-from testcase import TestCase
-
-class TestCygApt(TestCase):
+class TestCygApt(cygapt.utilstest.TestCase):
     def setUp(self):
-        
-        TestCase.setUp(self)
+        cygapt.utilstest.TestCase.setUp(self)
         
         self._var_verbose = False
         self._var_cygwin_p = sys.platform == "cygwin"
@@ -119,6 +117,28 @@ class TestCygApt(TestCase):
         output = "pkgball-1.12.3-1"
         ret = self.obj.join_ball(input)
         self.assertEqual(ret, output)
+        
+    def test_get_setup_ini(self):
+        f = open(self._file_setup_ini, "wb")
+        f.truncate(0)
+        f.write(self._var_setupIni.contents)
+        f.close()
+
+        self.obj.dists = 0
+        self.obj.get_setup_ini()
+        self.assertEqual(self.obj.dists, self._var_setupIni.dists.__dict__)
+
+    def test_get_url(self):
+        self.obj.packagename = self._var_setupIni.pkg.name
+        self.obj.dists = self._var_setupIni.dists.__dict__
+        self.obj.distname = "curr"
+        self.obj.INSTALL = "install"
+        ret = self.obj.get_url()
+        filename, size, md5 = string.split(self._var_setupIni.pkg.install.curr,
+                                           " ",
+                                           3)
+        
+        self.assertEqual(ret, (filename, md5))
 
 if __name__ == "__main__":
     unittest.main()

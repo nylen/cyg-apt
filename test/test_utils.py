@@ -10,9 +10,9 @@ import os
 
 import cygapt.utils as utils
 import cygapt.error as error
-from testcase import TestCase
+import cygapt.utilstest
 
-class TestUtils(TestCase):
+class TestUtils(cygapt.utilstest.TestCase):
     def _get_tmpdir(self):
         return self._dir_tmp
     

@@ -9,11 +9,11 @@ import os
 import subprocess
 
 from cygapt.setup import CygAptSetup
-from testcase import TestCase
+import cygapt.utilstest
 
-class TestSetup(TestCase):
+class TestSetup(cygapt.utilstest.TestCase):
     def setUp(self):
-        TestCase.setUp(self)
+        cygapt.utilstest.TestCase.setUp(self)
         self._var_verbose = False
         self._var_cygwin_p = sys.platform == "cygwin"
         self.obj = CygAptSetup(self._var_cygwin_p, self._var_verbose)
