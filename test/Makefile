@@ -1,6 +1,6 @@
 TEST_SCRIPT = test_all.py
 
-PYTHONPATH += :$(SD_SRC)
+PYTHONPATH += :$(subst \,,$(SD_SRC))
 
 
 all:
