@@ -1,11 +1,11 @@
 """
   cyg-apt - a Cygwin package manager.
-  
+
   (c) 2002--2009 Chris Cormie         Jan Nieuwenhuizen
-                 <cjcormie@gmail.com> <janneke@gnu.org> 
+                 <cjcormie@gmail.com> <janneke@gnu.org>
   (c) 2012       James Nylen
                  <jnylen@gmail.com>
-  
+
   License: GNU GPL
 """
 
@@ -67,7 +67,7 @@ class CygAptSetup:
         self.config = '/etc/setup'
         self.cygwin_pubring_uri = "http://cygwin.com/key/pubring.asc"
         self.installed_db_magic = 'INSTALLED.DB 2\n'
-    
+
     def set_verbose(self, verbose):
         self.verbose = verbose
 
@@ -110,7 +110,7 @@ class CygAptSetup:
         # since cyg-apt is dependent on them
         self.barred = "python cygwin base-cygwin corecautils bash zlib libreadline gnupg"
         self.always_update = True
-        
+
         if not self.cygwin_p:
             print >> sys.stdout, ("%s: settup only supported under Cygwin. Exiting."\
                 % self.sn)
@@ -187,10 +187,10 @@ class CygAptSetup:
                 v = result.group(2)
                 if k in self.rc_options:
                     rc[k] = eval(v)
-                
+
         if(not self.cygwin_p):
             self.pm = PathMapper(rc["ROOT"][:-1], False)
-        
+
         setup_ini = self.pm.map_path(rc["setup_ini"])
         if (main_mirror):
             mirror = main_mirror
@@ -222,7 +222,7 @@ class CygAptSetup:
                     continue
                     # Not an error to fail to find the first one
             # Take the first one we find
-            break       
+            break
 
         if setup_ini_name[-4:] == ".bz2":
             compressed = file(self.tmpdir + "/" + setup_ini_name, "rb").read()
@@ -295,37 +295,37 @@ class CygAptSetup:
             print >> sys.stdout, ("%s: fail to create %s only supported under Cygwin. Exiting."\
                 % self.sn, installed_db)
             return
-        
+
         sys.stderr.write('creating %s ... ' % installed_db)
-        
+
         db_contents = self.installed_db_magic
         cygcheck_path = self.pm.map_path("/bin/cygcheck")
-        
+
         if os.path.exists(cygcheck_path):
             cmd = cygcheck_path + " -cd "
             proc = subprocess.Popen(cmd, shell=True,
                     stdout=subprocess.PIPE)
-            
+
             if proc.returncode:
                 raise CygAptError(proc.stderr.readlines())
-            
+
             lines = proc.stdout.readlines()
             # remove first two lines
             pkgs = lines[2:]
-            
+
             for pkg in pkgs:
                 pkg = pkg.split()
                 db_contents += "{0} {0}-{1}.tar.bz2 0\n".format(pkg[0], pkg[1])
-        
-        
+
+
         open(installed_db, "wb").writelines(db_contents)
-        
+
         sys.stderr.write("OK\n")
 
     def gpg_import(self, uri):
         if not self.cygwin_p:
             return
-        
+
         cautils.uri_get(self.tmpdir, uri, verbose=self.verbose)
         tmpfile = os.path.join(self.tmpdir, os.path.basename(uri))
         cmd = "gpg "

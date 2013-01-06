@@ -1,11 +1,11 @@
 """
   cyg-apt - a Cygwin package manager.
-  
+
   (c) 2002--2009 Chris Cormie         Jan Nieuwenhuizen
-                 <cjcormie@gmail.com> <janneke@gnu.org> 
+                 <cjcormie@gmail.com> <janneke@gnu.org>
   (c) 2012       James Nylen
                  <jnylen@gmail.com>
-  
+
   License: GNU GPL
 """
 
@@ -104,7 +104,7 @@ class CygApt:
             self.get_installed()
 
     def check_for_setup_exe(self):
-        # It's far from bulletpoof, but it's surprisingly hard to detect 
+        # It's far from bulletpoof, but it's surprisingly hard to detect
         # setup.exe running since it doesn't lock any files.
         psout = os.popen(self.pm.map_path("/usr/bin/ps -W")).readlines()
         for l in psout:
@@ -236,7 +236,6 @@ class CygApt:
                     % (self.sn, self.packagename, self.mirror, \
                     self.sn))
                 sys.exit(1)
-                    
 
     def download(self):
         """download package (only, do not install)"""
@@ -318,7 +317,6 @@ class CygApt:
     def psort(self, lst):
         lst.sort()
         return lst
-        
 
     def preverse(self, lst):
         lst.reverse()
@@ -461,7 +459,7 @@ class CygApt:
                     packages.append(i)
         for self.packagename in self.psort(packages):
             s = self.packagename
-            d = self.get_field('sdesc') 
+            d = self.get_field('sdesc')
             if d:
                 s += ' - %s' % d[1:-1]
             print(s)
@@ -469,7 +467,7 @@ class CygApt:
     def show(self):
         """print package description"""
         s = self.packagename
-        d = self.get_field('sdesc') 
+        d = self.get_field('sdesc')
         if d:
             s += ' - %s' % d[1:-1]
         ldesc = self.get_field('ldesc')
@@ -582,8 +580,7 @@ class CygApt:
                         # Must ensure target exists before forming hard link
                         if not os.path.exists(mapped_target):
                             shutil.move(tempdir + "/" + link_target, mapped_target)
-                        os.system(self.dos_ln + " /" + link_target + " " + link_filename) 
-                        
+                        os.system(self.dos_ln + " /" + link_target + " " + link_filename)
                     else:
                         shutil.move(tempdir + "/" + m.name, path)
         finally:
@@ -688,7 +685,7 @@ class CygApt:
         else:
             print >> sys.stderr, ("%s" % suppression_msg)
 
-        # We don't expect these to be present: they are executed 
+        # We don't expect these to be present: they are executed
         # and moved to $(packagename).sh.done
         nowarns = []
         nowarns.append(self.pm.map_path(postinstall_sh))
@@ -838,7 +835,7 @@ class CygApt:
             sys.stderr.write('installing %s %s\n' \
                   % (self.packagename, self.version_to_string(self.get_version())))
             self.do_install()
-            
+
         if self.nopostinstall:
             print >> sys.stderr, ("%s" % suppression_msg)
         else:
@@ -880,9 +877,7 @@ class CygApt:
                     unformat += res
                 continue
 
-            if package == 'Package' and \
-               version == 'Version' and \
-                status == 'Status':
+            if package == 'Package' and version == 'Version' and status == 'Status':
                 start = True
                 unformat = ''
             elif not start:
@@ -972,7 +967,7 @@ class CygApt:
             print("%s: %s doesn't define mirror. Exiting." % (self.sn, self.cyg_apt_rc))
             sys.exit(1)
 
-        # We want ROOT + "/etc/setup" and cd(ROOT) to work: 
+        # We want ROOT + "/etc/setup" and cd(ROOT) to work:
         # necessitates two different forms, prefix and absolute
         if(self.cygwin_p):
             self.set_root("/")
@@ -991,7 +986,7 @@ class CygApt:
         self.postinstall_dir = "/etc/postinstall"
         self.postremove_dir = "/etc/postremove"
         self.preremove_dir = "/etc/preremove"
-        
+
         self.setup_ini = self.pm.map_path(self.setup_ini)
         self.dos_bin_dir = self.pm.mountroot + "/bin"
         self.dos_bash = self.pm.mountroot + "bin/bash"

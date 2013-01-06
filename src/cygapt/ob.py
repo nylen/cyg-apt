@@ -1,11 +1,11 @@
 """
   cyg-apt - a Cygwin package manager.
-  
+
   (c) 2002--2009 Chris Cormie         Jan Nieuwenhuizen
-                 <cjcormie@gmail.com> <janneke@gnu.org> 
+                 <cjcormie@gmail.com> <janneke@gnu.org>
   (c) 2012       James Nylen
                  <jnylen@gmail.com>
-  
+
   License: GNU GPL
 """
 
@@ -92,7 +92,7 @@ class CygAptOb:
         """ Return the contents of the output buffer """
         if not self._state:
             return False
-        
+
         buf = self._buffer.getvalue()
         if buf:
             self._value = buf

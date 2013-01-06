@@ -1,11 +1,11 @@
 """
   cyg-apt - a Cygwin package manager.
-  
+
   (c) 2002--2009 Chris Cormie         Jan Nieuwenhuizen
-                 <cjcormie@gmail.com> <janneke@gnu.org> 
+                 <cjcormie@gmail.com> <janneke@gnu.org>
   (c) 2012       James Nylen
                  <jnylen@gmail.com>
-  
+
   License: GNU GPL
 """
 
@@ -69,7 +69,7 @@ def uri_get(directory, uri, verbose=False):
     up = urlparse.urlparse(uri)
     opener = CygAptURLopener(verbose)
     scriptname = os.path.basename(sys.argv[0])
-    
+
     if up.scheme == "file":
         shutil.copy(uri[7:], directory)
         if verbose:

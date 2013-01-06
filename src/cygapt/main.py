@@ -1,12 +1,12 @@
 #!/usr/bin/python
 """
   cyg-apt - a Cygwin package manager.
-  
+
   (c) 2002--2009 Chris Cormie         Jan Nieuwenhuizen
-                 <cjcormie@gmail.com> <janneke@gnu.org> 
+                 <cjcormie@gmail.com> <janneke@gnu.org>
   (c) 2012       James Nylen
                  <jnylen@gmail.com>
-  
+
   License: GNU GPL
 """
 
@@ -29,32 +29,32 @@ class CygAptMain():
         main_cyg_apt_rc = None
         home_cyg_apt_rc = None
         main_verbose = False
-        
+
         main_cygwin_p = (sys.platform == "cygwin")
         cas = CygAptSetup(main_cygwin_p, main_verbose)
         update_not_needed = ["ball", "find", "help", "purge", "remove", "version",\
             "filelist", "update", "setup", "md5"]
-    
+
         main_scriptname = os.path.basename(sys.argv[0])
         if (main_scriptname[-3:] == ".py"):
             main_scriptname = main_scriptname[:-3]
-    
+
         ob = CygAptOb(True)
         cas.usage()
         usage = ob.get_flush()
-    
+
         cap = CygAptArgParser(usage=usage, scriptname=main_scriptname)
         args = cap.parse()
-    
+
         main_command = args.command
-    
+
         main_files = args.package[:]
         main_files.insert(0, main_command)
         if len(args.package) > 0:
             main_packagename = args.package[0]
         else:
             main_packagename = None
-    
+
         main_verbose = args.verbose
         main_download_p = args.download_p
         main_mirror = args.mirror
@@ -66,11 +66,11 @@ class CygAptMain():
         main_verify = args.verify
         main_nopostinstall = args.nopostinstall
         main_nopostremove = args.nopostremove
-    
-    
+
+
         cas.set_verbose(main_verbose)
-        
-        # Take most of our configuration from .cyg-apt 
+
+        # Take most of our configuration from .cyg-apt
         # preferring .cyg-apt in current directory over $(HOME)/.cyg-apt
         cwd_cyg_apt_rc = os.getcwd() + '/.' + main_scriptname
         if os.path.exists(cwd_cyg_apt_rc):
@@ -79,8 +79,8 @@ class CygAptMain():
             home_cyg_apt_rc = os.environ['HOME'] + '/.' + main_scriptname
             if os.path.exists(home_cyg_apt_rc):
                 main_cyg_apt_rc = home_cyg_apt_rc
-        
-        
+
+
         if main_cyg_apt_rc:
             # Take our configuration from .cyg-apt
             # Command line options can override, but only for this run.
@@ -89,7 +89,7 @@ class CygAptMain():
             print("%(sn)s: no .%(sn)s: run \"%(sn)s setup\" Exiting." \
                   % {'sn':main_scriptname})
             sys.exit(1)
-        
+
         if (main_command == "setup"):
             cas.setup()
             sys.exit(0)
@@ -105,7 +105,7 @@ class CygAptMain():
             not main_noupdate
         if always_update:
             cas.update(main_cyg_apt_rc, main_verify, main_mirror = main_mirror)
-            
+
         if main_command and main_command in dir(CygApt):
             try:
                 cyg_apt = CygApt(main_packagename,\
@@ -128,7 +128,7 @@ class CygAptMain():
             except CygAptError as exp:
                 print(exp)
                 sys.exit(1)
-                
+
             # Launch!
             try:
                 getattr(cyg_apt, main_command)()
