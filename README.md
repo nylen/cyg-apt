@@ -3,7 +3,7 @@ cyg-apt
 
 A Cygwin command line package management tool that allows you to install and
 remove packages on the command line, and provides other package management
-functions.  It has a command syntax similar to `apt-get` and `dpkg.`
+functions.  It has a command syntax similar to `apt-get` and `dpkg`.
 
 The project's original SVN repository is here:
 http://code.google.com/p/cyg-apt/
