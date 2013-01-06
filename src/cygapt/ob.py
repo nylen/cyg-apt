@@ -5,6 +5,8 @@
                  <cjcormie@gmail.com> <janneke@gnu.org>
   (c) 2012       James Nylen
                  <jnylen@gmail.com>
+  (c) 2012-2013  Alexandre Querci
+                 <alquerci@email.com>
 
   License: GNU GPL
 """

@@ -42,4 +42,6 @@ TODO
 ACKNOWLEDGMENTS
 ---------------
 
-The original cyg-apt was written by Jan Nieuwenhuizen. Additional development by Christopher Cormie. Questions and feedback to cjcormie@gmail.com.
+The original cyg-apt was written by Jan Nieuwenhuizen.  Additional development
+by Christopher Cormie (cjcormie@gmail.com), James Nylen (jnylen@gmail.com), and
+Alexandre Quercia (alquerci@email.com).
