@@ -30,6 +30,9 @@ class TestCase(unittest.TestCase):
         self._dir_data = os.path.join(self._dir_prefix, "share")
         self._dir_man = os.path.join(self._dir_data, "man")
         self._dir_info = os.path.join(self._dir_data, "info")
+        self._dir_postinstall = os.path.join(self._dir_sysconf, "postinstall");
+        self._dir_preremove = os.path.join(self._dir_sysconf, "preremove");
+        self._dir_postremove = os.path.join(self._dir_sysconf, "postremove");
 
         # bulld unix tree
         os.mkdir(self._dir_tmp)
@@ -99,6 +102,8 @@ last-action
 
         os.environ['TMP'] = self._dir_tmp
         os.environ['HOME'] = self._dir_user
+
+        os.chdir(self._dir_user);
 
         self._var_setupIni = SetupIniProvider(self);
 
@@ -177,7 +182,7 @@ class PackageIni():
 
         self.pkgPath = os.path.join("test", self.name);
 
-        self.pkgPath = "";
+        self.filelist = [];
 
         self.install = DistNameStruct()
         self.install.curr = FileStruct()
@@ -317,7 +322,17 @@ echo "postremove ... ok" >> {marker_d}/log;
         tar = tarfile.open(tar_name, mode="w:bz2");
         for name in [usr_d, etc_d, var_d]:
             tar.add(name, os.path.basename(name));
+        members = tar.getmembers();
         tar.close();
+
+        # Force slash to the end of each directories
+        lst = []
+        for m in members:
+            if m.isdir() and not m.name.endswith("/"):
+                lst.append(m.name + "/")
+            else:
+                lst.append(m.name)
+        self.filelist = lst;
 
         # build source tar
         tar_src_name = os.path.join(self._localMirror, self.source.__dict__[distname].url);

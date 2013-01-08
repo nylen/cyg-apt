@@ -571,18 +571,16 @@ class CygApt:
                     # (It produces copies instead: bulky and bugbait.)
                     # Convert to links if possible -- depends on coreutils being installed
                     if m.issym() and self.can_use_ln:
-                        link_filename = "/" + m.name
                         link_target = m.linkname
-                        os.system(self.dos_ln + " -s " + link_target + " " + link_filename)
+                        os.system(self.dos_ln + " -s " + link_target + " " + path)
                     elif m.islnk() and self.can_use_ln:
                         # Hard link -- expect these to be very rare
-                        link_filename = "/" + m.name
                         link_target = m.linkname
                         mapped_target = self.pm.map_path("/" + m.linkname)
                         # Must ensure target exists before forming hard link
                         if not os.path.exists(mapped_target):
                             shutil.move(tempdir + "/" + link_target, mapped_target)
-                        os.system(self.dos_ln + " /" + link_target + " " + link_filename)
+                        os.system(self.dos_ln + " " + mapped_target + " " + path)
                     else:
                         shutil.move(tempdir + "/" + m.name, path)
         finally:
