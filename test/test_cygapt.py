@@ -16,23 +16,33 @@ import cygapt.utilstest
 class TestCygApt(cygapt.utilstest.TestCase):
     def setUp(self):
         cygapt.utilstest.TestCase.setUp(self)
-        
+
         self._var_verbose = False
         self._var_cygwin_p = sys.platform == "cygwin"
-        
+
         if not self._var_cygwin_p:
             self.skipTest("requires cygwin")
-        
+
         setup = CygAptSetup(self._var_cygwin_p, self._var_verbose)
         setup.tmpdir = self._dir_tmp
         setup.sn = self._var_exename
         setup.config = self._dir_confsetup
         setup.ROOT = self._dir_mtroot
         setup.ABSOLUTE_ROOT = self._dir_mtroot
-        
+
         setup.gpg_import(setup.cygwin_pubring_uri)
         setup.setup()
-        
+
+        f = open(self._file_setup_ini, "wb");
+        f.truncate(0);
+        f.write(self._var_setupIni.contents);
+        f.close();
+
+        f = open(self._file_installed_db, "wb");
+        f.truncate(0);
+        f.write(setup.installed_db_magic);
+        f.close();
+
         self._var_packagename = ""
         self._var_files = []
         self._var_download_p = False
@@ -45,7 +55,7 @@ class TestCygApt(cygapt.utilstest.TestCase):
         self._var_nopostremove = False
         self._var_dists = 0
         self._var_installed = 0
-        
+
         self.obj = CygApt(self._var_packagename,
                           self._var_files,
                           self._file_user_config,
@@ -63,13 +73,38 @@ class TestCygApt(cygapt.utilstest.TestCase):
                           self._var_installed,
                           self._var_exename,
                           self._var_verbose)
-        
-        # FIXME: set attributes
+
+        self.obj.cache = self._dir_execache;
+        self.obj.downloads = self._dir_downloads;
+        self.obj.setup_ini = self._file_setup_ini;
+        self.obj.ROOT = self._dir_mtroot;
+        self.obj.mirror = self._var_mirror;
+        self.obj.installed_db = self._file_installed_db;
+
+        # set attributes
         self.obj.sn = self._var_exename
         self.obj.pm.cygwin_p = False
         self.obj.pm.mountroot = self._dir_mtroot
         self.obj.pm.root = self._dir_mtroot[:-1]
         self.obj.pm.map = {}
+
+        self.obj.packagename = self._var_setupIni.pkg.name
+        self.obj.dists = self._var_setupIni.dists.__dict__
+        self.obj.distname = "curr"
+        self.obj.INSTALL = "install"
+        self.obj.always_update = False;
+
+        self.obj.postinstall_dir = os.path.join(self._dir_sysconf, "postinstall");
+        self.obj.preremove_dir = os.path.join(self._dir_sysconf, "preremove");
+        self.obj.postremove_dir = os.path.join(self._dir_sysconf, "postremove");
+
+        self.obj.dos_bin_dir = self._dir_bin;
+        self.obj.dos_bash = "/usr/bin/bash";
+        self.obj.dos_ln = "/usr/bin/ln";
+
+        self.obj.PREFIX_ROOT = self._dir_mtroot[:-1];
+        self.obj.ABSOLUTE_ROOT = self._dir_mtroot;
+        self.obj.installed = {0:{}};
 
     def test___init__(self):
         self.assertTrue(isinstance(self.obj, CygApt))
@@ -119,22 +154,13 @@ class TestCygApt(cygapt.utilstest.TestCase):
         self.assertEqual(ret, output)
         
     def test_get_setup_ini(self):
-        f = open(self._file_setup_ini, "wb")
-        f.truncate(0)
-        f.write(self._var_setupIni.contents)
-        f.close()
-
         self.obj.dists = 0
         self.obj.get_setup_ini()
         self.assertEqual(self.obj.dists, self._var_setupIni.dists.__dict__)
 
     def test_get_url(self):
-        self.obj.packagename = self._var_setupIni.pkg.name
-        self.obj.dists = self._var_setupIni.dists.__dict__
-        self.obj.distname = "curr"
-        self.obj.INSTALL = "install"
         ret = self.obj.get_url()
-        filename, size, md5 = string.split(self._var_setupIni.pkg.install.curr,
+        filename, size, md5 = self._var_setupIni.pkg.install.curr.toString().split(
                                            " ",
                                            3)
         
