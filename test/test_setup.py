@@ -39,7 +39,7 @@ class TestSetup(cygapt.utilstest.TestCase):
         
         last_cache, last_mirror = self.obj.get_setup_rc(self._dir_confsetup)
         self.assertEqual(last_cache, self._dir_execache)
-        self.assertEqual(last_mirror, self._var_mirror)
+        self.assertEqual(last_mirror, self._var_mirror_http)
 
     def test_get_pre17_last(self):
         if not self._var_cygwin_p:
