@@ -11,6 +11,8 @@
   License: GNU GPL
 """
 
+from __future__ import print_function
+
 class CygAptError(Exception):
     def __init__(self, value):
         self.msg = value

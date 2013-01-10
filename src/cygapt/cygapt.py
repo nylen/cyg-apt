@@ -11,6 +11,7 @@
   License: GNU GPL
 """
 
+from __future__ import print_function
 import gzip
 import hashlib
 import io
@@ -349,8 +350,8 @@ class CygApt:
     def filelist(self):
         """list files installed by given packages"""
         if not self.packagename:
-            print >> sys.stderr, \
-            ("{0}: no package name given. Exiting.\n".format(self.sn))
+            print("{0}: no package name given. Exiting.\n".format(self.sn),
+                  file=sys.stderr);
         else:
             print(string.join(self.get_filelist(), '\n'))
 
@@ -359,9 +360,9 @@ class CygApt:
 
     def postremove(self):
         if len(self.files[1:]) == 0:
-            print >> sys.stderr, \
-            ("{0}: must specify package to run postremove. Exiting.".format(
-                self.sn))
+            print("{0}: must specify package to run postremove. "\
+                  "Exiting.".format(self.sn),
+                  file=sys.stderr)
         else:
             for self.packagename in self.files[1:]:
                 self.preremove_sh = self.preremove_dir + "/" + self.packagename + ".sh"
@@ -554,9 +555,11 @@ class CygApt:
         tempdir = os.path.basename(tf.name) + "-tmp"
         tempdir = tempdir.replace(".tar.bz2", "")
         if os.path.exists(tempdir):
-            print >> sys.stderr, \
-            ("{0}: tmpdir {1} exists, won't overwrite.\nInstall "\
-            "of {2} failed. exiting.".format(self.sn, tempdir, self.packagename))
+            print("{0}: tmpdir {1} exists, won't overwrite.\nInstall "\
+            "of {2} failed. exiting.".format(self.sn,
+                                             tempdir,
+                                             self.packagename),
+                  file=sys.stderr);
             sys.exit(1)
         try:
             tf.extractall(tempdir)
@@ -616,8 +619,9 @@ class CygApt:
                 else:
                     lst.append(m.name)
         else:
-            print >> sys.stderr, \
-            ("{0}: bad tarball {1}. Install failed.".format(self.sn, ball))
+            print("{0}: bad tarball {1}. Install failed.".format(self.sn,
+                                                                 ball),
+                  file=sys.stderr);
             return
         self.write_filelist(lst)
         self.installed[0][self.packagename] = os.path.basename(ball)
@@ -698,7 +702,8 @@ class CygApt:
             if expect_preremove:
                 self.run_script(preremove_sh, optional=False)
         else:
-            print >> sys.stderr, ("{0}".format(suppression_msg))
+            print("{0}".format(suppression_msg),
+                  file=sys.stderr);
 
         # We don't expect these to be present: they are executed
         # and moved to $(packagename).sh.done
@@ -807,13 +812,15 @@ class CygApt:
             else:
                 this_these = "these packages"
             barredstr = " " + string.join(barred, ", ")
-            print >> sys.stderr, (self.sn + ": NOT " + command + \
-                barredstr + ": " + self.sn + " is dependent on " + \
-                this_these + " under Cygwin.")
+            print("{0}: NOT {1}{2}: {0} is dependent on "\
+                  "{3} under Cygwin.".format(self.sn,
+                                             command,
+                                             barredstr,
+                                             this_these),
+                  file=sys.stderr);
             if not self.cygwin_p:
-                print >> sys.stderr, \
-                ("Use -f to override but proceed with caution.")
-
+                print("Use -f to override but proceed with caution.",
+                      file=sys.stderr);
     def install(self):
         """download and install packages with dependencies"""
         suppression_msg = \
@@ -852,7 +859,7 @@ class CygApt:
             self.do_install()
 
         if self.nopostinstall:
-            print >> sys.stderr, ("{0}".format(suppression_msg))
+            print(suppression_msg, file=sys.stderr);
         else:
             self.postinstall()
 
@@ -929,9 +936,10 @@ class CygApt:
             tf.extractall(self.packagename)
             tf.close();
         else:
-            print >> sys.stderr, \
-            ("{0}: bad source tarball {1}, exiting.\n{2}: SOURCE UNPACK FAILED".format(
-                 self.sn, ball, self.sn))
+            print("{0}: bad source tarball {1}, exiting.\n"\
+                  "{0}: SOURCE UNPACK FAILED".format(self.sn,
+                                                     ball),
+                  file=sys.stderr);
             sys.exit(1)
         if not os.path.exists(self.packagename):
             raise IOError

@@ -3,6 +3,7 @@
     Unit test for cygapt.argparser
 """
 
+from __future__ import print_function
 import unittest
 import sys
 

@@ -11,6 +11,7 @@
   License: GNU GPL
 """
 
+from __future__ import print_function
 import sys
 import urllib
 
@@ -38,7 +39,7 @@ class CygAptURLopener(urllib.FancyURLopener):
             sys.stdout.write(" "*70 + "\r")
             sys.stdout.flush()
         else:
-            print "[",
+            print("[", end="");
             for i in range(barmax):
                 if i < bar:
                     sys.stdout.write("=")

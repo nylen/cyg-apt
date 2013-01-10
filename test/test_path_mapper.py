@@ -3,6 +3,7 @@
 
 '''
 
+from __future__ import print_function
 import unittest
 import sys
 from tempfile import TemporaryFile

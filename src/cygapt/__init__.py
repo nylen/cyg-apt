@@ -10,3 +10,5 @@
 
   License: GNU GPL
 """
+
+from __future__ import print_function

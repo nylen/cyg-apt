@@ -11,6 +11,7 @@
   License: GNU GPL
 """
 
+from __future__ import print_function
 import bz2
 import inspect
 import os
@@ -116,8 +117,8 @@ class CygAptSetup:
         self.always_update = True
 
         if not self.cygwin_p:
-            print >> sys.stdout, ("{0}: settup only supported under Cygwin. Exiting.".format(
-                                  self.sn))
+            print("{0}: settup only supported under Cygwin."\
+                  "Exiting.".format(self.sn))
             return
 
         (last_cache, last_mirror) = self.get_setup_rc(self.config)
@@ -256,7 +257,7 @@ class CygAptSetup:
             sig_url = "{0}{1}{2}".format(mirror, sep, sig_name)
             err = cautils.uri_get(self.tmpdir, sig_url, verbose=self.verbose)
             if err:
-                print >> sys.stdout, ("{0}: failed to download signature {1} Use -X to ignore "\
+                print("{0}: failed to download signature {1} Use -X to ignore "\
                     "signatures. Exiting".format(
                     self.sn, sig_url))
                 sys.exit(1)
@@ -310,8 +311,8 @@ class CygAptSetup:
 
     def write_installed(self, installed_db):
         if not self.cygwin_p:
-            print >> sys.stdout, ("{0}: fail to create {1} only supported under Cygwin. Exiting.".format(
-                self.sn, installed_db))
+            print("{0}: fail to create {1} only supported under Cygwin. "\
+                  "Exiting.".format(self.sn, installed_db))
             return
 
         sys.stderr.write('creating {0} ... '.format(installed_db))

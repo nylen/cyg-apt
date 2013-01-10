@@ -13,6 +13,7 @@
   License: GNU GPL
 """
 
+from __future__ import print_function
 from cygapt.main import CygAptMain
 
 if __name__ == '__main__':

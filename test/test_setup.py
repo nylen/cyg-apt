@@ -3,6 +3,7 @@
     Unit test for cygapt.setup
 """
 
+from __future__ import print_function
 import unittest
 import sys
 import os
