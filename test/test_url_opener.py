@@ -4,6 +4,7 @@ from __future__ import print_function
 import unittest
 import sys
 from tempfile import TemporaryFile
+from cStringIO import StringIO
 
 from cygapt.url_opener import CygAptURLopener
 
@@ -28,14 +29,14 @@ class TestUrlOpener(unittest.TestCase):
 
     def test_dlProgress(self):
         self.obj.verbose = 1
-        f = TemporaryFile()
         old_stdout = sys.stdout
-        sys.stdout = f.file
+        buf = StringIO()
+        sys.stdout = buf
         self.obj.dlProgress(1, 512, 1024)
         sys.stdout = old_stdout
-        f.file.seek(0)
-        out = f.file.readline()
-        f.close()
+        buf.seek(0)
+        out = buf.readline()
+        buf.close()
         expect_out = "[====================>                   ]\r"
         
         self.assertEqual(out, expect_out)

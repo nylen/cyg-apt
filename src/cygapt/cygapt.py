@@ -641,7 +641,7 @@ class CygApt:
         return lst
 
     def touch(self, fname, times=None):
-        f = file(fname, 'a')
+        f = open(fname, 'a')
         os.utime(fname, times)
         f.close()
 

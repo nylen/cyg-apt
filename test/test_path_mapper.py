@@ -28,7 +28,7 @@ C:/cygwin/lib on /usr/lib type ntfs (binary,auto)
 C:/cygwin on / type ntfs (binary,auto)
 C: on /cygdrive/c type ntfs (binary,posix=0,user,noumount,auto)
 """
-        f = TemporaryFile()
+        f = TemporaryFile(mode="w+")
         f.file.writelines(mount)
         f.file.seek(0)
         mtab = f.file.readlines()

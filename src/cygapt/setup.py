@@ -275,7 +275,11 @@ class CygAptSetup:
                     stderr=subprocess.PIPE);
             p.wait();
             verify = p.stderr.read();
-            if not self.gpg_good_sig_msg in verify:
+            if isinstance(verify, bytes):
+                marker = self.gpg_good_sig_msg.encode();
+            else:
+                marker = self.gpg_good_sig_msg;
+            if not marker in verify:
                 sys.stderr.write("{0}: {1} not signed by Cygwin's public key. "\
                     "Use -X to ignore signatures. Exiting.\n".format(
                     self.sn, setup_ini_url))
@@ -339,7 +343,7 @@ class CygAptSetup:
 
 
         f = open(installed_db, "w");
-        f.writelines(db_contents)
+        f.write(db_contents)
         f.close();
 
         sys.stderr.write("OK\n")

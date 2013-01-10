@@ -165,7 +165,7 @@ setup-version: 2.774
         f.write(self.contents);
         f.close();
 
-        compressed = bz2.compress(self.contents);
+        compressed = bz2.compress(self.contents.encode());
         f = open(setup_bz2, "wb");
         f.write(compressed);
         f.close();

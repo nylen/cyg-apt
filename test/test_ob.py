@@ -24,8 +24,11 @@ class TestOb(unittest.TestCase):
     def makeOn(self):
         txt = "makeOn"
         t = self.obj._buffer.getvalue()
-        print(txt)
-        self.assertEqual(sys.stdout.getvalue(), t + txt + "\n")
+        print("", end="")
+        before = sys.stdout.getvalue();
+        print(txt, end="")
+        value = sys.stdout.getvalue();
+        self.assertEqual(value, before + txt)
         self.assertTrue(self.obj._state)
     
     def makeOff(self):
