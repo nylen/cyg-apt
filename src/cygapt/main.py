@@ -88,8 +88,8 @@ class CygAptMain():
             # Command line options can override, but only for this run.
             main_cyg_apt_rc = main_cyg_apt_rc.replace("\\","/")
         elif (main_command != "setup"):
-            print("%(sn)s: no .%(sn)s: run \"%(sn)s setup\" Exiting." \
-                  % {'sn':main_scriptname})
+            print("{sn}: no .{sn}: run \"{sn} setup\" Exiting.".format(
+                  {'sn':main_scriptname}))
             sys.exit(1)
 
         if (main_command == "setup"):

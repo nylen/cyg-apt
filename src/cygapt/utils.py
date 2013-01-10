@@ -21,7 +21,7 @@ from error import CygAptError
 from url_opener import CygAptURLopener
 
 def cygpath(path):
-    p = os.popen("cygpath \"%s\"" % path);
+    p = os.popen("cygpath \"{0}\"".format(path));
     dospath = p.read().strip()
     p.close();
     return dospath;
@@ -80,13 +80,13 @@ def uri_get(directory, uri, verbose=False):
     if up.scheme == "file":
         shutil.copy(uri[7:], directory)
         if verbose:
-            print("cp %s %s" % (uri[7:], directory))
+            print("cp {0} {1}".format(uri[7:], directory))
     elif up.scheme == "http" or up.scheme == "ftp":
         url_base = os.path.basename(up.path)
         old_cwd = os.getcwd()
         os.chdir(directory)
         if verbose:
-            print("\r%s: downloading: %s" % (scriptname, uri))
+            print("\r{0}: downloading: {1}".format(scriptname, uri))
         try:
             opener.retrieve\
                 (uri, url_base + ".tmp", reporthook=opener.dlProgress)
@@ -98,7 +98,7 @@ def uri_get(directory, uri, verbose=False):
             if os.path.exists(url_base + ".tmp"):
                 os.remove(url_base + ".tmp")
             os.chdir(old_cwd)
-            raise CygAptError("bad URL %s" % uri)
+            raise CygAptError("bad URL {0}".format(uri))
         os.chdir(old_cwd)
     else:
-        raise CygAptError("bad URL %s" % uri)
+        raise CygAptError("bad URL {0}".format(uri))

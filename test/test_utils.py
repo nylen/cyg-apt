@@ -17,7 +17,7 @@ class TestUtils(cygapt.utilstest.TestCase):
         return self._dir_tmp
     
     def _get_tmpfilename(self):
-        filename = "%s%stest~" % (self._get_tmpdir(), os.path.sep)
+        filename = "{0}{1}test~".format(self._get_tmpdir(), os.path.sep)
         return filename
 
     def test_cygpath(self):
@@ -74,7 +74,7 @@ class TestUtils(cygapt.utilstest.TestCase):
 
     def test_rename(self):
         dest = self._get_tmpfilename()
-        src = "%s2" % (self._get_tmpfilename())
+        src = "{0}2".format(self._get_tmpfilename())
         stream = open(src, 'w+')
         stream.writelines('1')
         stream.seek(0)

@@ -92,17 +92,17 @@ class CygAptSetup:
     def setup(self, flags=None):
         """create cyg-apt configuration file"""
         if not self.cygwin_p:
-            print("%s: setup outside Cygwin not supported. Exiting." % self.sn)
+            print("{0}: setup outside Cygwin not supported. Exiting.".format(self.sn))
             sys.exit(1)
         if "HOME" in os.environ:
             self.cyg_apt_rc = os.environ['HOME'] + '/.' + self.sn
         else:
-            sys.stderr.write("%s: can't locate home directory. Setup "\
-                "failed, exiting.\n" % self.sn)
+            sys.stderr.write("{0}: can't locate home directory. Setup "\
+                "failed, exiting.\n".format(self.sn))
             sys.exit(1)
         if os.path.exists(self.cyg_apt_rc):
-            sys.stderr.write("%s: %s exists, not overwriting. "\
-                "\n" % (self.sn, self.cyg_apt_rc))
+            sys.stderr.write("{0}: {1} exists, not overwriting. "\
+                "\n".format(self.sn, self.cyg_apt_rc))
             sys.exit(0)
 
 
@@ -116,16 +116,16 @@ class CygAptSetup:
         self.always_update = True
 
         if not self.cygwin_p:
-            print >> sys.stdout, ("%s: settup only supported under Cygwin. Exiting."\
-                % self.sn)
+            print >> sys.stdout, ("{0}: settup only supported under Cygwin. Exiting.".format(
+                                  self.sn))
             return
 
         (last_cache, last_mirror) = self.get_setup_rc(self.config)
         if ((not last_cache) or (not last_mirror)):
             (last_cache, last_mirror) = self.get_pre17_last(self.config)
             if ((not last_cache) or (not last_mirror)):
-                print("%s: %s/setup.rc not found. Please edit %s to "\
-                "provide mirror and cache." % (self.sn, self.config, self.cyg_apt_rc))
+                print("{0}: {1}/setup.rc not found. Please edit {2} to "\
+                "provide mirror and cache.".format(self.sn, self.config, self.cyg_apt_rc))
                 last_cache = missing_cache_marker
                 last_mirror  = missing_mirror_marker
         self.mirror = last_mirror
@@ -139,28 +139,28 @@ class CygAptSetup:
         for i in self.rc_options:
             if i in list(self.rc_comments.keys()):
                 contents += self.rc_comments[i];
-            contents += '%s="%s"\n\n' % (i, eval("self." + i))
+            contents += '{0}="{1}"\n\n'.format(i, eval("self." + i))
         f = open(self.cyg_apt_rc, "w");
         f.write(contents);
         f.close();
-        print("%s: creating %s" % (self.sn, self.cyg_apt_rc))
+        print("{0}: creating {1}".format(self.sn, self.cyg_apt_rc))
 
         if not os.path.isdir(self.ABSOLUTE_ROOT):
-            sys.stderr.write('error: %s no root dir\n' % self.ABSOLUTE_ROOT)
+            sys.stderr.write('error: {0} no root dir\n'.format(self.ABSOLUTE_ROOT))
             sys.exit(2)
         if not os.path.isdir(self.config):
-            sys.stderr.write('creating %s\n' % self.config)
+            sys.stderr.write('creating {0}\n'.format(self.config))
             os.makedirs(self.config)
         if not os.path.isfile(installed_db):
             self.write_installed(installed_db)
         if not os.path.isfile(self.setup_ini):
-            sys.stderr.write('getting %s\n' % self.setup_ini)
+            sys.stderr.write('getting {0}\n'.format(self.setup_ini))
             self.update(self.cyg_apt_rc, True)
 
     def usage(self, cyg_apt_rc=None):
-        print("%s [OPTION]... COMMAND [PACKAGE]..." % self.sn)
+        print("{0} [OPTION]... COMMAND [PACKAGE]...".format(self.sn))
         if (cyg_apt_rc):
-            print(("Configuration: %s" % cyg_apt_rc))
+            print(("Configuration: {0}".format(cyg_apt_rc)))
         print("\n  Commands:")
         members = [m
                 for m in inspect.getmembers(CygAptSetup) + inspect.getmembers(CygApt)
@@ -216,7 +216,7 @@ class CygAptSetup:
             os.path.basename(setup_ini)]
 
         for (setup_ini_name, index) in zip(setup_ini_names, list(range(len(setup_ini_names)))):
-            setup_ini_url = '%s%s%s' % (mirror, sep, setup_ini_name)
+            setup_ini_url = '{0}{1}{2}'.format(mirror, sep, setup_ini_name)
             err = None
             try:
                 cautils.uri_get(self.tmpdir, setup_ini_url, verbose=self.verbose)
@@ -253,12 +253,12 @@ class CygAptSetup:
 
         if verify:
             sig_name = setup_ini_name + ".sig"
-            sig_url = "%s%s%s" % (mirror, sep, sig_name)
+            sig_url = "{0}{1}{2}".format(mirror, sep, sig_name)
             err = cautils.uri_get(self.tmpdir, sig_url, verbose=self.verbose)
             if err:
-                print >> sys.stdout, ("%s: failed to download signature %s Use -X to ignore "\
-                    "signatures. Exiting" %\
-                    (self.sn, sig_url))
+                print >> sys.stdout, ("{0}: failed to download signature {1} Use -X to ignore "\
+                    "signatures. Exiting".format(
+                    self.sn, sig_url))
                 sys.exit(1)
             if self.cygwin_p:
                 gpg_path = "gpg "
@@ -275,9 +275,9 @@ class CygAptSetup:
             p.wait();
             verify = p.stderr.read();
             if not self.gpg_good_sig_msg in verify:
-                sys.stderr.write("%s: %s not signed by Cygwin's public key. "\
-                    "Use -X to ignore signatures. Exiting.\n" % \
-                    (self.sn, setup_ini_url))
+                sys.stderr.write("{0}: {1} not signed by Cygwin's public key. "\
+                    "Use -X to ignore signatures. Exiting.\n".format(
+                    self.sn, setup_ini_url))
                 sys.exit(1)
 
         if not os.path.exists(downloads):
@@ -310,11 +310,11 @@ class CygAptSetup:
 
     def write_installed(self, installed_db):
         if not self.cygwin_p:
-            print >> sys.stdout, ("%s: fail to create %s only supported under Cygwin. Exiting."\
-                % self.sn, installed_db)
+            print >> sys.stdout, ("{0}: fail to create {1} only supported under Cygwin. Exiting.".format(
+                self.sn, installed_db))
             return
 
-        sys.stderr.write('creating %s ... ' % installed_db)
+        sys.stderr.write('creating {0} ... '.format(installed_db))
 
         db_contents = self.installed_db_magic
         cygcheck_path = self.pm.map_path("/bin/cygcheck")
