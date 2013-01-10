@@ -119,7 +119,7 @@ class CygApt:
 
     def version_to_string(self, t):
         def try_itoa(x):
-            if type(x) == int:
+            if isinstance(x, int):
                 return "{0:d}".format(x)
             return x
         return '{0}-{1}'.format(string.join(list(map(try_itoa, t[:-1])), '.'),
@@ -189,7 +189,7 @@ class CygApt:
                     print(lines[j])
                     raise
                 if value.find('"') != -1 and value.find('"', value.find('"') + 1) == -1:
-                    while 1:
+                    while True:
                         j = j + 1
                         value += '\n' + lines[j]
                         if lines[j].find('"') != -1:
@@ -287,8 +287,7 @@ class CygApt:
                 reqs.update(update_list)
         # Delete the ask package it is not require by it self (joke)
         reqs.pop(self.packagename)
-        rlist = list(reqs.keys())
-        rlist.sort()
+        rlist = sorted(reqs.keys())
         return rlist
 
     def requires(self):

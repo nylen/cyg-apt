@@ -165,7 +165,7 @@ class CygAptSetup:
         print("\n  Commands:")
         members = [m
                 for m in inspect.getmembers(CygAptSetup) + inspect.getmembers(CygApt)
-                if type(m[1]) == type(self.usage) and m[1].__doc__]
+                if isinstance(m[1], type(self.usage)) and m[1].__doc__]
         pad = max(len(m[0]) for m in members)
         for m in members:
             print("    " + m[0].ljust(pad) + " : " + m[1].__doc__)
