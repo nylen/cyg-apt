@@ -77,7 +77,7 @@ class CygApt:
         self.verbose = main_verbose
 
         # Read in our configuration
-        self.get_rc(open(self.cyg_apt_rc))
+        self.get_rc(self.cyg_apt_rc)
 
         # Now we have a path mapper, check setup.exe is not running
         self.check_for_setup_exe()
@@ -108,7 +108,9 @@ class CygApt:
     def check_for_setup_exe(self):
         # It's far from bulletpoof, but it's surprisingly hard to detect
         # setup.exe running since it doesn't lock any files.
-        psout = os.popen(self.pm.map_path("/usr/bin/ps -W")).readlines()
+        p = os.popen(self.pm.map_path("/usr/bin/ps -W"));
+        psout = p.readlines();
+        p.close();
         for l in psout:
             if "setup.exe" in l or "setup-1.7.exe" in l:
                 raise AppConflictError("%s: Please close setup.exe while "\
@@ -156,7 +158,10 @@ class CygApt:
         if self.dists:
             return
         self.dists = {'test': {}, 'curr': {}, 'prev' : {}}
-        chunks = string.split(open(self.setup_ini).read(), '\n\n@ ')
+        f = open(self.setup_ini);
+        contents = f.read();
+        f.close();
+        chunks = string.split(contents, '\n\n@ ')
         for i in chunks[1:]:
             lines = string.split(i, '\n')
             name = string.strip(lines[0])
@@ -297,7 +302,10 @@ class CygApt:
         if self.installed:
             return self.installed
         self.installed = {0:{}}
-        for i in open(self.installed_db).readlines()[1:]:
+        f = open(self.installed_db);
+        lines = f.readlines();
+        f.close();
+        for i in lines[1:]:
             name, ball, status = string.split(i)
             self.installed[int(status)][name] = ball
         return self.installed
@@ -409,9 +417,11 @@ class CygApt:
 
     def get_md5(self):
         url, md5 = self.get_url()
-        f = file("%s/%s" % (self.downloads, url), "rb").read()
+        f = open("%s/%s" % (self.downloads, url), "rb");
+        data = f.read()
+        f.close();
         m = hashlib.md5()
-        m.update(f)
+        m.update(data)
         digest = m.hexdigest()
         return digest
 
@@ -535,10 +545,11 @@ class CygApt:
             for i in lst:
                 self.run_script('%s/%s' % (dirname, i))
 
-    def do_install_external(self, tf):
+    def do_install_external(self, ball):
         # Currently we use a temporary directory and extractall() then copy:
         # this is very slow. The Python documentation warns more sophisticated
         # approaches have pitfalls without specifying what they are.
+        tf = tarfile.open(ball);
         members = tf.getmembers()
         tempdir = os.path.basename(tf.name) + "-tmp"
         tempdir = tempdir.replace(".tar.bz2", "")
@@ -584,18 +595,20 @@ class CygApt:
                     else:
                         shutil.move(tempdir + "/" + m.name, path)
         finally:
+            tf.close();
             cautils.rmtree(tempdir)
 
     def do_install(self):
         ball = self.get_ball()
         if tarfile.is_tarfile(ball):
+            if not self.cygwin_p:
+                self.do_install_external(ball);
             tf = tarfile.open(ball)
             if self.cygwin_p:
                 tf.extractall(self.ABSOLUTE_ROOT)
-            else:
-                self.do_install_external(tf)
             # Force slash to the end of each directories
             members = tf.getmembers()
+            tf.close();
             lst = []
             for m in members:
                 if m.isdir() and not m.name.endswith("/"):
@@ -618,7 +631,9 @@ class CygApt:
             else:
                 raise CygAptError(self.packagename + " is installed, but " + \
                     filelist_file + " is missing")
-        lst = gzip.GzipFile(filelist_file).readlines()
+        gzf = gzip.GzipFile(filelist_file);
+        lst = gzf.readlines()
+        gzf.close();
         lst = [x.strip() for x in lst]
         return lst
 
@@ -633,12 +648,12 @@ class CygApt:
 
         # create iostring and write in gzip
         lst_io = io.BytesIO()
-        lst_io_gz = gzip.GzipFile(fileobj=lst_io, mode='wb')
+        lst_io_gz = gzip.GzipFile(fileobj=lst_io, mode='w')
         lst_io_gz.writelines(lst_cr)
         lst_io_gz.close()
 
         # save it in the file
-        lst_gz = open(gz_filename, 'wb')
+        lst_gz = open(gz_filename, 'w')
         lst_gz.write(lst_io.getvalue())
         lst_gz.close()
         lst_io.close()
@@ -863,7 +878,9 @@ class CygApt:
         if not self.cygwin_p:
             command += "'"
 
-        outputlines = os.popen(command).readlines()
+        p = os.popen(command);
+        outputlines = p.readlines()
+        p.close();
 
         unformat = ''
         start = False
@@ -910,6 +927,7 @@ class CygApt:
         if tarfile.is_tarfile(ball):
             tf = tarfile.open(ball)
             tf.extractall(self.packagename)
+            tf.close();
         else:
             print >> sys.stderr, \
             ("%s: bad source tarball %s, exiting.\n%s: SOURCE UNPACK FAILED"\
@@ -951,15 +969,18 @@ class CygApt:
         self.PREFIX_ROOT = root[:-1]
         self.ABSOLUTE_ROOT = root
 
-    def get_rc(self, h):
-        for i in h.readlines():
+    def get_rc(self, filename):
+        f = open(filename);
+        lines = f.readlines();
+        f.close();
+        for i in lines:
             result = self.rc_regex.search(i)
             if result:
                 k = result.group(1)
                 v = result.group(2)
                 if k in self.rc_options:
                     self.__dict__[k] = eval(v)
-        h.close()
+
         if not self.cache:
             print("%s: %s doesn't define cache. Exiting." % (self.sn, self.cyg_apt_rc))
             sys.exit(1)

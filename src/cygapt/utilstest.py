@@ -76,8 +76,8 @@ class TestCase(unittest.TestCase):
         self._file_user_config = os.path.join(self._dir_user,
                                                "." + self._var_exename)
 
-
-        open(self._file_setup_rc, "wb").write(r"""
+        f = open(self._file_setup_rc, "w");
+        f.write(r"""
 last-cache
 {2}{0}
 mirrors-lst
@@ -99,6 +99,7 @@ net-method
 last-action
 {2}Download,Install
 """.format(self._dir_execache, self._var_mirror_http, "\t"))
+        f.close();
 
         os.environ['TMP'] = self._dir_tmp
         os.environ['HOME'] = self._dir_user
@@ -159,10 +160,14 @@ setup-version: 2.774
         setup_ini = os.path.join(self._localMirror, "setup.ini");
         setup_bz2 = os.path.join(self._localMirror, "setup.bz2");
 
-        open(setup_ini, "wb").write(self.contents);
+        f = open(setup_ini, "w");
+        f.write(self.contents);
+        f.close();
 
         compressed = bz2.compress(self.contents);
-        open(setup_bz2, "wb").write(compressed);
+        f = open(setup_bz2, "wb");
+        f.write(compressed);
+        f.close();
 
 class PackageIni():
     def __init__(self, app, name="testpkg", category="test", requires=""):
@@ -296,7 +301,9 @@ source: {self[source][test]}""".format(self=vars(self));
         # create exec "#!/usr/bin/sh\necho running;" <pkg> > root/usr/bin
         #    link
         #    hard link
-        open(bin_f, "wb").write('#!/usr/bin/sh\necho "running";');
+        f = open(bin_f, "w");
+        f.write('#!/usr/bin/sh\necho "running";');
+        f.close();
         ret = 0;
         ret += os.system('ln -s "' + bin_f + '" "' + link_bin_f + '"')
         ret += os.system('ln "' + bin_f + '" "' + hardlink_bin_f + '"')
@@ -304,19 +311,27 @@ source: {self[source][test]}""".format(self=vars(self));
             raise Exception("fail to create links");
 
         # create postinstall > root/etc/postinstall
-        open(postinstall_f, "wb").write(r"""#!/usr/bin/sh
+        f = open(postinstall_f, "w");
+        f.write(r"""#!/usr/bin/sh
 echo "postinstall ... ok" >> {marker_d}/log;
 """.format(marker_d=sys_marker_d));
+        f.close();
         # create preremove > root/etc/postremove
-        open(preremove_f, "wb").write(r"""#!/usr/bin/sh
+        f = open(preremove_f, "w");
+        f.write(r"""#!/usr/bin/sh
 echo "preremove ... ok" >> {marker_d}/log;
 """.format(marker_d=sys_marker_d));
+        f.close();
         # create postremmove > root/etc/preremmove
-        open(postremove_f, "wb").write(r"""#!/usr/bin/sh
+        f = open(postremove_f, "w");
+        f.write(r"""#!/usr/bin/sh
 echo "postremove ... ok" >> {marker_d}/log;
 """.format(marker_d=sys_marker_d));
+        f.close();
         # create version marker > root/var/<pkg>/<version>
-        open(marker_f, "wb").write(self.version.__dict__[distname]);
+        f = open(marker_f, "w");
+        f.write(self.version.__dict__[distname]);
+        f.close();
         # build tar.bz2
         tar_name = os.path.join(self._localMirror, self.install.__dict__[distname].url);
         tar = tarfile.open(tar_name, mode="w:bz2");
@@ -340,15 +355,20 @@ echo "postremove ... ok" >> {marker_d}/log;
         tar.add(dirname, self.name+"-"+self.version.__dict__[distname]);
         tar.close();
 
-        content = open(tar_name, "rb").read();
+        f = open(tar_name, "rb");
+        content = f.read();
+        f.close();
         md5sum = hashlib.md5(content).hexdigest();
 
-        content = open(tar_src_name, "rb").read();
+        f = open(tar_src_name, "rb");
+        content = f.read();
+        f.close();
         md5sum_src = hashlib.md5(content).hexdigest();
 
         md5_sum_f = os.path.join(os.path.dirname(tar_name), "md5.sum");
 
-        open(md5_sum_f, "ab").write(\
+        f = open(md5_sum_f, "a");
+        f.write(\
             md5sum + \
             "  " + \
             os.path.basename(self.install.__dict__[distname].url) + \
@@ -358,6 +378,7 @@ echo "postremove ... ok" >> {marker_d}/log;
             os.path.basename(self.source.__dict__[distname].url) + \
             "\n"
         );
+        f.close();
 
         self.install.__dict__[distname].size = long(os.path.getsize(tar_name));
         self.source.__dict__[distname].size = long(os.path.getsize(tar_src_name));

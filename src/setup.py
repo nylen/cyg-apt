@@ -20,7 +20,9 @@ try:
 except KeyError:
     pkgname = "cygapt"
 
-long_description = open("../README.md").read()
+f = open("../README.md");
+long_description = f.read()
+f.close();
 
 setup(name=pkgname,
       packages=[pkgname],

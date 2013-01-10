@@ -34,13 +34,11 @@ class TestCygApt(cygapt.utilstest.TestCase):
         setup.gpg_import(setup.cygwin_pubring_uri)
         setup.setup()
 
-        f = open(self._file_setup_ini, "wb");
-        f.truncate(0);
+        f = open(self._file_setup_ini, "w");
         f.write(self._var_setupIni.contents);
         f.close();
 
-        f = open(self._file_installed_db, "wb");
-        f.truncate(0);
+        f = open(self._file_installed_db, "w");
         f.write(setup.installed_db_magic);
         f.close();
 
@@ -125,14 +123,19 @@ class TestCygApt(cygapt.utilstest.TestCase):
         self.obj.packagename = "pkg"
         self.obj.setup_ini = self._file_setup_ini
         self.obj.write_filelist(lst)
-        self.assertEqual(gzip.GzipFile(gzfile, "r").readlines(), lstret)
+        gzf = gzip.GzipFile(gzfile, "r");
+        expected = gzf.readlines();
+        gzf.close();
+        self.assertEqual(expected, lstret)
 
     def test_run_script(self):
         script = "/pkg.sh"
         script_done = script + ".done"
         map_script = self.obj.pm.map_path(script)
         map_script_done = self.obj.pm.map_path(script_done)
-        open(map_script, "wb").write("#!/bin/bash\nexit 0;")
+        f = open(map_script, "w");
+        f.write("#!/bin/bash\nexit 0;")
+        f.close();
 
         self.obj.run_script(script, False)
         self.assertTrue(os.path.exists(map_script_done))
@@ -190,7 +193,9 @@ class TestCygApt(cygapt.utilstest.TestCase):
 
     def test_get_installed(self):
         pkg = ['pkgname', 'pkgname-1.1-1.tar.bz2', "0"];
-        open(self._file_installed_db, "ab").write(string.join(pkg, " "));
+        f = open(self._file_installed_db, "a");
+        f.write(string.join(pkg, " "));
+        f.close();
 
         expected = {int(pkg[2]):{pkg[0]:pkg[1]}};
 
@@ -207,7 +212,9 @@ class TestCygApt(cygapt.utilstest.TestCase):
         self.obj.installed = {int(pkg[2]):{pkg[0]:pkg[1]}};
 
         self.obj.write_installed();
-        ret = open(self._file_installed_db).read();
+        f = open(self._file_installed_db)
+        ret = f.read();
+        f.close();
 
         self.assertEqual(ret.replace("\n", ""), expected.replace("\n", ""));
 
@@ -301,13 +308,17 @@ class TestCygApt(cygapt.utilstest.TestCase):
                                     "var",
                                     pkgname,
                                     "version");
-        retcurr = open(version_file).read();
+        f = open(version_file);
+        retcurr = f.read();
+        f.close();
 
         self.obj.distname = "test";
         self.obj.upgrade();
 
         expected = self._var_setupIni.pkg.version.test;
-        rettest = open(version_file).read();
+        f = open(version_file);
+        rettest = f.read();
+        f.close();
         self.assertNotEqual(retcurr, rettest);
 
     def test_purge(self):

@@ -21,22 +21,27 @@ from error import CygAptError
 from url_opener import CygAptURLopener
 
 def cygpath(path):
-    return os.popen("cygpath \"%s\"" % path).read().strip()
+    p = os.popen("cygpath \"%s\"" % path);
+    dospath = p.read().strip()
+    p.close();
+    return dospath;
 
 def parse_rc(cyg_apt_rc):
     # Currently main only needs to know if we alway call the update command
     # before other commands
-    h = open(cyg_apt_rc)
+    f = open(cyg_apt_rc);
+    lines = f.readlines();
+    f.close();
     rc_regex = re.compile("^\s*(\w+)\s*=\s*(.*)\s*$")
     always_update = False
-    for i in h.readlines():
+    for i in lines:
         result = rc_regex.search(i)
         if result:
             k = result.group(1)
             v = result.group(2)
             if k == "always_update":
                 always_update = eval(v)
-    h.close()
+
     return always_update
 
 def prsort(lst):

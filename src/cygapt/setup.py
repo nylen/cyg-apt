@@ -76,7 +76,9 @@ class CygAptSetup:
     def get_setup_rc(self, location):
         if not (os.path.exists(location + "/" + "setup.rc")):
             return (None, None)
-        setup_rc = file(location + "/" + "setup.rc").readlines()
+        f = open(location + "/" + "setup.rc");
+        setup_rc = f.readlines()
+        f.close();
         last_cache = None
         last_mirror = None
         for i in range(0, (len(setup_rc) -1)):
@@ -132,12 +134,15 @@ class CygAptSetup:
         cygwin_version = platform.release()[:3]
         self.setup_ini = self.config + "/setup.ini"
         self.cygwin_version = float(cygwin_version)
-        h = open(self.cyg_apt_rc, "w")
+
+        contents = "";
         for i in self.rc_options:
             if i in list(self.rc_comments.keys()):
-                h.write(self.rc_comments[i])
-            h.write('%s="%s"\n\n' % (i, eval("self." + i)))
-        h.close()
+                contents += self.rc_comments[i];
+            contents += '%s="%s"\n\n' % (i, eval("self." + i))
+        f = open(self.cyg_apt_rc, "w");
+        f.write(contents);
+        f.close();
         print("%s: creating %s" % (self.sn, self.cyg_apt_rc))
 
         if not os.path.isdir(self.ABSOLUTE_ROOT):
@@ -182,7 +187,10 @@ class CygAptSetup:
         """fetch current package database from mirror"""
         rc = {}
         sig_name = None
-        for i in open(cyg_apt_rc).readlines():
+        f = open(cyg_apt_rc);
+        lines = f.readlines();
+        f.close();
+        for i in lines:
             result = self.rc_regex.search(i)
             if result:
                 k = result.group(1)
@@ -227,15 +235,17 @@ class CygAptSetup:
             break
 
         if setup_ini_name[-4:] == ".bz2":
-            compressed = file(self.tmpdir + "/" + setup_ini_name, "rb").read()
+            f = open(self.tmpdir + "/" + setup_ini_name, "rb");
+            compressed = f.read();
+            f.close();
+
             decomp = bz2.decompress(compressed)
             os.remove(self.tmpdir + "/" + setup_ini_name)
             setup_ini_name =  os.path.basename(setup_ini)
-            if self.cygwin_p:
-                mode = "w"
-            else:
-                mode = "wb"
-            file(self.tmpdir + "/" + setup_ini_name, mode).write(decomp)
+
+            f = open(self.tmpdir + "/" + setup_ini_name, "wb");
+            f.write(decomp);
+            f.close();
 
         if not self.cygwin_p:
             sys.stderr.write("WARNING can't verify setup.ini outside Cygwin.\n")
@@ -260,8 +270,10 @@ class CygAptSetup:
             cmd = gpg_path + "--verify --no-secmem-warning "
             cmd += self.tmpdir + "/" + sig_name + " "
             cmd += self.tmpdir + "/" + setup_ini_name
-            verify = subprocess.Popen(cmd, shell=True,
-                    stderr=subprocess.PIPE).stderr.read()
+            p = subprocess.Popen(cmd, shell=True,
+                    stderr=subprocess.PIPE);
+            p.wait();
+            verify = p.stderr.read();
             if not self.gpg_good_sig_msg in verify:
                 sys.stderr.write("%s: %s not signed by Cygwin's public key. "\
                     "Use -X to ignore signatures. Exiting.\n" % \
@@ -287,9 +299,13 @@ class CygAptSetup:
             not os.path.exists(location + "/last-cache")):
             return (None, None)
         else:
-            last_cache = file(location + "/last-cache").read().strip()
+            f = open(location + "/last-cache");
+            last_cache = f.read().strip()
+            f.close();
             last_cache = cautils.cygpath(last_cache)
-            last_mirror = file(location + "/last-mirror").read().strip()
+            f = open(location + "/last-mirror");
+            last_mirror = f.read().strip()
+            f.close();
             return (last_cache, last_mirror)
 
     def write_installed(self, installed_db):
@@ -306,9 +322,10 @@ class CygAptSetup:
         if os.path.exists(cygcheck_path):
             cmd = cygcheck_path + " -cd "
             proc = subprocess.Popen(cmd, shell=True,
-                    stdout=subprocess.PIPE)
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE)
 
-            if proc.returncode:
+            if proc.wait():
                 raise CygAptError(proc.stderr.readlines())
 
             lines = proc.stdout.readlines()
@@ -320,7 +337,9 @@ class CygAptSetup:
                 db_contents += "{0} {0}-{1}.tar.bz2 0\n".format(pkg[0], pkg[1])
 
 
-        open(installed_db, "wb").writelines(db_contents)
+        f = open(installed_db, "w");
+        f.writelines(db_contents)
+        f.close();
 
         sys.stderr.write("OK\n")
 
@@ -333,6 +352,9 @@ class CygAptSetup:
         cmd = "gpg "
         cmd += "--no-secmem-warning "
         cmd += "--import {0}".format(tmpfile)
-        subprocess.Popen(cmd, shell=True,
+        p = subprocess.Popen(cmd, shell=True,
                          stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE).wait()
+                         stderr=subprocess.PIPE)
+
+        if p.wait():
+            raise CygAptError(p.stderr.readlines())

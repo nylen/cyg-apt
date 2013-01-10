@@ -51,13 +51,11 @@ class TestSetup(cygapt.utilstest.TestCase):
         os.mkdir(last_cache)
         lm_file = os.path.join(self._var_tmpdir, "last-mirror")
         lc_file = os.path.join(self._var_tmpdir, "last-cache")
-        lm_stream = open(lm_file, "wb")
+        lm_stream = open(lm_file, "w")
         lm_stream.write(last_mirror)
-        lm_stream.flush()
         lm_stream.close()
-        lc_stream = open(lc_file, "wb")
+        lc_stream = open(lc_file, "w")
         lc_stream.write(last_cache)
-        lc_stream.flush()
         lc_stream.close()
         
         
@@ -104,8 +102,13 @@ class TestSetup(cygapt.utilstest.TestCase):
         real_installed_db = self._file_installed_db.replace(self._var_tmpdir, "")
         self.obj.write_installed(self._file_installed_db)
         self.assertTrue(os.path.exists(self._file_installed_db))
-        self.assertEqual(open(self._file_installed_db).readlines().sort(),
-                         open(real_installed_db).readlines().sort())
+        f = open(self._file_installed_db);
+        ret = f.readlines().sort();
+        f.close();
+        f = open(real_installed_db);
+        expected = f.readlines().sort();
+        f.close();
+        self.assertEqual(ret, expected)
     
     def test_gpg_import(self):
         if not self._var_cygwin_p:
@@ -116,10 +119,12 @@ class TestSetup(cygapt.utilstest.TestCase):
         cmd = "gpg "
         cmd += "--no-secmem-warning "
         cmd += "--list-public-keys --fingerprint "
-        lines = subprocess.Popen(cmd, shell=True,
+        p = subprocess.Popen(cmd, shell=True,
                          stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE).stdout.readlines()
-                         
+                         stderr=subprocess.PIPE);
+        if p.wait():
+            raise RuntimeError(p.stderr.read());
+        lines = p.stdout.readlines();
         findout = False
         for line in lines:
             if line.find(self.obj.gpg_good_sig_msg) > 0:

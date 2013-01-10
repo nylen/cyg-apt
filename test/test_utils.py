@@ -31,7 +31,7 @@ class TestUtils(cygapt.utilstest.TestCase):
             self.assertEquals(ret, path)
 
     def test_parse_rc(self):
-        f = open(self._get_tmpfilename(), "wb")
+        f = open(self._get_tmpfilename(), "w")
         f.write("always_update = True")
         f.close()
         
@@ -39,7 +39,7 @@ class TestUtils(cygapt.utilstest.TestCase):
         self.assertTrue(ret)
         
         
-        f = open(self._get_tmpfilename(), "wb")
+        f = open(self._get_tmpfilename(), "w")
         f.write("always_update = bad_value")
         f.close()
         
@@ -75,13 +75,13 @@ class TestUtils(cygapt.utilstest.TestCase):
     def test_rename(self):
         dest = self._get_tmpfilename()
         src = "%s2" % (self._get_tmpfilename())
-        stream = open(src, 'wb+')
+        stream = open(src, 'w+')
         stream.writelines('1')
         stream.seek(0)
         src_content = stream.readlines()
         stream.close()
         
-        stream = open(dest, "wb")
+        stream = open(dest, "w")
         stream.writelines('2')
         stream.close()
         

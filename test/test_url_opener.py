@@ -22,9 +22,9 @@ class TestUrlOpener(unittest.TestCase):
         f = TemporaryFile()
         errcode = 404
         self.obj.http_error_default("url", f.file, errcode, "errmsg", "headers")
-        self.assertTrue(self.obj.errcode == errcode)
         f.close()
-        
+        self.assertTrue(self.obj.errcode == errcode)
+
     def test_dlProgress(self):
         self.obj.verbose = 1
         f = TemporaryFile()

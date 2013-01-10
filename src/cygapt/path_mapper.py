@@ -18,7 +18,9 @@ import utils as cautils
 class PathMapper:
     def __init__(self, root, cygwin_p):
         self.root = root
-        mountout = os.popen(self.root + "/bin/mount").readlines()
+        p = os.popen(self.root + "/bin/mount");
+        mountout = p.readlines()
+        p.close();
         self.mountroot = "/"
         self.add_mapping(mountout)
         self.cygwin_p = cygwin_p
