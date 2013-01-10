@@ -18,7 +18,6 @@ import io
 import os
 import re
 import shutil
-import string
 import sys
 import tarfile
 import urllib
@@ -122,7 +121,7 @@ class CygApt:
             if isinstance(x, int):
                 return "{0:d}".format(x)
             return x
-        return '{0}-{1}'.format(string.join(list(map(try_itoa, t[:-1])), '.'),
+        return '{0}-{1}'.format('.'.join(list(map(try_itoa, t[:-1]))),
                   t[-1])
 
     def string_to_version(self, s):
@@ -130,9 +129,9 @@ class CygApt:
         s = re.sub('[ _.-][ _.-]*', ' ', s)
         def try_atoi(x):
             if re.match('^[0-9]*$', x):
-                return string.atoi(x)
+                return int(x)
             return x
-        return tuple(map(try_atoi, (string.split(s, ' '))))
+        return tuple(map(try_atoi, (s.split(' '))))
 
     def split_ball(self, p):
         m = re.match('^(.*)-([0-9].*-[0-9]+)(.tar.bz2)?$', p)
@@ -162,15 +161,15 @@ class CygApt:
         f = open(self.setup_ini);
         contents = f.read();
         f.close();
-        chunks = string.split(contents, '\n\n@ ')
+        chunks = contents.split('\n\n@ ')
         for i in chunks[1:]:
-            lines = string.split(i, '\n')
-            name = string.strip(lines[0])
+            lines = i.split('\n')
+            name = lines[0].strip()
             self.debug('package: ' + name)
             packages = self.dists['curr']
             records = {'sdesc': name}
             j = 1
-            while j < len(lines) and string.strip(lines[j]):
+            while j < len(lines) and lines[j].strip():
                 self.debug('raw: ' + lines[j])
                 if lines[j][0] == '#':
                     j = j + 1
@@ -183,8 +182,9 @@ class CygApt:
                     continue
 
                 try:
-                    key, value = list(map(string.strip,
-                          string.split(lines[j], ': ', 1)))
+                    duo = lines[j].split(': ', 1);
+                    key = duo[0].strip();
+                    value = duo[1].strip();
                 except:
                     print(lines[j])
                     raise
@@ -213,7 +213,7 @@ class CygApt:
                 raise SetupIniError(str(self.packagename) + " is not in " + self.setup_ini)
         else:
             install = self.dists[self.distname][self.packagename][self.INSTALL]
-        filename, size, md5 = string.split(install)
+        filename, size, md5 = install.split()
         return filename, md5
 
     def url(self):
@@ -283,7 +283,7 @@ class CygApt:
                 p = dist[i]
                 if 'requires' not in p:
                     continue
-                update_list = [(x, 0) for x in string.split(p['requires'])]
+                update_list = [(x, 0) for x in p['requires'].split()]
                 reqs.update(update_list)
         # Delete the ask package it is not require by it self (joke)
         reqs.pop(self.packagename)
@@ -296,7 +296,7 @@ class CygApt:
         if len(reqs) == 0:
             print('No dependencies for package {0}'.format(self.packagename))
         else:
-            print(string.join(reqs, '\n'))
+            print('\n'.join(reqs))
 
     def get_installed(self):
         if self.installed:
@@ -306,7 +306,7 @@ class CygApt:
         lines = f.readlines();
         f.close();
         for i in lines[1:]:
-            name, ball, status = string.split(i)
+            name, ball, status = i.split()
             self.installed[int(status)][name] = ball
         return self.installed
 
@@ -352,7 +352,7 @@ class CygApt:
             print("{0}: no package name given. Exiting.\n".format(self.sn),
                   file=sys.stderr);
         else:
-            print(string.join(self.get_filelist(), '\n'))
+            print('\n'.join(self.get_filelist()))
 
     def postinstall(self):
         self.run_all(self.postinstall_dir)
@@ -376,7 +376,7 @@ class CygApt:
             return (0, 0)
         package = self.dists[self.distname][self.packagename]
         if 'ver' not in package:
-            filename = string.split(package[self.INSTALL])[0]
+            filename = package[self.INSTALL].split()[0]
             ball = os.path.split(filename)[1]
             package['ver'] = self.split_ball(ball)[1]
         return package['ver']
@@ -499,7 +499,7 @@ class CygApt:
         if self.packagename not in self.installed[0]:
             missingreqs.append(self.packagename)
         if missingreqs and self.packagename not in missingreqs:
-            sys.stderr.write('warning: missing packages: {0}\n'.format(string.join(missingreqs)))
+            sys.stderr.write('warning: missing packages: {0}\n'.format(" ".join(missingreqs)))
         elif self.packagename in self.installed[0]:  # Check version
             ins = self.get_installed_version()
             new = self.get_version()
@@ -514,7 +514,7 @@ class CygApt:
         """print missing dependencies for package"""
         missing = self.get_missing()
         if len(missing) > 0:
-            print(string.join(missing, '\n'))
+            print('\n'.join(missing))
         else:
             print("All dependent packages for {0} installed".format(self.packagename))
 
@@ -810,7 +810,7 @@ class CygApt:
                 this_these = "this package"
             else:
                 this_these = "these packages"
-            barredstr = " " + string.join(barred, ", ")
+            barredstr = " " + ", ".join(barred)
             print("{0}: NOT {1}{2}: {0} is dependent on "\
                   "{3} under Cygwin.".format(self.sn,
                                              command,
@@ -832,7 +832,7 @@ class CygApt:
 
         if len(missing) > 1:
             sys.stderr.write('to install: \n')
-            sys.stderr.write('    {0}'.format(string.join(list(missing.keys()))))
+            sys.stderr.write('    {0}'.format(" ".join(list(missing.keys()))))
             sys.stderr.write('\n')
 
         for self.packagename in list(missing.keys()):
@@ -873,7 +873,7 @@ class CygApt:
         if self.verbose:
             options += '-v '
 
-        pkg_lst = string.join(checklist)
+        pkg_lst = " ".join(checklist)
         command = ''
         if not self.cygwin_p:
             command += self.dos_bash + ' --login -c '
@@ -967,7 +967,7 @@ class CygApt:
             for i in files:
                 if re.search(file_to_find, '/{0}'.format(i)):
                     hits.append('{0}: /{1}'.format(self.packagename, i))
-        print((string.join(hits, '\n')))
+        print('\n'.join(hits))
 
     def set_root(self, root):
         if len(root) < 1 or root[-1] != "/":

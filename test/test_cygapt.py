@@ -9,7 +9,6 @@ import unittest
 import sys
 import os
 import gzip
-import string
 
 from cygapt.cygapt import CygApt
 from cygapt.setup import CygAptSetup
@@ -196,7 +195,7 @@ class TestCygApt(cygapt.utilstest.TestCase):
     def test_get_installed(self):
         pkg = ['pkgname', 'pkgname-1.1-1.tar.bz2', "0"];
         f = open(self._file_installed_db, "a");
-        f.write(string.join(pkg, " "));
+        f.write(" ".join(pkg));
         f.close();
 
         expected = {int(pkg[2]):{pkg[0]:pkg[1]}};
@@ -209,7 +208,7 @@ class TestCygApt(cygapt.utilstest.TestCase):
     def test_write_installed(self):
         pkg = ['pkgname', 'pkgname-1.1-1.tar.bz2', "0"];
         expected = self.obj.installed_db_magic;
-        expected += string.join(pkg, " ");
+        expected += " ".join(pkg);
 
         self.obj.installed = {int(pkg[2]):{pkg[0]:pkg[1]}};
 
