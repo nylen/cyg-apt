@@ -637,7 +637,7 @@ class CygApt:
         gzf = gzip.GzipFile(filelist_file);
         lst = gzf.readlines()
         gzf.close();
-        lst = [x.strip() for x in lst]
+        lst = [x.decode().strip() for x in lst]
         return lst
 
     def touch(self, fname, times=None):
@@ -652,11 +652,11 @@ class CygApt:
         # create iostring and write in gzip
         lst_io = io.BytesIO()
         lst_io_gz = gzip.GzipFile(fileobj=lst_io, mode='w')
-        lst_io_gz.writelines(lst_cr)
+        lst_io_gz.writelines([x.encode() for x in lst_cr])
         lst_io_gz.close()
 
         # save it in the file
-        lst_gz = open(gz_filename, 'w')
+        lst_gz = open(gz_filename, 'wb')
         lst_gz.write(lst_io.getvalue())
         lst_gz.close()
         lst_io.close()

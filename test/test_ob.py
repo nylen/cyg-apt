@@ -9,6 +9,8 @@ import sys
 
 from cygapt.ob import CygAptOb
 
+REPR_STDOUT = repr(sys.stdout);
+
 class TestOb(unittest.TestCase):
     def setUp(self):
         unittest.TestCase.setUp(self)
@@ -22,19 +24,14 @@ class TestOb(unittest.TestCase):
             pass
     
     def makeOn(self):
-        txt = "makeOn"
-        t = self.obj._buffer.getvalue()
-        print("", end="")
-        before = sys.stdout.getvalue();
-        print(txt, end="")
+        txt = "TestOb.makeOn "
+        print(txt, end="");
         value = sys.stdout.getvalue();
-        self.assertEqual(value, before + txt)
+        self.assertTrue(value.endswith(txt));
         self.assertTrue(self.obj._state)
     
     def makeOff(self):
-        def call():
-            sys.stdout.getvalue
-        self.assertRaises(AttributeError, call)
+        self.assertEqual(repr(sys.stdout), REPR_STDOUT);
         self.assertFalse(self.obj._state)
     
     def test___init__(self):
@@ -89,7 +86,7 @@ class TestOb(unittest.TestCase):
         self.obj.start()
         self.makeOn()
         t = self.obj._buffer.getvalue()
-        txt = "test_get_clean"
+        txt = "TestOb.test_get_clean"
         print(txt)
         ret = self.obj.get_clean()
         self.assertEqual(ret, t + txt + "\n")
@@ -100,7 +97,7 @@ class TestOb(unittest.TestCase):
         self.assertFalse(ret)
         self.makeOff()
         self.obj.start()
-        txt = "test_get_content"
+        txt = "TestOb.test_get_content"
         print(txt)
         ret = self.obj.get_contents()
         self.assertEqual(ret, txt + "\n")
@@ -111,7 +108,7 @@ class TestOb(unittest.TestCase):
         self.assertFalse(ret)
         self.makeOff()
         self.obj.start()
-        txt = "test_get_flush"
+        txt = "TestOb.test_get_flush"
         print(txt)
         ret = self.obj.get_flush()
         self.assertEqual(ret, txt + "\n")

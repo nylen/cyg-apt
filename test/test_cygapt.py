@@ -118,13 +118,13 @@ class TestCygApt(cygapt.utilstest.TestCase):
 
     def test_write_filelist(self):
         lst = ["file1", "file2/", "file3/dfd"]
-        lstret = ["file1\n", "file2/\n", "file3/dfd\n"]
+        lstret = [b"file1\n", b"file2/\n", b"file3/dfd\n"]
         gzfile = os.path.join(self._dir_confsetup, "pkg.lst.gz")
         self.obj.config = self._dir_confsetup
         self.obj.packagename = "pkg"
         self.obj.setup_ini = self._file_setup_ini
         self.obj.write_filelist(lst)
-        gzf = gzip.GzipFile(gzfile, "r");
+        gzf = gzip.open(gzfile);
         expected = gzf.readlines();
         gzf.close();
         self.assertEqual(expected, lstret)
@@ -280,7 +280,7 @@ class TestCygApt(cygapt.utilstest.TestCase):
         self.test_do_install();
         expected = self._var_setupIni.pkg.filelist;
         ret = self.obj.get_filelist();
-        self.assertEqual(ret, expected);
+        self.assertEqual(ret.sort(), expected.sort());
 
     def test_do_uninstall(self):
         self.test_postinstall();
@@ -356,6 +356,11 @@ class TestCygApt(cygapt.utilstest.TestCase):
             pkg_ini_list.append(self._var_setupIni.__dict__[pkg]);
 
         for pkg in pkg_ini_list:
+            f = gzip.open(os.path.join(self._dir_confsetup,
+                                  "{0}.lst.gz".format(pkg.name)));
+            lines = f.readlines();
+            f.close();
+            self.assertEqual(pkg.filelist.sort(), lines.sort());
             for filename in pkg.filelist:
                 filename = self._dir_mtroot + filename;
                 if os.path.dirname(filename) != self._dir_postinstall:

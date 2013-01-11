@@ -128,7 +128,11 @@ class TestSetup(cygapt.utilstest.TestCase):
         lines = p.stdout.readlines();
         findout = False
         for line in lines:
-            if line.find(self.obj.gpg_good_sig_msg) > 0:
+            if isinstance(line, bytes):
+                marker = self.obj.gpg_good_sig_msg.encode();
+            else:
+                marker = self.obj.gpg_good_sig_msg;
+            if marker in line:
                 findout = True
                 break
             

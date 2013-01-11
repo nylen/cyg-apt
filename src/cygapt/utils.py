@@ -75,7 +75,6 @@ def rmtree_helper(path):
 
 def uri_get(directory, uri, verbose=False):
     up = urlparse.urlparse(uri)
-    opener = CygAptURLopener(verbose)
     scriptname = os.path.basename(sys.argv[0])
 
     if up.scheme == "file":
@@ -89,6 +88,7 @@ def uri_get(directory, uri, verbose=False):
         if verbose:
             print("\r{0}: downloading: {1}".format(scriptname, uri))
         try:
+            opener = CygAptURLopener(verbose)
             opener.retrieve\
                 (uri, url_base + ".tmp", reporthook=opener.dlProgress)
         except IOError:

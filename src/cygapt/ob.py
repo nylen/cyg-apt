@@ -49,6 +49,7 @@ class CygAptOb:
         self.clean()
         if self._value:
             self._stdout.write(self._value)
+            self._stdout.flush();
         self._value = None
 
     def get_flush(self):
@@ -56,8 +57,9 @@ class CygAptOb:
             return it as a string and turn off output buffering
         """
         self.clean()
+        content = self.get_contents();
         self.end()
-        return self._value
+        return content;
 
     def end_flush(self):
         """ Flush (send) the output buffer and turn off output buffering """
@@ -99,7 +101,7 @@ class CygAptOb:
         buf = self._buffer.getvalue()
         if buf:
             self._value = buf
-        return self._value
+        return self._value;
 
     def get_length(self):
         """ Return the length of the output buffer """
