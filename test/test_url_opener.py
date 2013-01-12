@@ -23,7 +23,7 @@ class TestUrlOpener(unittest.TestCase):
     def test_http_error_default(self):
         f = TemporaryFile()
         errcode = 404
-        self.obj.http_error_default("url", f.file, errcode, "errmsg", "headers")
+        self.obj.http_error_default("url", f, errcode, "errmsg", "headers")
         f.close()
         self.assertTrue(self.obj.errcode == errcode)
 

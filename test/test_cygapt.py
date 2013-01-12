@@ -113,6 +113,8 @@ class TestCygApt(cygapt.utilstest.TestCase):
         self.obj.ABSOLUTE_ROOT = self._dir_mtroot;
         self.obj.installed = {0:{}};
 
+        self.obj._forceBarred = [self._var_setupIni.barredpkg.name];
+
     def test___init__(self):
         self.assertTrue(isinstance(self.obj, CygApt))
 
@@ -349,6 +351,12 @@ class TestCygApt(cygapt.utilstest.TestCase):
         ret = ob.get_clean();
         self.assertEqual(ret, expected);
 
+    def test_is_barred_package(self):
+        self.assertTrue(self.obj.is_barred_package(self._var_setupIni.libbarredpkg.name));
+        self.assertTrue(self.obj.is_barred_package(self._var_setupIni.barredpkg.name));
+        self.assertFalse(self.obj.is_barred_package(self._var_setupIni.libpkg.name));
+        self.assertFalse(self.obj.is_barred_package(self._var_setupIni.pkg.name));
+        self.obj.is_barred_package("not_exists_pkg");
 
     def assertInstall(self, pkgname_list):
         pkg_ini_list = [];

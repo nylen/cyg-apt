@@ -52,6 +52,7 @@ class CygApt:
         self.rc_options = ['ROOT', 'mirror', 'cache', 'setup_ini', 'distname', 'barred']
         self.distnames = ('curr', 'test', 'prev')
         self.rc_regex = re.compile("^\s*(\w+)\s*=\s*(.*)\s*$")
+        self._forceBarred = ['python', 'python-argparse', 'gnupg'];
 
         # Default behaviours
         self.regex_search = False
@@ -1022,7 +1023,29 @@ class CygApt:
         return 0
 
     def is_barred_package(self, package):
-        return (not self.nobarred) and package in self.barred
+        barred = [];
+        # add user barred package
+        barred.extend(self.barred.split());
+        # add force barred package
+        barred.extend(self._forceBarred);
+
+        # store current package name
+        curr_pkgname = self.packagename;
+
+        # get barred package requires
+        depbarred = [];
+        for self.packagename in barred:
+            try:
+                depbarred.extend(self.get_requires());
+            except SystemExit:
+                pass;
+
+        barred.extend(depbarred);
+
+        # set current package name
+        self.packagename = curr_pkgname;
+
+        return (not self.nobarred) and package in barred;
 
 class AppConflictError(CygAptError):
     def __init__(self, *args):

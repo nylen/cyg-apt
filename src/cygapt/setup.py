@@ -113,7 +113,7 @@ class CygAptSetup:
         self.distname = "curr"
         # Refuse to remove/install any package including these substrings
         # since cyg-apt is dependent on them
-        self.barred = "python cygwin base-cygwin corecautils bash zlib libreadline gnupg"
+        self.barred = ""
         self.always_update = True
 
         if not self.cygwin_p:

@@ -11,10 +11,11 @@ http://code.google.com/p/cyg-apt/
 REQUIREMENTS
 ------------
 
-* A base Cygwin installation.
-* Cygwin `gnupg` package, under Utilities
-* Cygwin Python, under Python. Currently this package is at Python 2.6.
-  Python 3.0 is not currently  supported.
+* A Cygwin base installation v1.7+
+* `gnupg` v1.4+, under `Utils` category
+* `python` v2.6+, <3.0, under `Python` category
+* `python-argparse` v1.2+, under `Python` category
+* `make` v3.82+, under `Devel` category
 
 BUILDING
 --------

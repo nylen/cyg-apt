@@ -29,9 +29,9 @@ C:/cygwin on / type ntfs (binary,auto)
 C: on /cygdrive/c type ntfs (binary,posix=0,user,noumount,auto)
 """
         f = TemporaryFile(mode="w+")
-        f.file.writelines(mount)
-        f.file.seek(0)
-        mtab = f.file.readlines()
+        f.writelines(mount)
+        f.seek(0)
+        mtab = f.readlines()
         f.close()
         
         mapping = {'/usr/bin/': 'C:/cygwin/bin/',
