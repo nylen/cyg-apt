@@ -624,7 +624,12 @@ class CygApt:
                   file=sys.stderr);
             return
         self.write_filelist(lst)
-        self.installed[0][self.packagename] = os.path.basename(ball)
+
+        status = 1;
+        if not self.packagename in self._integrity_control():
+            status = 0;
+        self.installed[status][self.packagename] = os.path.basename(ball)
+
         self.write_installed()
 
     def get_filelist(self):
@@ -865,14 +870,13 @@ class CygApt:
 
         self.barred_warn_if_need(barred, "installing")
 
-        # TODO: do somethings when installation fail
-        self._integrity_control(missing)
-
-
-    def _integrity_control(self, checklist):
+    def _integrity_control(self, checklist=[]):
         options = "-c "
         if self.verbose:
             options += '-v '
+
+        if len(checklist) == 0:
+            checklist.append(self.packagename);
 
         pkg_lst = " ".join(checklist)
         command = ''
