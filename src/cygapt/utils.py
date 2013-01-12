@@ -43,6 +43,11 @@ def parse_rc(cyg_apt_rc):
             if k == "always_update":
                 always_update = eval(v)
 
+    if always_update in [True, 'True', 'true', 'Yes', 'yes']:
+        always_update = True;
+    else:
+        always_update = False;
+
     return always_update
 
 def prsort(lst):

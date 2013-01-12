@@ -33,12 +33,18 @@ class TestUtils(cygapt.utilstest.TestCase):
 
     def test_parse_rc(self):
         f = open(self._get_tmpfilename(), "w")
-        f.write("always_update = True")
+        f.write("always_update = \"True\"")
         f.close()
         
         ret = utils.parse_rc(self._get_tmpfilename())
         self.assertTrue(ret)
         
+        f = open(self._get_tmpfilename(), "w")
+        f.write("always_update = \"False\"")
+        f.close()
+
+        ret = utils.parse_rc(self._get_tmpfilename())
+        self.assertFalse(ret)
         
         f = open(self._get_tmpfilename(), "w")
         f.write("always_update = bad_value")

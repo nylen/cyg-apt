@@ -114,7 +114,7 @@ class CygAptSetup:
         # Refuse to remove/install any package including these substrings
         # since cyg-apt is dependent on them
         self.barred = ""
-        self.always_update = True
+        self.always_update = False
 
         if not self.cygwin_p:
             print("{0}: settup only supported under Cygwin."\
