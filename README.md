@@ -25,6 +25,7 @@ BUILDING
 INSTALL
 -------
 
+* $ `make test`
 * $ `make install`
 
 HELP
