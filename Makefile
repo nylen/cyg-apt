@@ -26,7 +26,7 @@ SD_DOC = $(SD_ROOT)/doc
 SD_TOOLS = $(SD_ROOT)/tools
 
 # source environement
-VERSION = 1.1.0
+VERSION = 1.1.0-1
 VERSION_FILE = VERSION-FILE~
 $(VERSION_FILE): FORCE
 	@$(SHELL_PATH) ./VERSION-GEN

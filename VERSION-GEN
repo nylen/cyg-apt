@@ -26,7 +26,30 @@ elif test -d .git -o -f .git &&
 		VN="$VN-dirty" ;;
 	esac
 then
-	VN=$(echo "$VN" | sed -e 's/-/./g');
+	# Format into cygwin version  major.minor.micro-release[.<git-describe>]
+	oldIFS="$IFS";
+	IFS="-";
+	i=0;
+	VT="";
+	for part in $VN;
+	do
+		case "$i"
+		in
+			'0')
+				VT+="$part";
+			;;
+			'1')
+				VT+="-$part";
+			;;
+			*)
+				VT+=".$part";
+			;;
+		esac;
+		(( i++ ));
+	done;
+	unset i;
+	IFS="$oldIFS"
+	VN="$VT";
 else
 	VN="$VERSION"
 fi
@@ -39,7 +62,7 @@ then
 else
 	VC=unset
 fi
-VN=${VN#v};
+
 test "$VN" = "$VC" || {
 	echo >&2 "VERSION = $VN"
 	echo "VERSION = $VN" >$VF
