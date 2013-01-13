@@ -816,12 +816,25 @@ class CygApt:
                 this_these = "this package"
             else:
                 this_these = "these packages"
-            barredstr = " " + ", ".join(barred)
-            print("{0}: NOT {1}{2}: {0} is dependent on "\
-                  "{3} under Cygwin.".format(self.sn,
-                                             command,
-                                             barredstr,
-                                             this_these),
+            barredstr = ", ".join(barred)
+            helpfull = "";
+            close_all_cygwin_programs = "";
+            if command == "installing":
+                helpfull += r"""
+You can force the installation with the option -f. But it is recommended
+to upgrade the Cygwin distribution, with the official Setup program
+(e.g., setup.exe).""";
+                if "_autorebase" in barred:
+                    close_all_cygwin_programs += r"""
+Before that, you must close all Cygwin programs to perform rebasing
+(e.g., rebaseall).""";
+            print("BarredWarning: NOT {1}:\n    {2}\n{0} is dependent on {3} under Cygwin."\
+                  "{4}{5}".format(self.sn,
+                                  command,
+                                  barredstr,
+                                  this_these,
+                                  helpfull,
+                                  close_all_cygwin_programs),
                   file=sys.stderr);
             if not self.cygwin_p:
                 print("Use -f to override but proceed with caution.",
