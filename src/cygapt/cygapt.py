@@ -53,6 +53,7 @@ class CygApt:
         self.distnames = ('curr', 'test', 'prev')
         self.rc_regex = re.compile("^\s*(\w+)\s*=\s*(.*)\s*$")
         self._forceBarred = ['python', 'python-argparse', 'gnupg'];
+        self._shOption = " --norc --noprofile ";
 
         # Default behaviours
         self.regex_search = False
@@ -520,15 +521,14 @@ class CygApt:
             print("All dependent packages for {0} installed".format(self.packagename))
 
     def run_script(self, file_name, optional=True):
-        sh_option = "--norc --noprofile "
         mapped_file = self.pm.map_path(file_name)
         mapped_file_done = mapped_file + ".done"
         if os.path.isfile(mapped_file):
             sys.stderr.write('running: {0}\n'.format(file_name))
             if self.cygwin_p:
-                cmd = "sh " + sh_option + mapped_file
+                cmd = "sh " + self._shOption + mapped_file
             else:
-                cmd = self.dos_bash + sh_option + mapped_file
+                cmd = self.dos_bash + self._shOption + mapped_file
             retval = os.system(cmd)
 
             if os.path.exists(mapped_file_done):
@@ -894,9 +894,10 @@ Before that, you must close all Cygwin programs to perform rebasing
         pkg_lst = " ".join(checklist)
         command = ''
         if not self.cygwin_p:
-            command += self.dos_bash + ' --login -c '
+            command += self.dos_bash + ' ' + self._shOption
+            command += ' -c '
             command += "'"
-        command += 'cygcheck '
+        command += '/bin/cygcheck '
         command += options
         command += pkg_lst
         if not self.cygwin_p:

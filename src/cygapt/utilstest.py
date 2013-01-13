@@ -313,7 +313,7 @@ source: {self[source][test]}""".format(self=vars(self));
         #    link
         #    hard link
         f = open(bin_f, "w");
-        f.write('#!/usr/bin/sh\necho "running";');
+        f.write('#!/bin/sh\necho "running";');
         f.close();
         ret = 0;
         ret += os.system('ln -s "' + bin_f + '" "' + link_bin_f + '"')
@@ -323,19 +323,19 @@ source: {self[source][test]}""".format(self=vars(self));
 
         # create postinstall > root/etc/postinstall
         f = open(postinstall_f, "w");
-        f.write(r"""#!/usr/bin/sh
+        f.write(r"""#!/bin/sh
 echo "postinstall ... ok" >> {marker_d}/log;
 """.format(marker_d=sys_marker_d));
         f.close();
         # create preremove > root/etc/postremove
         f = open(preremove_f, "w");
-        f.write(r"""#!/usr/bin/sh
+        f.write(r"""#!/bin/sh
 echo "preremove ... ok" >> {marker_d}/log;
 """.format(marker_d=sys_marker_d));
         f.close();
         # create postremmove > root/etc/preremmove
         f = open(postremove_f, "w");
-        f.write(r"""#!/usr/bin/sh
+        f.write(r"""#!/bin/sh
 echo "postremove ... ok" >> {marker_d}/log;
 """.format(marker_d=sys_marker_d));
         f.close();
