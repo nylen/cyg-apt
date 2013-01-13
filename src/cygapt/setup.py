@@ -26,6 +26,8 @@ from cygapt import CygApt
 from error import CygAptError
 from path_mapper import PathMapper
 import utils as cautils
+import version
+import copying
 
 class CygAptSetup:
     def __init__(self, cygwin_p, verbose):
@@ -70,6 +72,7 @@ class CygAptSetup:
         self.config = '/etc/setup'
         self.cygwin_pubring_uri = "http://cygwin.com/key/pubring.asc"
         self.installed_db_magic = 'INSTALLED.DB 2\n'
+        self.version = version.__version__;
 
     def set_verbose(self, verbose):
         self.verbose = verbose
@@ -159,9 +162,11 @@ class CygAptSetup:
             self.update(self.cyg_apt_rc, True)
 
     def usage(self, cyg_apt_rc=None):
-        print("{0} [OPTION]... COMMAND [PACKAGE]...".format(self.sn))
+        print("{0}, version {1}".format(self.sn, self.version));
+        print(copying.help_message, end="\n\n");
         if (cyg_apt_rc):
-            print(("Configuration: {0}".format(cyg_apt_rc)))
+            print("Configuration: {0}".format(cyg_apt_rc))
+        print("Usage: {0} [OPTION]... COMMAND [PACKAGE]...".format(self.sn));
         print("\n  Commands:")
         members = [m
                 for m in inspect.getmembers(CygAptSetup) + inspect.getmembers(CygApt)

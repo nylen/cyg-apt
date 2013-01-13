@@ -2,6 +2,7 @@ SRC = main.py
 D_BUILD = $(SD_BUILD)/$(ID_EXEC)
 EXEC = $(EXENAME)
 PYPKG = cygapt
+PY_VERSION_FILE = $(PYPKG)/version.py
 SRCLIB = $(wildcard $(PYPKG)/*.py)
 
 GPG_CYGWIN_PUBKEY = cygwin.sig
@@ -13,7 +14,10 @@ $(D_BUILD):
 	$(MKDIR) $(SD_BUILD)/$(ID_SYSCONF)/postinstall
 	$(MKDIR) $(SD_BUILD)/$(ID_DATA)/$(EXENAME)
 
-$(D_BUILD)/$(EXEC): $(SRC) $(D_BUILD) $(SRCLIB)
+$(PY_VERSION_FILE): $(SRC) $(SRCLIB)
+	@echo "__version__ = '$(VERSION)'" > $@
+
+$(D_BUILD)/$(EXEC): $(SRC) $(PY_VERSION_FILE) $(D_BUILD)
 	$(SHELL_PATH) ./postinstall-gen.sh > $(SD_BUILD)/$(ID_SYSCONF)/postinstall/$(EXENAME).sh
 	$(PYTHON) setup.py bdist --format=tar --plat-name=""
 	$(TAR) -C $(SD_BUILD) -xf dist/$(PYPKG)-$(VERSION)..tar
@@ -31,7 +35,7 @@ install: $(D_BUILD)/$(EXEC)
 
 clean: FORCE
 	$(PYTHON) setup.py clean
-	$(RM) -r build dist
+	$(RM) -r build dist $(PY_VERSION_FILE)
 
 .PHONY: FORCE
 .EXPORT_ALL_VARIABLES:

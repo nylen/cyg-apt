@@ -26,7 +26,7 @@ SD_DOC = $(SD_ROOT)/doc
 SD_TOOLS = $(SD_ROOT)/tools
 
 # source environement
-VERSION = 1.0.9
+VERSION = 1.1.0
 VERSION_FILE = VERSION-FILE~
 $(VERSION_FILE): FORCE
 	@$(SHELL_PATH) ./VERSION-GEN
@@ -55,7 +55,7 @@ doc: FORCE
 tools: FORCE
 	@cd $(SD_TOOLS); $(MAKE)
 
-test: FORCE
+test: build FORCE
 	@cd $(SD_TEST); $(MAKE)
 
 install: FORCE

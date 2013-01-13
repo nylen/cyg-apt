@@ -138,5 +138,8 @@ class TestSetup(cygapt.utilstest.TestCase):
             
         self.assertTrue(findout)
         
+    def test_usage(self):
+        self.obj.usage();
+
 if __name__ == "__main__":
     unittest.main()

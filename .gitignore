@@ -3,3 +3,4 @@ dist
 *.pyc
 .*
 *~
+/src/cygapt/version.py
