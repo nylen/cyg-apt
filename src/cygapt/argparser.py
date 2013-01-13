@@ -93,8 +93,9 @@ class CygAptArgParser():
                             dest='regex_search',
                             help='search as regex pattern')
 
-        parser.add_argument('-f', '--nobarred',
+        parser.add_argument('-f', '--nobarred', '--force',
                             action='store_true',
+                            dest='force',
                             help='add/remove packages cyg-apt depends on')
 
         parser.add_argument('-X', '--no-verify',

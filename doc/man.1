@@ -29,7 +29,7 @@ Examples:
 setup
 .RS 4
 setup
-is run automatically when \fBcyg\-apt\fR is installed. If for any reason you wish to reset your ~/.cyg-apt configuration file, you can delete it and run setup manually. The configuration information therein is taken from your last Cygwin setup.exe run.
+is run automatically when \fBcyg\-apt\fR is installed. If for any reason you wish to reset your ~/.cyg-apt configuration file, you can run \fBsetup\fR with \fB\-f\fR option. The configuration information therein is taken from your last Cygwin setup.exe run.
 .RE
 .PP
 install
@@ -178,9 +178,11 @@ $ \fBcyg\-apt\fR --regexp search "p.thon"
 .RE
 .PP
 
-\fB\-f\fR, \fB\-\-nobarred\fR
+\fB\-f\fR, \fB\-\-force\fR, \fB\-\-nobarred\fR
 .RS 4
 add/remove packages cyg-apt itself depends on.\&.
+.PP
+\fBsetup\fR; overwriting ~/.cyg-apt configuration file.
 .RE
 .PP
 

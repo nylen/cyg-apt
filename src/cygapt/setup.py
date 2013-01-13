@@ -90,8 +90,8 @@ class CygAptSetup:
         last_cache = cautils.cygpath(last_cache)
         return (last_cache, last_mirror)
 
-    def setup(self, flags=None):
-        """create cyg-apt configuration file"""
+    def setup(self, force=False):
+        """create cyg-apt configuration file, it overwrite with -f option"""
         if not self.cygwin_p:
             print("{0}: setup outside Cygwin not supported. Exiting.".format(self.sn))
             sys.exit(1)
@@ -101,7 +101,7 @@ class CygAptSetup:
             sys.stderr.write("{0}: can't locate home directory. Setup "\
                 "failed, exiting.\n".format(self.sn))
             sys.exit(1)
-        if os.path.exists(self.cyg_apt_rc):
+        if os.path.exists(self.cyg_apt_rc) and not force:
             sys.stderr.write("{0}: {1} exists, not overwriting. "\
                 "\n".format(self.sn, self.cyg_apt_rc))
             sys.exit(0)

@@ -65,7 +65,7 @@ class CygAptMain():
         main_noupdate = args.noupdate
         main_nodeps_p = args.nodeps_p
         main_regex_search = args.regex_search
-        main_nobarred = args.nobarred
+        main_nobarred = args.force
         main_verify = args.verify
         main_nopostinstall = args.nopostinstall
         main_nopostremove = args.nopostremove
@@ -94,7 +94,7 @@ class CygAptMain():
             sys.exit(1)
 
         if (main_command == "setup"):
-            cas.setup()
+            cas.setup(args.force)
             sys.exit(0)
         elif (main_command == "help"):
             cas.usage(main_cyg_apt_rc)
