@@ -14,12 +14,10 @@ $(D_BUILD):
 	$(MKDIR) $(SD_BUILD)/$(ID_SYSCONF)/postinstall
 	$(MKDIR) $(SD_BUILD)/$(ID_DATA)/$(EXENAME)
 
-$(PY_VERSION_FILE): $(SRC) $(SRCLIB)
-	@echo "__version__ = '$(VERSION)'" > $@
-
-$(D_BUILD)/$(EXEC): $(SRC) $(PY_VERSION_FILE) $(D_BUILD)
+$(D_BUILD)/$(EXEC): $(SRC) $(SRCLIB) $(D_BUILD)
 	$(SHELL_PATH) ./postinstall-gen.sh > $(SD_BUILD)/$(ID_SYSCONF)/postinstall/$(EXENAME).sh
 	$(CP) $(SD_ROOT)/LICENSE $(PYPKG)
+	@echo "__version__ = '$(VERSION)'" > $(PY_VERSION_FILE)
 	$(PYTHON) setup.py bdist --format=tar --plat-name=""
 	$(RM) $(PYPKG)/LICENSE
 	$(TAR) -C $(SD_BUILD) -xf dist/$(PYPKG)-$(VERSION)..tar
