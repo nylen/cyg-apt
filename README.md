@@ -28,31 +28,32 @@ Install instructions
 --------------------
 
 Briefly the following commands should build, test and install this package.
- * $ `make`
- * $ `make test`
- * $ `make install`
 
-See the [INSTALL][0] file for more detailed instructions.
+    $ make
+    $ make test
+    $ make install
+
+See the `INSTALL` file for more detailed instructions.
 
 
-HELP
-----
+Usage
+-----
 
-* $ `cyg-apt --help`
-* $ `man cyg-apt`
+cyg-apt is similar to apt-get.
+You can install, use it and remove packages from the Cygwin command prompt:
 
-TODO
-----
+    $ cyg-apt install gdb
+    ...
+    $ gdb
+    (gdb)
+    $ cyg-apt remove gdb
 
-* Add cygport support
-* Add travis test
-* Add missing tests
+Type `cyg-apt --help` or `man cyg-apt` for see all commands and options.
 
-ACKNOWLEDGMENTS
+
+Acknowledgments
 ---------------
 
-The original cyg-apt was written by Jan Nieuwenhuizen.  Additional development
-by Christopher Cormie (cjcormie@gmail.com), James Nylen (jnylen@gmail.com), and
-Alexandre Quercia (alquerci@email.com).
+The original cyg-apt was written by Jan Nieuwenhuizen <janneke@gnu.org>.
 
-[0]: INSTALL.md
+For a list of authors, please see the `AUTHORS` files.
