@@ -19,7 +19,9 @@ $(PY_VERSION_FILE): $(SRC) $(SRCLIB)
 
 $(D_BUILD)/$(EXEC): $(SRC) $(PY_VERSION_FILE) $(D_BUILD)
 	$(SHELL_PATH) ./postinstall-gen.sh > $(SD_BUILD)/$(ID_SYSCONF)/postinstall/$(EXENAME).sh
+	$(CP) $(SD_ROOT)/LICENSE $(PYPKG)
 	$(PYTHON) setup.py bdist --format=tar --plat-name=""
+	$(RM) $(PYPKG)/LICENSE
 	$(TAR) -C $(SD_BUILD) -xf dist/$(PYPKG)-$(VERSION)..tar
 	$(CP) $(GPG_CYGWIN_PUBKEY) $(SD_BUILD)/$(ID_DATA)/$(EXENAME)
 	$(CP) "$<" "$@"
