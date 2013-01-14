@@ -811,5 +811,44 @@ Catch and display exceptions at the top level. Much cleaner.
 
 Ditch unused buildrequires() test.
 
-Revision 141
-------------
+================
+Switching to git
+================
+
+1.0.8-1
+-------
+c3e7b15 Make install script change to current directory
+b6fe556 Use subprocess module instead of deprecated os.popen3
+89804ee Prevent error if $TMP is not set
+a789cc7 Use setup.ini instead of setup-2.ini
+d836ecf Make help text more readable
+22bb534 Fix missing parameter for self.update()
+366c4c1 Fix a couple of spelling/formatting issues
+5571ddc Apply patch from http://code.google.com/p/cyg-apt/issues/detail?id=3
+70c47d4 Show a more helpful error message on package MD5 mismatch.
+
+1.1.0-1
+-------
+f394618 Add bash completion
+24688e4 Fix requires list
+348d188 Update install command
+f2bc283 Fix write_filelist
+d8f31ed Replace getopt by argparse
+a72fbff Fix build lst
+dd1770a Fix CygApt.write_filelist
+d79c371 Add quiet option
+7e98ce7 Fix running script like setup.exe
+5bef6ad Update testsuite
+a658372 Build a local mirror for running the test suites
+53f1c71 Use only format function for string formatting
+da1e0a1 Fix grammar so that print() is a function
+53704b2 Remove string module dependency
+5b75ad0 Fix iostreams
+a54de00 Fix dependency
+9dac272 Fix parse rc
+a16f8cd Add control package integrity on install
+659b77f Show a more explicit message on barred warning
+128ea0f Fix bash execution
+d1c4232 Add the ability to overwrite the configuration file for setup command
+eec4e0f Update help message with version and license
+2507a92 Add any relevent documentation into the binary package
