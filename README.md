@@ -8,25 +8,32 @@ functions.  It has a command syntax similar to `apt-get` and `dpkg`.
 The project's original SVN repository is here:
 http://code.google.com/p/cyg-apt/
 
-REQUIREMENTS
+Requirements
 ------------
 
-* A Cygwin base installation v1.7+
-* `gnupg` v1.4+, under `Utils` category
-* `python` v2.6+, <3.0, under `Python` category
-* `python-argparse` v1.2+, under `Python` category
-* `make` v3.82+, under `Devel` category
+* `cygwin` 1.7+
+* `gnupg` 1.4+
+* `python` 2.6+, <3.0
+* `python-argparse` 1.2+
 
-BUILDING
---------
 
-* $ `make`
+Build requirements
+------------------
 
-INSTALL
--------
+* `make` 3.80+
+* `git` 1.7+
 
-* $ `make test`
-* $ `make install`
+
+Install instructions
+--------------------
+
+Briefly the following commands should build, test and install this package.
+ * $ `make`
+ * $ `make test`
+ * $ `make install`
+
+See the [INSTALL][0] file for more detailed instructions.
+
 
 HELP
 ----
@@ -47,3 +54,5 @@ ACKNOWLEDGMENTS
 The original cyg-apt was written by Jan Nieuwenhuizen.  Additional development
 by Christopher Cormie (cjcormie@gmail.com), James Nylen (jnylen@gmail.com), and
 Alexandre Quercia (alquerci@email.com).
+
+[0]: INSTALL.md
