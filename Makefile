@@ -58,6 +58,9 @@ tools: FORCE
 test: build FORCE
 	@cd $(SD_TEST); $(MAKE)
 
+installtest: install FORCE
+	@cd $(SD_TEST); $(MAKE) $@
+
 install: FORCE
 	@cd $(SD_SRC); $(MAKE) $@
 	@cd $(SD_DOC); $(MAKE) $@
