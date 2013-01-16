@@ -1,3 +1,11 @@
 Add cygport support
 Add travis test
 Add missing tests
+[CygApt] Remove cygcheck dependency to control package integrity (_integrity_control)
+    For it help you to the source code of cygcheck under the cygwin package
+[ArgParser] Update usage with pretty argparse format ( subparser ? )
+Implement the OOP encapsulation (start with a _ not public methods or properties)
+Add language translation
+[Completion] Fix bash completion currently it is not in line with commands and options available
+[Makefile] Add `make uninstall`
+[Makefile] Add configure script for check dependency it must be set macro values
