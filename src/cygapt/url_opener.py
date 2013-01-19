@@ -10,42 +10,42 @@
 # LICENSE file that was distributed with this source code.
 ######################### END LICENSE BLOCK #########################
 
-from __future__ import print_function
-import sys
-import urllib
+from __future__ import print_function;
+import sys;
+import urllib;
 
 class CygAptURLopener(urllib.FancyURLopener):
     def __init__(self, verbose, *args):
-        urllib.FancyURLopener.__init__(self, *args)
-        self.verbose = verbose
-        self.errcode = 200
-        self.barmax = 40
+        urllib.FancyURLopener.__init__(self, *args);
+        self.verbose = verbose;
+        self.errcode = 200;
+        self.barmax = 40;
 
     def http_error_default(self, url, fp, errcode, errmsg, headers):
-        self.errcode = errcode
+        self.errcode = errcode;
         return urllib.FancyURLopener.http_error_default\
-            (self, url, fp, errcode, errmsg, headers)
+            (self, url, fp, errcode, errmsg, headers);
 
     def dlProgress(self, count, blockSize, totalSize):
         if self.errcode != 200:
-            return
+            return;
         if not self.verbose:
-            return
-        barmax = self.barmax
-        ratio = min((count * blockSize), totalSize) / float(totalSize)
-        bar = int(barmax * ratio)
+            return;
+        barmax = self.barmax;
+        ratio = min((count * blockSize), totalSize) / float(totalSize);
+        bar = int(barmax * ratio);
         if ratio == 1.0:
-            sys.stdout.write(" "*70 + "\r")
-            sys.stdout.flush()
+            sys.stdout.write(" "*70 + "\r");
+            sys.stdout.flush();
         else:
             print("[", end="");
             for i in range(barmax):
                 if i < bar:
-                    sys.stdout.write("=")
+                    sys.stdout.write("=");
                 elif i == bar:
-                    sys.stdout.write(">")
+                    sys.stdout.write(">");
                 else:
-                    sys.stdout.write(" ")
-            sys.stdout.write("]\r")
-            sys.stdout.flush()
+                    sys.stdout.write(" ");
+            sys.stdout.write("]\r");
+            sys.stdout.flush();
 

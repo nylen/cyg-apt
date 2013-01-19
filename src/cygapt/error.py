@@ -10,11 +10,11 @@
 # LICENSE file that was distributed with this source code.
 ######################### END LICENSE BLOCK #########################
 
-from __future__ import print_function
+from __future__ import print_function;
 
 class CygAptError(Exception):
     def __init__(self, value):
-        self.msg = value
+        self.msg = value;
 
     def __str__(self):
-        return self.msg
+        return self.msg;

@@ -10,8 +10,8 @@
 # LICENSE file that was distributed with this source code.
 ######################### END LICENSE BLOCK #########################
 
-from __future__ import print_function
+from __future__ import print_function;
 
-import version
+import version;
 
-__version__ = version.__version__
+__version__ = version.__version__;

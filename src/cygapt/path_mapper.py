@@ -10,37 +10,37 @@
 # LICENSE file that was distributed with this source code.
 ######################### END LICENSE BLOCK #########################
 
-from __future__ import print_function
-import os
+from __future__ import print_function;
+import os;
 
-import utils as cautils
+import utils as cautils;
 
 class PathMapper:
     def __init__(self, root, cygwin_p):
-        self.root = root
+        self.root = root;
         p = os.popen(self.root + "/bin/mount");
-        mountout = p.readlines()
+        mountout = p.readlines();
         p.close();
-        self.mountroot = "/"
-        self.add_mapping(mountout)
-        self.cygwin_p = cygwin_p
+        self.mountroot = "/";
+        self.add_mapping(mountout);
+        self.cygwin_p = cygwin_p;
 
     def add_mapping(self, mtab):
-        self.map = {}
-        mtab = [l.split() for l in mtab]
+        self.map = {};
+        mtab = [l.split() for l in mtab];
         for l in mtab:
             if l[2] != "/":
-                self.map[l[2] + "/"] = l[0] + "/"
+                self.map[l[2] + "/"] = l[0] + "/";
             else:
-                self.mountroot = l[0] + "/"
+                self.mountroot = l[0] + "/";
 
     def map_path(self, path):
         if self.cygwin_p:
-            return path
+            return path;
         # sort to map to /e/bar/foo in pefrence /e/bar
-        l = cautils.prsort(list(self.map.keys()))
+        l = cautils.prsort(list(self.map.keys()));
         for cygpath in l:
             if path.find(cygpath) == 0:
-                path = path.replace(cygpath, self.map[cygpath])
-                return path
-        return self.root + path
+                path = path.replace(cygpath, self.map[cygpath]);
+                return path;
+        return self.root + path;

@@ -11,36 +11,36 @@
 # LICENSE file that was distributed with this source code.
 ######################### END LICENSE BLOCK #########################
 
-from __future__ import print_function
-import unittest
-import sys
-import os
-import gzip
+from __future__ import print_function;
+import unittest;
+import sys;
+import os;
+import gzip;
 
-from cygapt.cygapt import CygApt
-from cygapt.setup import CygAptSetup
-from cygapt.ob import CygAptOb
-import cygapt.utilstest
+from cygapt.cygapt import CygApt;
+from cygapt.setup import CygAptSetup;
+from cygapt.ob import CygAptOb;
+import cygapt.utilstest;
 
 class TestCygApt(cygapt.utilstest.TestCase):
     def setUp(self):
-        cygapt.utilstest.TestCase.setUp(self)
+        cygapt.utilstest.TestCase.setUp(self);
 
-        self._var_verbose = False
-        self._var_cygwin_p = sys.platform == "cygwin"
+        self._var_verbose = False;
+        self._var_cygwin_p = sys.platform == "cygwin";
 
         if not self._var_cygwin_p:
-            self.skipTest("requires cygwin")
+            self.skipTest("requires cygwin");
 
-        setup = CygAptSetup(self._var_cygwin_p, self._var_verbose)
-        setup.tmpdir = self._dir_tmp
-        setup.sn = self._var_exename
-        setup.config = self._dir_confsetup
-        setup.ROOT = self._dir_mtroot
-        setup.ABSOLUTE_ROOT = self._dir_mtroot
+        setup = CygAptSetup(self._var_cygwin_p, self._var_verbose);
+        setup.tmpdir = self._dir_tmp;
+        setup.sn = self._var_exename;
+        setup.config = self._dir_confsetup;
+        setup.ROOT = self._dir_mtroot;
+        setup.ABSOLUTE_ROOT = self._dir_mtroot;
 
-        setup.gpg_import(setup.cygwin_pubring_uri)
-        setup.setup()
+        setup.gpg_import(setup.cygwin_pubring_uri);
+        setup.setup();
 
         f = open(self._file_setup_ini, "w");
         f.write(self._var_setupIni.contents);
@@ -50,18 +50,18 @@ class TestCygApt(cygapt.utilstest.TestCase):
         f.write(setup.installed_db_magic);
         f.close();
 
-        self._var_packagename = self._var_setupIni.pkg.name
+        self._var_packagename = self._var_setupIni.pkg.name;
         self._var_files = ["", self._var_packagename];
-        self._var_download_p = False
-        self._var_downloads = None
-        self._var_distname = None
-        self._var_nodeps_p = False
-        self._var_regex_search = False
-        self._var_nobarred = False
-        self._var_nopostinstall = False
-        self._var_nopostremove = False
-        self._var_dists = 0
-        self._var_installed = 0
+        self._var_download_p = False;
+        self._var_downloads = None;
+        self._var_distname = None;
+        self._var_nodeps_p = False;
+        self._var_regex_search = False;
+        self._var_nobarred = False;
+        self._var_nopostinstall = False;
+        self._var_nopostremove = False;
+        self._var_dists = 0;
+        self._var_installed = 0;
 
         self.obj = CygApt(self._var_packagename,
                           self._var_files,
@@ -79,7 +79,7 @@ class TestCygApt(cygapt.utilstest.TestCase):
                           self._var_dists,
                           self._var_installed,
                           self._var_exename,
-                          self._var_verbose)
+                          self._var_verbose);
 
         self.obj.cache = self._dir_execache;
         self.obj.downloads = self._dir_downloads;
@@ -90,11 +90,11 @@ class TestCygApt(cygapt.utilstest.TestCase):
         self.obj.config = self._dir_confsetup;
 
         # set attributes
-        self.obj.sn = self._var_exename
-        self.obj.pm.cygwin_p = False
-        self.obj.pm.mountroot = self._dir_mtroot
-        self.obj.pm.root = self._dir_mtroot[:-1]
-        self.obj.pm.map = {self._dir_mtroot:self._dir_mtroot}
+        self.obj.sn = self._var_exename;
+        self.obj.pm.cygwin_p = False;
+        self.obj.pm.mountroot = self._dir_mtroot;
+        self.obj.pm.root = self._dir_mtroot[:-1];
+        self.obj.pm.map = {self._dir_mtroot:self._dir_mtroot};
 
         expected = self._dir_mtroot;
         ret = self.obj.pm.map_path(self._dir_mtroot);
@@ -103,9 +103,9 @@ class TestCygApt(cygapt.utilstest.TestCase):
         ret = self.obj.pm.map_path(expected);
         self.assertEqual(ret, expected);
 
-        self.obj.dists = self._var_setupIni.dists.__dict__
-        self.obj.distname = "curr"
-        self.obj.INSTALL = "install"
+        self.obj.dists = self._var_setupIni.dists.__dict__;
+        self.obj.distname = "curr";
+        self.obj.INSTALL = "install";
         self.obj.always_update = False;
 
         self.obj.postinstall_dir = self._dir_postinstall;
@@ -123,69 +123,69 @@ class TestCygApt(cygapt.utilstest.TestCase):
         self.obj._forceBarred = [self._var_setupIni.barredpkg.name];
 
     def test___init__(self):
-        self.assertTrue(isinstance(self.obj, CygApt))
+        self.assertTrue(isinstance(self.obj, CygApt));
 
     def test_write_filelist(self):
-        lst = ["file1", "file2/", "file3/dfd"]
-        lstret = [b"file1\n", b"file2/\n", b"file3/dfd\n"]
-        gzfile = os.path.join(self._dir_confsetup, "pkg.lst.gz")
-        self.obj.config = self._dir_confsetup
-        self.obj.packagename = "pkg"
-        self.obj.setup_ini = self._file_setup_ini
-        self.obj.write_filelist(lst)
+        lst = ["file1", "file2/", "file3/dfd"];
+        lstret = [b"file1\n", b"file2/\n", b"file3/dfd\n"];
+        gzfile = os.path.join(self._dir_confsetup, "pkg.lst.gz");
+        self.obj.config = self._dir_confsetup;
+        self.obj.packagename = "pkg";
+        self.obj.setup_ini = self._file_setup_ini;
+        self.obj.write_filelist(lst);
         gzf = gzip.open(gzfile);
         expected = gzf.readlines();
         gzf.close();
-        self.assertEqual(expected, lstret)
+        self.assertEqual(expected, lstret);
 
     def test_run_script(self):
-        script = "/pkg.sh"
-        script_done = script + ".done"
-        map_script = self.obj.pm.map_path(script)
-        map_script_done = self.obj.pm.map_path(script_done)
+        script = "/pkg.sh";
+        script_done = script + ".done";
+        map_script = self.obj.pm.map_path(script);
+        map_script_done = self.obj.pm.map_path(script_done);
         f = open(map_script, "w");
-        f.write("#!/bin/bash\nexit 0;")
+        f.write("#!/bin/bash\nexit 0;");
         f.close();
 
-        self.obj.run_script(script, False)
-        self.assertTrue(os.path.exists(map_script_done))
+        self.obj.run_script(script, False);
+        self.assertTrue(os.path.exists(map_script_done));
         
     def test_version_to_string(self):
-        versiont = [1,12,3,1]
-        out = "1.12.3-1"
-        ret = self.obj.version_to_string(versiont)
-        self.assertEqual(ret, out)
+        versiont = [1,12,3,1];
+        out = "1.12.3-1";
+        ret = self.obj.version_to_string(versiont);
+        self.assertEqual(ret, out);
         
     def test_string_to_version(self):
-        string = "1.12.3-1"
-        out = [1,12,3,1]
-        ret = self.obj.string_to_version(string)
-        self.assertEqual(list(ret), out)
+        string = "1.12.3-1";
+        out = [1,12,3,1];
+        ret = self.obj.string_to_version(string);
+        self.assertEqual(list(ret), out);
         
     def test_split_ball(self):
-        input = "pkgball-1.12.3-1.tar.bz2"
-        output = ["pkgball", (1,12,3,1)]
-        ret = self.obj.split_ball(input)
-        self.assertEqual(list(ret), output)
+        input = "pkgball-1.12.3-1.tar.bz2";
+        output = ["pkgball", (1,12,3,1)];
+        ret = self.obj.split_ball(input);
+        self.assertEqual(list(ret), output);
         
     def test_join_ball(self):
-        input = ["pkgball", [1,12,3,1]]
-        output = "pkgball-1.12.3-1"
-        ret = self.obj.join_ball(input)
-        self.assertEqual(ret, output)
+        input = ["pkgball", [1,12,3,1]];
+        output = "pkgball-1.12.3-1";
+        ret = self.obj.join_ball(input);
+        self.assertEqual(ret, output);
         
     def test_get_setup_ini(self):
-        self.obj.dists = 0
-        self.obj.get_setup_ini()
-        self.assertEqual(self.obj.dists, self._var_setupIni.dists.__dict__)
+        self.obj.dists = 0;
+        self.obj.get_setup_ini();
+        self.assertEqual(self.obj.dists, self._var_setupIni.dists.__dict__);
 
     def test_get_url(self):
-        ret = self.obj.get_url()
+        ret = self.obj.get_url();
         filename, size, md5 = self._var_setupIni.pkg.install.curr.toString().split(
                                            " ",
-                                           3)
+                                           3);
 
-        self.assertEqual(ret, (filename, md5))
+        self.assertEqual(ret, (filename, md5));
 
     #test also do_download ball getmd5 and md5
     def test_download(self):
@@ -222,7 +222,7 @@ class TestCygApt(cygapt.utilstest.TestCase):
         self.obj.installed = {int(pkg[2]):{pkg[0]:pkg[1]}};
 
         self.obj.write_installed();
-        f = open(self._file_installed_db)
+        f = open(self._file_installed_db);
         ret = f.read();
         f.close();
 
@@ -294,7 +294,7 @@ class TestCygApt(cygapt.utilstest.TestCase):
     def test_do_uninstall(self):
         self.test_postinstall();
         self.obj.do_uninstall();
-        self.assertRemove([self.obj.packagename])
+        self.assertRemove([self.obj.packagename]);
 
     def test_install(self):
         # INSTALL
@@ -408,4 +408,4 @@ class TestCygApt(cygapt.utilstest.TestCase):
                     self.assertTrue(False, filename + " postremove runing fail");
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main();

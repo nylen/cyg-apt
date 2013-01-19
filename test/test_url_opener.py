@@ -11,13 +11,13 @@
 # LICENSE file that was distributed with this source code.
 ######################### END LICENSE BLOCK #########################
 
-from __future__ import print_function
-import unittest
-import sys
-from tempfile import TemporaryFile
-from cStringIO import StringIO
+from __future__ import print_function;
+import unittest;
+import sys;
+from tempfile import TemporaryFile;
+from cStringIO import StringIO;
 
-from cygapt.url_opener import CygAptURLopener
+from cygapt.url_opener import CygAptURLopener;
 
 class TestUrlOpener(unittest.TestCase):
     '''
@@ -25,33 +25,33 @@ class TestUrlOpener(unittest.TestCase):
     '''
 
     def setUp(self):
-        unittest.TestCase.setUp(self)
-        self.obj = CygAptURLopener(True)
+        unittest.TestCase.setUp(self);
+        self.obj = CygAptURLopener(True);
 
     def test___init__(self):
-        self.assertTrue(isinstance(self.obj, CygAptURLopener))
+        self.assertTrue(isinstance(self.obj, CygAptURLopener));
 
     def test_http_error_default(self):
-        f = TemporaryFile()
-        errcode = 404
-        self.obj.http_error_default("url", f, errcode, "errmsg", "headers")
-        f.close()
-        self.assertTrue(self.obj.errcode == errcode)
+        f = TemporaryFile();
+        errcode = 404;
+        self.obj.http_error_default("url", f, errcode, "errmsg", "headers");
+        f.close();
+        self.assertTrue(self.obj.errcode == errcode);
 
     def test_dlProgress(self):
-        self.obj.verbose = 1
-        old_stdout = sys.stdout
-        buf = StringIO()
-        sys.stdout = buf
-        self.obj.dlProgress(1, 512, 1024)
-        sys.stdout = old_stdout
-        buf.seek(0)
-        out = buf.readline()
-        buf.close()
-        expect_out = "[====================>                   ]\r"
+        self.obj.verbose = 1;
+        old_stdout = sys.stdout;
+        buf = StringIO();
+        sys.stdout = buf;
+        self.obj.dlProgress(1, 512, 1024);
+        sys.stdout = old_stdout;
+        buf.seek(0);
+        out = buf.readline();
+        buf.close();
+        expect_out = "[====================>                   ]\r";
         
-        self.assertEqual(out, expect_out)
+        self.assertEqual(out, expect_out);
         
         
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main();

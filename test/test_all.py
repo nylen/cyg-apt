@@ -11,20 +11,20 @@
 # LICENSE file that was distributed with this source code.
 ######################### END LICENSE BLOCK #########################
 
-from __future__ import print_function
-import unittest
+from __future__ import print_function;
+import unittest;
 
-from test_utils import TestUtils
-from test_url_opener import TestUrlOpener
-from test_argparser import TestArgParser
-from test_ob import TestOb
-from test_path_mapper import TestPathMapper
-from test_setup import TestSetup
-from test_cygapt import TestCygApt as TestCygAptClass
+from test_utils import TestUtils;
+from test_url_opener import TestUrlOpener;
+from test_argparser import TestArgParser;
+from test_ob import TestOb;
+from test_path_mapper import TestPathMapper;
+from test_setup import TestSetup;
+from test_cygapt import TestCygApt as TestCygAptClass;
 
 class TestCygApt(unittest.TestSuite):
     def __init__(self):
-        loader = unittest.TestLoader()
+        loader = unittest.TestLoader();
         self.addTests(
             loader.loadTestsFromTestCase(TestUtils),
             loader.loadTestsFromTestCase(TestUrlOpener),

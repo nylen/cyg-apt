@@ -12,28 +12,28 @@
 # LICENSE file that was distributed with this source code.
 ######################### END LICENSE BLOCK #########################
 
-from __future__ import print_function
-from distutils.core import setup
-import os
+from __future__ import print_function;
+from distutils.core import setup;
+import os;
 
-realpathfile = os.path.realpath(os.path.dirname(__file__))
-realpathcwd = os.path.realpath(os.getcwd())
+realpathfile = os.path.realpath(os.path.dirname(__file__));
+realpathcwd = os.path.realpath(os.getcwd());
 
 if realpathfile != realpathcwd:
-    os.chdir(realpathfile)
+    os.chdir(realpathfile);
 
 try:
-    version = os.environ['VERSION']
+    version = os.environ['VERSION'];
 except KeyError:
-    version = "1.1.0beta1"
+    version = "1.1.0beta1";
 
 try:
-    pkgname = os.environ['PYPKG']
+    pkgname = os.environ['PYPKG'];
 except KeyError:
-    pkgname = "cygapt"
+    pkgname = "cygapt";
 
 f = open("../README.md");
-long_description = f.read()
+long_description = f.read();
 f.close();
 
 setup(name=pkgname,
@@ -57,6 +57,6 @@ setup(name=pkgname,
           'Operating System :: Microsoft :: Windows',
           'Programming Language :: Python',
           ],
-      )
+      );
 
-os.chdir(realpathcwd)
+os.chdir(realpathcwd);
