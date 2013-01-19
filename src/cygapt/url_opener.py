@@ -48,4 +48,3 @@ class CygAptURLopener(urllib.FancyURLopener):
                     sys.stdout.write(" ");
             sys.stdout.write("]\r");
             sys.stdout.flush();
-
