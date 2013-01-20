@@ -30,7 +30,7 @@ class TestOb(unittest.TestCase):
     def tearDown(self):
         unittest.TestCase.tearDown(self);
         try:
-            self.obj.end();
+            self.obj._end();
         except:
             pass;
     
@@ -59,11 +59,11 @@ class TestOb(unittest.TestCase):
         self.assertFalse(self.obj.getContents() == "");
     
     def testStartEnd(self):
-        self.obj.end();
+        self.obj._end();
         self.makeOff();
         self.obj.start();
         self.makeOn();
-        self.obj.end();
+        self.obj._end();
         self.makeOff();
         
     def testEndClean(self):

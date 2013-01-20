@@ -15,23 +15,30 @@ import sys;
 import urllib;
 
 class CygAptURLopener(urllib.FancyURLopener):
+    BAR_MAX = 40;
+
     def __init__(self, verbose, *args):
         urllib.FancyURLopener.__init__(self, *args);
-        self.verbose = verbose;
-        self.errorCode = 200;
-        self.barMax = 40;
+        self.__verbose = verbose;
+        self.__errorCode = 200;
+
+    def getErrorCode(self):
+        return self.__errorCode;
+
+    def setErrorCode(self, code):
+        self.__errorCode = int(code);
 
     def http_error_default(self, url, fp, errcode, errmsg, headers):
-        self.errorCode = errcode;
+        self.__errorCode = errcode;
         return urllib.FancyURLopener.http_error_default\
             (self, url, fp, errcode, errmsg, headers);
 
     def dlProgress(self, count, blockSize, totalSize):
-        if self.errorCode != 200:
+        if self.__errorCode != 200:
             return;
-        if not self.verbose:
+        if not self.__verbose:
             return;
-        barmax = self.barMax;
+        barmax = self.BAR_MAX;
         ratio = min((count * blockSize), totalSize) / float(totalSize);
         bar = int(barmax * ratio);
         if ratio == 1.0:

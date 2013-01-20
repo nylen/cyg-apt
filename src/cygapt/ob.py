@@ -35,7 +35,7 @@ class CygAptOb:
         self._state = True;
         self._value = None;
 
-    def end(self):
+    def _end(self):
         """ Turn off output buffering """
         if self._state:
             self._buffer.close();
@@ -57,13 +57,13 @@ class CygAptOb:
         """
         self.clean();
         content = self.getContents();
-        self.end();
+        self._end();
         return content;
 
     def endFlush(self):
         """ Flush (send) the output buffer and turn off output buffering """
         self.flush();
-        self.end();
+        self._end();
 
     def clean(self):
         """ Clean (erase) the output buffer """
@@ -83,12 +83,12 @@ class CygAptOb:
     def endClean(self):
         """ Clean (erase) the output buffer and turn off output buffering """
         self._value = None;
-        self.end();
+        self._end();
 
     def implicitFlush(self, flag=True):
         """ Turn implicit flush on/off """
         if flag and self._state:
-            self.end();
+            self._end();
         elif not flag and not self._state:
             self.start();
 

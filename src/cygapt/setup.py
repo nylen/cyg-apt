@@ -27,54 +27,111 @@ from path_mapper import PathMapper;
 import utils as cautils;
 import version;
 import copying;
+from structure import ConfigStructure;
 
 class CygAptSetup:
+    RC_OPTIONS = [
+                  'ROOT',
+                  'mirror',
+                  'cache',
+                  'setup_ini',
+                  'distname',
+                  'barred',
+                  'always_update'
+                  ];
+    RC_COMMENTS = {\
+        "ROOT" : "# The root of your Cygwin installation as a windows path\n",\
+        "mirror" : "# URL of your Cygwin mirror: example "\
+        "http://mirror.internode.on.net/pub/cygwin/\n",\
+        "cache" : "# Your package cache as a POSIX path: example "\
+        "/e/home/cygwin_package_cache\n",\
+        "setup_ini" : "# setup.ini lists available packages and is "\
+        "downloaded from the top level\n"\
+        "# of the downloaded mirror. Standard location is "\
+        "/etc/setup/setup.ini,\n"\
+        "# seutp-2.ini for Cygwin 1.7 Beta\n",\
+        "distname" : "# The distribution, current previous or test "\
+        "[curr, prev, test].\n"\
+        "# Usually you want the \"curr\" version of a package.\n",\
+        "barred" : "# Packages which cyg-apt can't change under Cygwin "\
+        "since it depends on them.\n"\
+        "# Run cyg-apt under DOS with -f (force) option to change "\
+        "these packages.\n"\
+        "# Treat Cygwin core packages with CAUTION.\n",\
+        "always_update" : "# Always update setup.ini before any command"\
+        " that uses it. cyg-apt will be\n# faster and use less bandwidth if"\
+        " False but you will have to run the update\n# command manually.\n"
+    };
+    RC_REGEX = re.compile("^\s*(\w+)\s*=\s*(.*)\s*$");
+    GPG_GOOD_FINGER = "1169 DF9F 2273 4F74 3AA5  9232 A9A2 62FF 6760 41BA";
+    GPG_CYG_PUBLIC_RING_URI = "http://cygwin.com/key/pubring.asc";
+    VERSION = version.__version__;
+
     def __init__(self, cygwin_p, verbose):
-        self.cygwinPlatform = cygwin_p;
-        self.verbose = verbose;
-        self.rcOptions = ['ROOT', 'mirror', 'cache', 'setup_ini', 'distname',\
-            'barred', 'always_update'];
-        self.rcComments = {\
-            "ROOT" : "# The root of your Cygwin installation as a windows path\n",\
-            "mirror" : "# URL of your Cygwin mirror: example "\
-            "http://mirror.internode.on.net/pub/cygwin/\n",\
-            "cache" : "# Your package cache as a POSIX path: example "\
-            "/e/home/cygwin_package_cache\n",\
-            "setup_ini" : "# setup.ini lists available packages and is "\
-            "downloaded from the top level\n"\
-            "# of the downloaded mirror. Standard location is "\
-            "/etc/setup/setup.ini,\n"\
-            "# seutp-2.ini for Cygwin 1.7 Beta\n",\
-            "distname" : "# The distribution, current previous or test "\
-            "[curr, prev, test].\n"\
-            "# Usually you want the \"curr\" version of a package.\n",\
-            "barred" : "# Packages which cyg-apt can't change under Cygwin "\
-            "since it depends on them.\n"\
-            "# Run cyg-apt under DOS with -f (force) option to change "\
-            "these packages.\n"\
-            "# Treat Cygwin core packages with CAUTION.\n",\
-            "always_update" : "# Always update setup.ini before any command"\
-            " that uses it. cyg-apt will be\n# faster and use less bandwidth if"\
-            " False but you will have to run the update\n# command manually.\n"
-            };
-        self.appName = os.path.basename(sys.argv[0]);
-        self.rcRegex = re.compile("^\s*(\w+)\s*=\s*(.*)\s*$");
-        if 'TMP' in os.environ:
-            self.tmpdir = os.environ['TMP'];
-        else:
-            self.tmpdir = "/usr/share/cyg-apt";
-        self.gpgGoodFinger = "1169 DF9F 2273 4F74 3AA5  9232 A9A2 62FF 6760 41BA";
-        #self.gpgGoodFinger = "Good signature"
-        self.pm = PathMapper("", self.cygwinPlatform);
-        self.ROOT = self.pm.mountRoot;
-        self.absRoot = self.ROOT;
-        self.config = '/etc/setup';
-        self.cygwinPublicRingUri = "http://cygwin.com/key/pubring.asc";
-        self.installedDbMagic = 'INSTALLED.DB 2\n';
-        self.version = version.__version__;
+        self.__cygwinPlatform = cygwin_p;
+        self.__verbose = verbose;
+        self.__appName = os.path.basename(sys.argv[0]);
+        self.setTmpDir();
+        self.setPathMapper();
+        self.__setupDir = '/etc/setup';
+        self.__rc = ConfigStructure();
+        
+        self.__rc.ROOT = self.__pm.getMountRoot();
+
+    def getCygwinPlatform(self):
+        return self.__cygwinPlatform;
+
+    def setCygwinPlatform(self, cygwin_p):
+        self.__cygwinPlatform = bool(cygwin_p);
 
     def setVerbose(self, verbose):
-        self.verbose = verbose;
+        self.__verbose = verbose;
+
+    def getVerbose(self):
+        return self.__verbose;
+
+    def getAppName(self):
+        return self.__appName;
+
+    def setAppName(self, app_name):
+        self.__appName = str(app_name);
+
+    def getTmpDir(self):
+        return self.__tmpDir;
+
+    def setTmpDir(self, tmp_dir=None):
+        if tmp_dir:
+            self.__tmpDir = tmp_dir;
+        elif 'TMP' in os.environ:
+            self.__tmpDir = os.environ['TMP'];
+        else:
+            self.__tmpDir = "/usr/share/cyg-apt";
+
+    def getPathMapper(self):
+        return self.__pm;
+
+    def setPathMapper(self, path_mapper=None):
+        if path_mapper:
+            assert isinstance(path_mapper, PathMapper);
+            self.__pm = path_mapper;
+        else:
+            self.__pm = PathMapper("", self.__cygwinPlatform);
+
+    def getRC(self):
+        return self.__rc;
+
+    def setRC(self, rc_structure):
+        assert isinstance(rc_structure, ConfigStructure);
+        self.__rc = rc_structure;
+
+    def getSetupDir(self):
+        return self.__setupDir;
+
+    def setSetupDir(self, setup_dir):
+        self.__setupDir = str(setup_dir);
+
+    def _cygwinVersion(self):
+        return float(platform.release()[:3]);
 
     def getSetupRc(self, location):
         if not (os.path.exists(location + "/" + "setup.rc")):
@@ -94,78 +151,75 @@ class CygAptSetup:
 
     def setup(self, force=False):
         """create cyg-apt configuration file, it overwrite with -f option"""
-        if not self.cygwinPlatform:
-            print("{0}: setup outside Cygwin not supported. Exiting.".format(self.appName));
+        if not self.__cygwinPlatform:
+            print("{0}: setup outside Cygwin not supported. Exiting.".format(self.__appName));
             sys.exit(1);
         if "HOME" in os.environ:
-            self.configFileName = os.environ['HOME'] + '/.' + self.appName;
+            rc_file = os.environ['HOME'] + '/.' + self.__appName;
         else:
             sys.stderr.write("{0}: can't locate home directory. Setup "\
-                "failed, exiting.\n".format(self.appName));
+                "failed, exiting.\n".format(self.__appName));
             sys.exit(1);
-        if os.path.exists(self.configFileName) and not force:
+        if os.path.exists(rc_file) and not force:
             sys.stderr.write("{0}: {1} exists, not overwriting. "\
-                "\n".format(self.appName, self.configFileName));
+                "\n".format(self.__appName, rc_file));
             sys.exit(0);
 
 
-        installed_db = self.config + '/installed.db';
+        installed_db = self.__setupDir + '/installed.db';
         missing_cache_marker = "";
         missing_mirror_marker = "";
-        self.distname = "curr";
+        self.__rc.distname = "curr";
         # Refuse to remove/install any package including these substrings
         # since cyg-apt is dependent on them
-        self.barred = "";
-        self.always_update = False;
+        self.__rc.barred = "";
+        self.__rc.always_update = False;
 
-        if not self.cygwinPlatform:
+        if not self.__cygwinPlatform:
             print("{0}: settup only supported under Cygwin."\
-                  "Exiting.".format(self.appName));
+                  "Exiting.".format(self.__appName));
             return;
 
-        (last_cache, last_mirror) = self.getSetupRc(self.config);
+        (last_cache, last_mirror) = self.getSetupRc(self.__setupDir);
         if ((not last_cache) or (not last_mirror)):
-            (last_cache, last_mirror) = self.getPre17Last(self.config);
+            (last_cache, last_mirror) = self._getPre17Last(self.__setupDir);
             if ((not last_cache) or (not last_mirror)):
                 print("{0}: {1}/setup.rc not found. Please edit {2} to "\
-                "provide mirror and cache.".format(self.appName, self.config, self.configFileName));
+                "provide mirror and cache.".format(self.__appName, self.__setupDir, rc_file));
                 last_cache = missing_cache_marker;
                 last_mirror  = missing_mirror_marker;
-        self.mirror = last_mirror;
-        self.cache = last_cache;
-
-        cygwin_version = platform.release()[:3];
-        self.setup_ini = self.config + "/setup.ini";
-        self.cygwinVersion = float(cygwin_version);
+        self.__rc.mirror = last_mirror;
+        self.__rc.cache = last_cache;
+        self.__rc.setup_ini = self.__setupDir + "/setup.ini";
 
         contents = "";
-        for i in self.rcOptions:
-            if i in list(self.rcComments.keys()):
-                contents += self.rcComments[i];
-            contents += '{0}="{1}"\n\n'.format(i, eval("self." + i));
-        f = open(self.configFileName, "w");
+        for i in self.__rc.__dict__:
+            if i in list(self.RC_COMMENTS.keys()):
+                contents += self.RC_COMMENTS[i];
+            contents += '{0}="{1}"\n\n'.format(i, self.__rc.__dict__[i]);
+        f = open(rc_file, "w");
         f.write(contents);
         f.close();
-        print("{0}: creating {1}".format(self.appName, self.configFileName));
+        print("{0}: creating {1}".format(self.__appName, rc_file));
 
-        if not os.path.isdir(self.absRoot):
-            sys.stderr.write('error: {0} no root dir\n'.format(self.absRoot));
+        if not os.path.isdir(self.__rc.ROOT):
+            sys.stderr.write('error: {0} no root dir\n'.format(self.__rc.ROOT));
             sys.exit(2);
-        if not os.path.isdir(self.config):
-            sys.stderr.write('creating {0}\n'.format(self.config));
-            os.makedirs(self.config);
+        if not os.path.isdir(self.__setupDir):
+            sys.stderr.write('creating {0}\n'.format(self.__setupDir));
+            os.makedirs(self.__setupDir);
         if not os.path.isfile(installed_db):
-            self.writeInstalled(installed_db);
-        if not os.path.isfile(self.setup_ini):
-            sys.stderr.write('getting {0}\n'.format(self.setup_ini));
-            self.update(self.configFileName, True);
+            self._writeInstalled(installed_db);
+        if not os.path.isfile(self.__rc.setup_ini):
+            sys.stderr.write('getting {0}\n'.format(self.__rc.setup_ini));
+            self.update(rc_file, True);
 
     def usage(self, cyg_apt_rc=None):
-        print("{0}, version {1}".format(self.appName, self.version));
+        print("{0}, version {1}".format(self.__appName, self.VERSION));
         print(copying.help_message, end="\n\n");
         if (cyg_apt_rc):
             print("Configuration: {0}".format(cyg_apt_rc));
-        print("Usage: {0} [OPTION]... COMMAND [PACKAGE]...".format(self.appName));
+        print("Usage: {0} [OPTION]... COMMAND [PACKAGE]...".format(self.__appName));
         print("\n  Commands:");
         members = [m
                 for m in inspect.getmembers(CygAptSetup) + inspect.getmembers(CygApt)
@@ -190,28 +244,27 @@ class CygAptSetup:
 
     def update(self, cyg_apt_rc, verify, main_mirror=None):
         """fetch current package database from mirror"""
-        rc = {};
         sig_name = None;
         f = open(cyg_apt_rc);
         lines = f.readlines();
         f.close();
         for i in lines:
-            result = self.rcRegex.search(i);
+            result = self.RC_REGEX.search(i);
             if result:
                 k = result.group(1);
                 v = result.group(2);
-                if k in self.rcOptions:
-                    rc[k] = eval(v);
+                if k in self.__rc.__dict__:
+                    self.__rc.__dict__[k] = eval(v);
 
-        if(not self.cygwinPlatform):
-            self.pm = PathMapper(rc["ROOT"][:-1], False);
+        if(not self.__cygwinPlatform):
+            self.__pm = PathMapper(self.__rc.ROOT[:-1], False);
 
-        setup_ini = self.pm.mapPath(rc["setup_ini"]);
+        setup_ini = self.__pm.mapPath(self.__rc.setup_ini);
         if (main_mirror):
             mirror = main_mirror;
         else:
-            mirror = rc["mirror"];
-        downloads = self.pm.mapPath(rc["cache"]) + '/' + urllib.quote(mirror, '').lower();
+            mirror = self.__rc.mirror;
+        downloads = self.__pm.mapPath(self.__rc.cache) + '/' + urllib.quote(mirror, '').lower();
         if not mirror[-1] == "/":
             sep = "/";
         else:
@@ -224,13 +277,13 @@ class CygAptSetup:
             setup_ini_url = '{0}{1}{2}'.format(mirror, sep, setup_ini_name);
             err = None;
             try:
-                cautils.uri_get(self.tmpdir, setup_ini_url, verbose=self.verbose);
+                cautils.uri_get(self.__tmpDir, setup_ini_url, verbose=self.__verbose);
             except CygAptError as xxx_todo_changeme:
                 # Failed to find a possible .ini
                 (err) = xxx_todo_changeme;
                 # Failed to find a possible .ini
                 if index == len(setup_ini_names) - 1:
-                    sys.stderr.write(self.appName + ": " + err.msg +\
+                    sys.stderr.write(self.__appName + ": " + err.msg +\
                     ", exiting.\n");
                     sys.exit(1);
                 else:
@@ -240,70 +293,70 @@ class CygAptSetup:
             break;
 
         if setup_ini_name[-4:] == ".bz2":
-            f = open(self.tmpdir + "/" + setup_ini_name, "rb");
+            f = open(self.__tmpDir + "/" + setup_ini_name, "rb");
             compressed = f.read();
             f.close();
 
             decomp = bz2.decompress(compressed);
-            os.remove(self.tmpdir + "/" + setup_ini_name);
+            os.remove(self.__tmpDir + "/" + setup_ini_name);
             setup_ini_name =  os.path.basename(setup_ini);
 
-            f = open(self.tmpdir + "/" + setup_ini_name, "wb");
+            f = open(self.__tmpDir + "/" + setup_ini_name, "wb");
             f.write(decomp);
             f.close();
 
-        if not self.cygwinPlatform:
+        if not self.__cygwinPlatform:
             sys.stderr.write("WARNING can't verify setup.ini outside Cygwin.\n");
             verify = False;
 
         if verify:
             sig_name = setup_ini_name + ".sig";
             sig_url = "{0}{1}{2}".format(mirror, sep, sig_name);
-            err = cautils.uri_get(self.tmpdir, sig_url, verbose=self.verbose);
+            err = cautils.uri_get(self.__tmpDir, sig_url, verbose=self.__verbose);
             if err:
                 print("{0}: failed to download signature {1} Use -X to ignore "\
                     "signatures. Exiting".format(
-                    self.appName, sig_url));
+                    self.__appName, sig_url));
                 sys.exit(1);
-            if self.cygwinPlatform:
+            if self.__cygwinPlatform:
                 gpg_path = "gpg ";
             else:
-                if self.cygwinVersion < 1.7:
+                if self._cygwinVersion() < 1.7:
                     gpg_path = "/usr/bin/gpg ";
                 else:
                     gpg_path = "/usr/local/bin/gpg ";
             cmd = gpg_path + "--verify --no-secmem-warning ";
-            cmd += self.tmpdir + "/" + sig_name + " ";
-            cmd += self.tmpdir + "/" + setup_ini_name;
+            cmd += self.__tmpDir + "/" + sig_name + " ";
+            cmd += self.__tmpDir + "/" + setup_ini_name;
             p = subprocess.Popen(cmd, shell=True,
                     stderr=subprocess.PIPE);
             p.wait();
             verify = p.stderr.read();
             if isinstance(verify, bytes):
-                marker = self.gpgGoodFinger.encode();
+                marker = self.GPG_GOOD_FINGER.encode();
             else:
-                marker = self.gpgGoodFinger;
+                marker = self.GPG_GOOD_FINGER;
             if not marker in verify:
                 sys.stderr.write("{0}: {1} not signed by Cygwin's public key. "\
                     "Use -X to ignore signatures. Exiting.\n".format(
-                    self.appName, setup_ini_url));
+                    self.__appName, setup_ini_url));
                 sys.exit(1);
 
         if not os.path.exists(downloads):
             os.makedirs(downloads);
 
-        shutil.copy(self.tmpdir + "/" + setup_ini_name, downloads + "/" +\
+        shutil.copy(self.__tmpDir + "/" + setup_ini_name, downloads + "/" +\
                     setup_ini_name);
         if os.path.exists(setup_ini):
             shutil.copy(setup_ini, setup_ini + ".bak");
         shutil.copy(downloads + "/" + setup_ini_name, setup_ini);
-        if os.path.exists(self.tmpdir + "/" + setup_ini_name):
-            os.remove(self.tmpdir + "/" + setup_ini_name);
+        if os.path.exists(self.__tmpDir + "/" + setup_ini_name):
+            os.remove(self.__tmpDir + "/" + setup_ini_name);
         if sig_name:
-            if os.path.exists(self.tmpdir + "/" + sig_name):
-                os.remove(self.tmpdir + "/" + sig_name);
+            if os.path.exists(self.__tmpDir + "/" + sig_name):
+                os.remove(self.__tmpDir + "/" + sig_name);
 
-    def getPre17Last(self, location):
+    def _getPre17Last(self, location):
         if not os.path.exists(location + "/last-mirror" or\
             not os.path.exists(location + "/last-cache")):
             return (None, None);
@@ -317,16 +370,16 @@ class CygAptSetup:
             f.close();
             return (last_cache, last_mirror);
 
-    def writeInstalled(self, installed_db):
-        if not self.cygwinPlatform:
+    def _writeInstalled(self, installed_db):
+        if not self.__cygwinPlatform:
             print("{0}: fail to create {1} only supported under Cygwin. "\
-                  "Exiting.".format(self.appName, installed_db));
+                  "Exiting.".format(self.__appName, installed_db));
             return;
 
         sys.stderr.write('creating {0} ... '.format(installed_db));
 
-        db_contents = self.installedDbMagic;
-        cygcheck_path = self.pm.mapPath("/bin/cygcheck");
+        db_contents = CygApt.INSTALLED_DB_MAGIC;
+        cygcheck_path = self.__pm.mapPath("/bin/cygcheck");
 
         if os.path.exists(cygcheck_path):
             cmd = cygcheck_path + " -cd ";
@@ -352,12 +405,12 @@ class CygAptSetup:
 
         sys.stderr.write("OK\n");
 
-    def gpgImport(self, uri):
-        if not self.cygwinPlatform:
+    def _gpgImport(self, uri):
+        if not self.__cygwinPlatform:
             return;
 
-        cautils.uri_get(self.tmpdir, uri, verbose=self.verbose);
-        tmpfile = os.path.join(self.tmpdir, os.path.basename(uri));
+        cautils.uri_get(self.__tmpDir, uri, verbose=self.__verbose);
+        tmpfile = os.path.join(self.__tmpDir, os.path.basename(uri));
         cmd = "gpg ";
         cmd += "--no-secmem-warning ";
         cmd += "--import {0}".format(tmpfile);

@@ -17,30 +17,50 @@ import utils as cautils;
 
 class PathMapper:
     def __init__(self, root, cygwin_p):
-        self.root = root;
-        p = os.popen(self.root + "/bin/mount");
+        self.__root = root;
+        self.__mountRoot = "/";
+        self.__cygwinPlatform = cygwin_p;
+        self.__map = {};
+
+        p = os.popen(self.__root + "/bin/mount");
         mountout = p.readlines();
         p.close();
-        self.mountRoot = "/";
-        self.addMapping(mountout);
-        self.cygwinPlatform = cygwin_p;
+        self._addMapping(mountout);
 
-    def addMapping(self, mtab):
-        self.map = {};
+    def getRoot(self):
+        return self.__root;
+
+    def setRoot(self, root_dir):
+        self.__root = root_dir;
+
+    def getMountRoot(self):
+        return self.__mountRoot;
+
+    def setMountRoot(self, mount_root):
+        self.__mountRoot = mount_root;
+
+    def getMap(self):
+        return self.__map;
+
+    def setMap(self, mapping):
+        self.__map = mapping;
+
+    def _addMapping(self, mtab):
+        self.__map = {};
         mtab = [l.split() for l in mtab];
         for l in mtab:
             if l[2] != "/":
-                self.map[l[2] + "/"] = l[0] + "/";
+                self.__map[l[2] + "/"] = l[0] + "/";
             else:
-                self.mountRoot = l[0] + "/";
+                self.__mountRoot = l[0] + "/";
 
     def mapPath(self, path):
-        if self.cygwinPlatform:
+        if self.__cygwinPlatform:
             return path;
         # sort to map to /e/bar/foo in pefrence /e/bar
-        l = cautils.prsort(list(self.map.keys()));
+        l = cautils.prsort(list(self.__map.keys()));
         for cygpath in l:
             if path.find(cygpath) == 0:
-                path = path.replace(cygpath, self.map[cygpath]);
+                path = path.replace(cygpath, self.__map[cygpath]);
                 return path;
-        return self.root + path;
+        return self.__root + path;

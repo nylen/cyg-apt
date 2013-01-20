@@ -29,16 +29,15 @@ class TestSetup(cygapt.utilstest.TestCase):
         self._var_verbose = False;
         self._var_cygwin_p = sys.platform == "cygwin";
         self.obj = CygAptSetup(self._var_cygwin_p, self._var_verbose);
-        self.obj.tmpdir = self._dir_tmp;
-        self.obj.appName = self._var_exename;
-        self.obj.config = self._dir_confsetup;
-        self.obj.ROOT = self._dir_mtroot;
-        self.obj.absRoot = self._dir_mtroot;
+        self.obj.setTmpDir(self._dir_tmp);
+        self.obj.setAppName(self._var_exename);
+        self.obj.setSetupDir(self._dir_confsetup);
+        self.obj.getRC().ROOT = self._dir_mtroot;
         
     def test__init__(self):
         self.assertTrue(isinstance(self.obj, CygAptSetup));
-        self.assertEqual(self.obj.cygwinPlatform, self._var_cygwin_p);
-        self.assertEqual(self.obj.verbose, self._var_verbose);
+        self.assertEqual(self.obj.getCygwinPlatform(), self._var_cygwin_p);
+        self.assertEqual(self.obj.getVerbose(), self._var_verbose);
         
     def testGetSetupRc(self):
         if not self._var_cygwin_p:
@@ -71,7 +70,7 @@ class TestSetup(cygapt.utilstest.TestCase):
         lc_stream.close();
         
         
-        rlast_cache, rlast_mirror = self.obj.getPre17Last(location);
+        rlast_cache, rlast_mirror = self.obj._getPre17Last(location);
         self.assertEqual(last_cache, rlast_cache);
         self.assertEqual(last_mirror, rlast_mirror);
     
@@ -79,14 +78,13 @@ class TestSetup(cygapt.utilstest.TestCase):
         if not self._var_cygwin_p:
             self.skipTest("requires cygwin");
 
-        self.obj.gpgImport(self.obj.cygwinPublicRingUri);
+        self.obj._gpgImport(self.obj.GPG_CYG_PUBLIC_RING_URI);
         self.obj.setup();
         
         self.obj.update(self._file_user_config, True);
     
     def testSetup(self):
         if not self._var_cygwin_p:
-            self.obj.appName = self._var_exename;
             self.assertRaises(SystemExit, self.obj.setup);
             return;
         
@@ -99,12 +97,12 @@ class TestSetup(cygapt.utilstest.TestCase):
         f = open(self._file_user_config, "w");
         f.close();
         self.assertRaises(SystemExit, self.obj.setup);
-        self.assertEqual(self.obj.configFileName, self._file_user_config);
+        self.assertTrue(os.path.exists(self._file_user_config));
         
         os.remove(self._file_user_config);
 
         # next
-        self.obj.gpgImport(self.obj.cygwinPublicRingUri);
+        self.obj._gpgImport(self.obj.GPG_CYG_PUBLIC_RING_URI);
         self.obj.setup();
         
     def testWriteInstalled(self):
@@ -112,7 +110,7 @@ class TestSetup(cygapt.utilstest.TestCase):
             self.skipTest("requires cygwin");
         
         real_installed_db = self._file_installed_db.replace(self._var_tmpdir, "");
-        self.obj.writeInstalled(self._file_installed_db);
+        self.obj._writeInstalled(self._file_installed_db);
         self.assertTrue(os.path.exists(self._file_installed_db));
         f = open(self._file_installed_db);
         ret = f.readlines().sort();
@@ -126,7 +124,7 @@ class TestSetup(cygapt.utilstest.TestCase):
         if not self._var_cygwin_p:
             self.skipTest("requires cygwin");
         
-        self.obj.gpgImport(self.obj.cygwinPublicRingUri);
+        self.obj._gpgImport(self.obj.GPG_CYG_PUBLIC_RING_URI);
         
         cmd = "gpg ";
         cmd += "--no-secmem-warning ";
@@ -140,9 +138,9 @@ class TestSetup(cygapt.utilstest.TestCase):
         findout = False;
         for line in lines:
             if isinstance(line, bytes):
-                marker = self.obj.gpgGoodFinger.encode();
+                marker = self.obj.GPG_GOOD_FINGER.encode();
             else:
-                marker = self.obj.gpgGoodFinger;
+                marker = self.obj.GPG_GOOD_FINGER;
             if marker in line:
                 findout = True;
                 break;

@@ -15,8 +15,20 @@ import argparse;
 
 class CygAptArgParser():
     def __init__(self, usage=None, scriptname=None):
-        self.usage = usage;
-        self.scriptName = scriptname;
+        self.setUsage(usage);
+        self.setAppName(scriptname);
+
+    def getUsage(self):
+        return self._usage;
+
+    def setUsage(self, usage):
+        self._usage = str(usage);
+
+    def getAppName(self):
+        return self._appName;
+
+    def setAppName(self, app_name):
+        self._appName = str(app_name);
 
     def parse(self):
         commands = ['setup',
@@ -42,9 +54,9 @@ class CygAptArgParser():
                     'version',
                     ];
 
-        parser = argparse.ArgumentParser(prog=self.scriptName,
+        parser = argparse.ArgumentParser(prog=self._appName,
                                          add_help=False,
-                                         usage=self.usage);
+                                         usage=self._usage);
 
         parser.add_argument('command',
                             nargs='?',
