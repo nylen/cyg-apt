@@ -73,10 +73,10 @@ class CygAptSetup:
         self.installed_db_magic = 'INSTALLED.DB 2\n';
         self.version = version.__version__;
 
-    def set_verbose(self, verbose):
+    def setVerbose(self, verbose):
         self.verbose = verbose;
 
-    def get_setup_rc(self, location):
+    def getSetupRc(self, location):
         if not (os.path.exists(location + "/" + "setup.rc")):
             return (None, None);
         f = open(location + "/" + "setup.rc");
@@ -123,9 +123,9 @@ class CygAptSetup:
                   "Exiting.".format(self.sn));
             return;
 
-        (last_cache, last_mirror) = self.get_setup_rc(self.config);
+        (last_cache, last_mirror) = self.getSetupRc(self.config);
         if ((not last_cache) or (not last_mirror)):
-            (last_cache, last_mirror) = self.get_pre17_last(self.config);
+            (last_cache, last_mirror) = self.getPre17Last(self.config);
             if ((not last_cache) or (not last_mirror)):
                 print("{0}: {1}/setup.rc not found. Please edit {2} to "\
                 "provide mirror and cache.".format(self.sn, self.config, self.cyg_apt_rc));
@@ -155,7 +155,7 @@ class CygAptSetup:
             sys.stderr.write('creating {0}\n'.format(self.config));
             os.makedirs(self.config);
         if not os.path.isfile(installed_db):
-            self.write_installed(installed_db);
+            self.writeInstalled(installed_db);
         if not os.path.isfile(self.setup_ini):
             sys.stderr.write('getting {0}\n'.format(self.setup_ini));
             self.update(self.cyg_apt_rc, True);
@@ -206,12 +206,12 @@ class CygAptSetup:
         if(not self.cygwin_p):
             self.pm = PathMapper(rc["ROOT"][:-1], False);
 
-        setup_ini = self.pm.map_path(rc["setup_ini"]);
+        setup_ini = self.pm.mapPath(rc["setup_ini"]);
         if (main_mirror):
             mirror = main_mirror;
         else:
             mirror = rc["mirror"];
-        downloads = self.pm.map_path(rc["cache"]) + '/' + urllib.quote(mirror, '').lower();
+        downloads = self.pm.mapPath(rc["cache"]) + '/' + urllib.quote(mirror, '').lower();
         if not mirror[-1] == "/":
             sep = "/";
         else:
@@ -303,7 +303,7 @@ class CygAptSetup:
             if os.path.exists(self.tmpdir + "/" + sig_name):
                 os.remove(self.tmpdir + "/" + sig_name);
 
-    def get_pre17_last(self, location):
+    def getPre17Last(self, location):
         if not os.path.exists(location + "/last-mirror" or\
             not os.path.exists(location + "/last-cache")):
             return (None, None);
@@ -317,7 +317,7 @@ class CygAptSetup:
             f.close();
             return (last_cache, last_mirror);
 
-    def write_installed(self, installed_db):
+    def writeInstalled(self, installed_db):
         if not self.cygwin_p:
             print("{0}: fail to create {1} only supported under Cygwin. "\
                   "Exiting.".format(self.sn, installed_db));
@@ -326,7 +326,7 @@ class CygAptSetup:
         sys.stderr.write('creating {0} ... '.format(installed_db));
 
         db_contents = self.installed_db_magic;
-        cygcheck_path = self.pm.map_path("/bin/cygcheck");
+        cygcheck_path = self.pm.mapPath("/bin/cygcheck");
 
         if os.path.exists(cygcheck_path):
             cmd = cygcheck_path + " -cd ";
@@ -352,7 +352,7 @@ class CygAptSetup:
 
         sys.stderr.write("OK\n");
 
-    def gpg_import(self, uri):
+    def gpgImport(self, uri):
         if not self.cygwin_p:
             return;
 

@@ -31,7 +31,7 @@ class TestArgParser(unittest.TestCase):
         self.assertEqual(self.obj.usage, "usage");
         self.assertEqual(self.obj.scriptname, "scriptname");
 
-    def test_parse(self):
+    def testParse(self):
         argv = sys.argv[:];
         sys.argv = sys.argv[:1];
         sys.argv.append("install");

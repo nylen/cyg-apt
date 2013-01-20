@@ -226,12 +226,12 @@ class PackageIni():
         self.build();
 
     def build(self):
-        self._build_dist();
+        self._buildDist();
         self._buildPkg();
-        self._build_dists();
-        self._build_ini_contents();
+        self._buildDists();
+        self._buildIniContents();
 
-    def _build_dist(self):
+    def _buildDist(self):
         self.version.prev = "1.0.1-1";
         self.version.curr = "2.0.1-1";
         self.version.test = "3.0.1-1";
@@ -252,7 +252,7 @@ class PackageIni():
                                 self.version.__dict__[distname] + \
                                 ".src.tar.bz2");
 
-    def _build_ini_contents(self):
+    def _buildIniContents(self):
         self.ini_contents = r"""@ {self[name]}
 sdesc: {self[shortDesc]}
 ldesc: {self[longDesc]}
@@ -270,7 +270,7 @@ version: {self[version][test]}
 install: {self[install][test]}
 source: {self[source][test]}""".format(self=vars(self));
 
-    def _build_dists(self):
+    def _buildDists(self):
         for distname in self.dists.__dict__:
             self.dists.__dict__[distname].category = self.category;
             self.dists.__dict__[distname].ldesc = self.longDesc;

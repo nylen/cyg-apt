@@ -21,14 +21,14 @@ import cygapt.error as error;
 import cygapt.utilstest;
 
 class TestUtils(cygapt.utilstest.TestCase):
-    def _get_tmpdir(self):
+    def _getTmpDir(self):
         return self._dir_tmp;
     
-    def _get_tmpfilename(self):
-        filename = "{0}{1}test~".format(self._get_tmpdir(), os.path.sep);
+    def _getTmpFileName(self):
+        filename = "{0}{1}test~".format(self._getTmpDir(), os.path.sep);
         return filename;
 
-    def test_cygpath(self):
+    def testCygpath(self):
         if sys.platform != "cygwin":
             self.skipTest("requires cygwin");
 
@@ -38,31 +38,31 @@ class TestUtils(cygapt.utilstest.TestCase):
             ret = utils.cygpath(path);
             self.assertEquals(ret, path);
 
-    def test_parse_rc(self):
-        f = open(self._get_tmpfilename(), "w");
+    def testParseRc(self):
+        f = open(self._getTmpFileName(), "w");
         f.write("always_update = \"True\"");
         f.close();
         
-        ret = utils.parse_rc(self._get_tmpfilename());
+        ret = utils.parse_rc(self._getTmpFileName());
         self.assertTrue(ret);
         
-        f = open(self._get_tmpfilename(), "w");
+        f = open(self._getTmpFileName(), "w");
         f.write("always_update = \"False\"");
         f.close();
 
-        ret = utils.parse_rc(self._get_tmpfilename());
+        ret = utils.parse_rc(self._getTmpFileName());
         self.assertFalse(ret);
         
-        f = open(self._get_tmpfilename(), "w");
+        f = open(self._getTmpFileName(), "w");
         f.write("always_update = bad_value");
         f.close();
         
         self.assertRaises(NameError,
                           utils.parse_rc,
-                          self._get_tmpfilename());
+                          self._getTmpFileName());
 
 
-    def test_prsort(self):
+    def testPrsort(self):
         in_lst = ["B",
                   "A",
                   "a",
@@ -86,9 +86,9 @@ class TestUtils(cygapt.utilstest.TestCase):
         utils.prsort(in_lst);
         self.assertEqual(in_lst, out_lst);
 
-    def test_rename(self):
-        dest = self._get_tmpfilename();
-        src = "{0}2".format(self._get_tmpfilename());
+    def testRename(self):
+        dest = self._getTmpFileName();
+        src = "{0}2".format(self._getTmpFileName());
         stream = open(src, 'w+');
         stream.writelines('1');
         stream.seek(0);
@@ -111,9 +111,9 @@ class TestUtils(cygapt.utilstest.TestCase):
         if os.path.exists(src):
             os.unlink(src);
 
-    def test_rmtree(self):
+    def testRmtree(self):
         # create tree
-        root = os.path.join(self._get_tmpdir(), "root~");
+        root = os.path.join(self._getTmpDir(), "root~");
         subdir = os.path.join(root, "subdir~");
         rootfile = os.path.join(root, "file~");
         subdirfile = os.path.join(subdir, "file~");
@@ -163,8 +163,8 @@ class TestUtils(cygapt.utilstest.TestCase):
         self.assertTrue(ok);
         rm_tree();
         
-    def test_uri_get(self):
-        directory = self._get_tmpdir();
+    def testUriGet(self):
+        directory = self._getTmpDir();
         uri = "http://cygwin.uib.no/setup.bz2.sig";
         verbose = False;
         utils.uri_get(directory, uri, verbose);

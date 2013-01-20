@@ -43,7 +43,7 @@ class CygAptMain():
 
         ob = CygAptOb(True);
         cas.usage();
-        usage = ob.get_flush();
+        usage = ob.getFlush();
 
         cap = CygAptArgParser(usage=usage, scriptname=main_scriptname);
         args = cap.parse();
@@ -70,7 +70,7 @@ class CygAptMain():
         main_nopostremove = args.nopostremove;
 
 
-        cas.set_verbose(main_verbose);
+        cas.setVerbose(main_verbose);
 
         # Take most of our configuration from .cyg-apt
         # preferring .cyg-apt in current directory over $(HOME)/.cyg-apt

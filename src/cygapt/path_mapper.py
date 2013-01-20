@@ -22,10 +22,10 @@ class PathMapper:
         mountout = p.readlines();
         p.close();
         self.mountroot = "/";
-        self.add_mapping(mountout);
+        self.addMapping(mountout);
         self.cygwin_p = cygwin_p;
 
-    def add_mapping(self, mtab):
+    def addMapping(self, mtab):
         self.map = {};
         mtab = [l.split() for l in mtab];
         for l in mtab:
@@ -34,7 +34,7 @@ class PathMapper:
             else:
                 self.mountroot = l[0] + "/";
 
-    def map_path(self, path):
+    def mapPath(self, path):
         if self.cygwin_p:
             return path;
         # sort to map to /e/bar/foo in pefrence /e/bar

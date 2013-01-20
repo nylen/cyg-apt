@@ -45,10 +45,10 @@ class TestOb(unittest.TestCase):
         self.assertEqual(repr(sys.stdout), REPR_STDOUT);
         self.assertFalse(self.obj._state);
     
-    def test___init__(self):
+    def test__init__(self):
         self.assertTrue(isinstance(self.obj, CygAptOb));
     
-    def test_clean(self):
+    def testClean(self):
         self.obj.clean();
         self.makeOff();
         self.obj.start();
@@ -56,9 +56,9 @@ class TestOb(unittest.TestCase):
         self.obj.clean();
         self.assertEqual(self.obj._buffer.getvalue(), "");
         self.assertFalse(self.obj._value == "");
-        self.assertFalse(self.obj.get_contents() == "");
+        self.assertFalse(self.obj.getContents() == "");
     
-    def test_start_end(self):
+    def testStartEnd(self):
         self.obj.end();
         self.makeOff();
         self.obj.start();
@@ -66,23 +66,23 @@ class TestOb(unittest.TestCase):
         self.obj.end();
         self.makeOff();
         
-    def test_end_clean(self):
-        self.obj.end_clean();
+    def testEndClean(self):
+        self.obj.endClean();
         self.makeOff();
         self.obj.start();
         self.makeOn();
-        self.obj.end_clean();
+        self.obj.endClean();
         self.makeOff();
     
-    def test_end_flush(self):
-        self.obj.end_flush();
+    def testEndFlush(self):
+        self.obj.endFlush();
         self.makeOff();
         self.obj.start();
         self.makeOn();
-        self.obj.end_flush();
+        self.obj.endFlush();
         self.makeOff();
     
-    def test_flush(self):
+    def testFlush(self):
         self.obj.flush();
         self.makeOff();
         self.obj.start();
@@ -90,56 +90,56 @@ class TestOb(unittest.TestCase):
         self.obj.flush();
         self.makeOn();
     
-    def test_get_clean(self):
-        ret = self.obj.get_clean();
+    def testGetClean(self):
+        ret = self.obj.getClean();
         self.assertFalse(ret);
         self.makeOff();
         self.obj.start();
         self.makeOn();
         t = self.obj._buffer.getvalue();
-        txt = "TestOb.test_get_clean";
+        txt = "TestOb.test_getClean";
         print(txt);
-        ret = self.obj.get_clean();
+        ret = self.obj.getClean();
         self.assertEqual(ret, t + txt + "\n");
         self.makeOff();
         
-    def test_get_content(self):
-        ret = self.obj.get_contents();
+    def testGetContent(self):
+        ret = self.obj.getContents();
         self.assertFalse(ret);
         self.makeOff();
         self.obj.start();
         txt = "TestOb.test_get_content";
         print(txt);
-        ret = self.obj.get_contents();
+        ret = self.obj.getContents();
         self.assertEqual(ret, txt + "\n");
         self.makeOn();
         
-    def test_get_flush(self):
-        ret = self.obj.get_flush();
+    def testGetFlush(self):
+        ret = self.obj.getFlush();
         self.assertFalse(ret);
         self.makeOff();
         self.obj.start();
-        txt = "TestOb.test_get_flush";
+        txt = "TestOb.test_getFlush";
         print(txt);
-        ret = self.obj.get_flush();
+        ret = self.obj.getFlush();
         self.assertEqual(ret, txt + "\n");
         self.makeOff();
     
-    def test_get_length(self):
-        ret = self.obj.get_length();
+    def testGetLength(self):
+        ret = self.obj.getLength();
         self.assertFalse(ret);
         self.makeOff();
         self.obj.start();
         length = 10;
         print("t" * length);
-        ret = self.obj.get_length();
+        ret = self.obj.getLength();
         self.assertEqual(ret, length + 1);
         self.makeOn();
         
-    def test_implicit_flush(self):
-        self.obj.implicit_flush(True);
+    def testImplicitFlush(self):
+        self.obj.implicitFlush(True);
         self.makeOff();
-        self.obj.implicit_flush(False);
+        self.obj.implicitFlush(False);
         self.makeOn();
 
 

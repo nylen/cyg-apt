@@ -28,17 +28,17 @@ class TestUrlOpener(unittest.TestCase):
         unittest.TestCase.setUp(self);
         self.obj = CygAptURLopener(True);
 
-    def test___init__(self):
+    def test__init__(self):
         self.assertTrue(isinstance(self.obj, CygAptURLopener));
 
-    def test_http_error_default(self):
+    def testHttp_error_default(self):
         f = TemporaryFile();
         errcode = 404;
         self.obj.http_error_default("url", f, errcode, "errmsg", "headers");
         f.close();
         self.assertTrue(self.obj.errcode == errcode);
 
-    def test_dlProgress(self):
+    def testDlProgress(self):
         self.obj.verbose = 1;
         old_stdout = sys.stdout;
         buf = StringIO();

@@ -51,16 +51,16 @@ class CygAptOb:
             self._stdout.flush();
         self._value = None;
 
-    def get_flush(self):
+    def getFlush(self):
         """ Flush the output buffer,
             return it as a string and turn off output buffering
         """
         self.clean();
-        content = self.get_contents();
+        content = self.getContents();
         self.end();
         return content;
 
-    def end_flush(self):
+    def endFlush(self):
         """ Flush (send) the output buffer and turn off output buffering """
         self.flush();
         self.end();
@@ -71,28 +71,28 @@ class CygAptOb:
             self._value = self._buffer.getvalue();
             self._buffer.truncate(0);
 
-    def get_clean(self):
+    def getClean(self):
         """ Get current buffer contents and delete current output buffer """
         if not self._state:
             return False;
 
-        content = self.get_contents();
-        self.end_clean();
+        content = self.getContents();
+        self.endClean();
         return content;
 
-    def end_clean(self):
+    def endClean(self):
         """ Clean (erase) the output buffer and turn off output buffering """
         self._value = None;
         self.end();
 
-    def implicit_flush(self, flag=True):
+    def implicitFlush(self, flag=True):
         """ Turn implicit flush on/off """
         if flag and self._state:
             self.end();
         elif not flag and not self._state:
             self.start();
 
-    def get_contents(self):
+    def getContents(self):
         """ Return the contents of the output buffer """
         if not self._state:
             return False;
@@ -102,9 +102,9 @@ class CygAptOb:
             self._value = buf;
         return self._value;
 
-    def get_length(self):
+    def getLength(self):
         """ Return the length of the output buffer """
         if not self._state:
             return False;
 
-        return len(self.get_contents());
+        return len(self.getContents());

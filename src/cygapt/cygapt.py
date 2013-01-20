@@ -78,10 +78,10 @@ class CygApt:
         self.verbose = main_verbose;
 
         # Read in our configuration
-        self.get_rc(self.cyg_apt_rc);
+        self.getRessource(self.cyg_apt_rc);
 
         # Now we have a path mapper, check setup.exe is not running
-        self.check_for_setup_exe();
+        self.checkForSetupExe();
 
         # DOS specific
         if not self.cygwin_p:
@@ -103,13 +103,13 @@ class CygApt:
             sys.stderr.write('error: run {0} setup?\n'.format(self.sn));
             sys.exit(2);
         else:
-            self.get_setup_ini();
-            self.get_installed();
+            self.getSetupIni();
+            self.getInstalled();
 
-    def check_for_setup_exe(self):
+    def checkForSetupExe(self):
         # It's far from bulletpoof, but it's surprisingly hard to detect
         # setup.exe running since it doesn't lock any files.
-        p = os.popen(self.pm.map_path("/usr/bin/ps -W"));
+        p = os.popen(self.pm.mapPath("/usr/bin/ps -W"));
         psout = p.readlines();
         p.close();
         for l in psout:
@@ -117,7 +117,7 @@ class CygApt:
                 raise AppConflictError("{0}: Please close setup.exe while "\
                     "running cyg-apt. Exiting.".format(self.sn));
 
-    def version_to_string(self, t):
+    def versionToString(self, t):
         def try_itoa(x):
             if isinstance(x, int):
                 return "{0:d}".format(x);
@@ -125,7 +125,7 @@ class CygApt:
         return '{0}-{1}'.format('.'.join(list(map(try_itoa, t[:-1]))),
                   t[-1]);
 
-    def string_to_version(self, s):
+    def stringToVersion(self, s):
         s = re.sub('([^0-9][^0-9]*)', ' \\1 ', s);
         s = re.sub('[ _.-][ _.-]*', ' ', s);
         def try_atoi(x):
@@ -134,16 +134,16 @@ class CygApt:
             return x
         return tuple(map(try_atoi, (s.split(' '))));
 
-    def split_ball(self, p):
+    def splitBall(self, p):
         m = re.match('^(.*)-([0-9].*-[0-9]+)(.tar.bz2)?$', p);
         if not m:
-            print('split_ball: ' + p);
+            print('splitBall: ' + p);
             return (p[:2], (0, 0));
-        t = (m.group(1), self.string_to_version(m.group(2)));
+        t = (m.group(1), self.stringToVersion(m.group(2)));
         return t;
 
-    def join_ball(self, t):
-        return t[0] + '-' + self.version_to_string(t[1]);
+    def joinBall(self, t):
+        return t[0] + '-' + self.versionToString(t[1]);
 
     def debug(self, s):
         s;
@@ -155,7 +155,7 @@ class CygApt:
             sys.exit();
         print(self.__dict__[self.packagename].__doc__);
 
-    def get_setup_ini(self):
+    def getSetupIni(self):
         if self.dists:
             return;
         self.dists = {'test': {}, 'curr': {}, 'prev' : {}};
@@ -199,10 +199,10 @@ class CygApt:
                 j = j + 1;
             packages[name] = records;
 
-    def get_url(self):
+    def getUrl(self):
         if self.packagename not in self.dists[self.distname] \
            or self.INSTALL not in self.dists[self.distname][self.packagename]:
-            self.no_package();
+            self.noPackage();
             install = 0;
             for d in self.distnames:
                 if self.packagename in self.dists[d] \
@@ -221,20 +221,20 @@ class CygApt:
         """print tarball url"""
         if not self.packagename:
             raise CygAptError("url command requires a package name");
-        print(self.mirror + "/" + self.get_url()[0]);
+        print(self.mirror + "/" + self.getUrl()[0]);
 
-    def get_ball(self):
-        url, md5 = self.get_url();
+    def getBall(self):
+        url, md5 = self.getUrl();
         return '{0}/{1}'.format(self.downloads, url);
 
     def ball(self):
         """print tarball name"""
-        print(self.get_ball());
+        print(self.getBall());
 
-    def do_download(self):
-        url, md5 = self.get_url();
+    def doDownload(self):
+        url, md5 = self.getUrl();
         directory = '{0}/{1}'.format(self.downloads, os.path.split(url)[0]);
-        if not os.path.exists(self.get_ball()) or not self.check_md5():
+        if not os.path.exists(self.getBall()) or not self.checkMd5():
             if not os.path.exists(directory):
                 os.makedirs(directory);
             status = cautils.uri_get(directory, '{0}/{1}'.format(self.mirror, url));
@@ -248,21 +248,21 @@ class CygApt:
 
     def download(self):
         """download package (only, do not install)"""
-        self.do_download();
+        self.doDownload();
         self.ball();
         self.md5();
 
-    def no_package(self):
+    def noPackage(self):
         sys.stderr.write \
         ("{0}: {1} is not on mirror {2} in [{3}]\n".format(self.sn, self.packagename, \
             self.mirror, self.distname));
 
     # return an array contents all dependencies of self.packagename
-    def get_requires(self):
+    def getRequires(self):
         # Looking for dependencies on curr not prev or test
         dist = self.dists["curr"];
         if self.packagename not in self.dists[self.distname]:
-            self.no_package();
+            self.noPackage();
             sys.exit(1);
         if self.nodeps_p:
             return [];
@@ -293,13 +293,13 @@ class CygApt:
 
     def requires(self):
         """print requires: for package"""
-        reqs = self.get_requires();
+        reqs = self.getRequires();
         if len(reqs) == 0:
             print('No dependencies for package {0}'.format(self.packagename));
         else:
             print('\n'.join(reqs));
 
-    def get_installed(self):
+    def getInstalled(self):
         if self.installed:
             return self.installed;
         self.installed = {0:{}};
@@ -311,14 +311,14 @@ class CygApt:
             self.installed[int(status)][name] = ball;
         return self.installed;
 
-    def write_installed(self):
+    def writeInstalled(self):
         file_db = open(self.installed_db, 'w');
         file_db.write(self.installed_db_magic);
         file_db.writelines(['{0} {1} 0\n'.format(x, self.installed[0][x]) for x in list(self.installed[0].keys())]);
         if file_db.close():
             raise IOError;
 
-    def get_field(self, field, default=''):
+    def getField(self, field, default=''):
         for d in (self.distname,) + self.distnames:
             if self.packagename in self.dists[d] \
                and field in self.dists[d][self.packagename]:
@@ -337,14 +337,14 @@ class CygApt:
         """list installed packages"""
         print("--- Installed packages ---");
         for self.packagename in self.psort(list(self.installed[0].keys())):
-            ins = self.get_installed_version();
+            ins = self.getInstalledVersion();
             new = 0;
             if self.packagename in self.dists[self.distname] \
                and self.INSTALL in self.dists[self.distname][self.packagename]:
-                new = self.get_version();
-            s = '{0:<19} {1:<15}'.format(self.packagename, self.version_to_string(ins));
+                new = self.getVersion();
+            s = '{0:<19} {1:<15}'.format(self.packagename, self.versionToString(ins));
             if new and new != ins:
-                s += '({0})'.formatself.version_to_string(new);
+                s += '({0})'.formatself.versionToString(new);
             print(s);
 
     def filelist(self):
@@ -353,12 +353,12 @@ class CygApt:
             print("{0}: no package name given. Exiting.\n".format(self.sn),
                   file=sys.stderr);
         else:
-            print('\n'.join(self.get_filelist()));
+            print('\n'.join(self.getFileList()));
 
-    def postinstall(self):
-        self.run_all(self.postinstall_dir);
+    def postInstall(self):
+        self.runAll(self.postinstall_dir);
 
-    def postremove(self):
+    def postRemove(self):
         if len(self.files[1:]) == 0:
             print("{0}: must specify package to run postremove. "\
                   "Exiting.".format(self.sn),
@@ -367,44 +367,44 @@ class CygApt:
             for self.packagename in self.files[1:]:
                 self.preremove_sh = self.preremove_dir + "/" + self.packagename + ".sh";
                 self.postremove_sh = self.postremove_dir + "/" + self.packagename + ".sh";
-                self.run_script(self.preremove_sh);
-                self.run_script(self.postremove_sh);
+                self.runScript(self.preremove_sh);
+                self.runScript(self.postremove_sh);
 
-    def get_version(self):
+    def getVersion(self):
         if self.packagename not in self.dists[self.distname] \
            or self.INSTALL not in self.dists[self.distname][self.packagename]:
-            self.no_package();
+            self.noPackage();
             return (0, 0);
         package = self.dists[self.distname][self.packagename];
         if 'ver' not in package:
             filename = package[self.INSTALL].split()[0];
             ball = os.path.split(filename)[1];
-            package['ver'] = self.split_ball(ball)[1];
+            package['ver'] = self.splitBall(ball)[1];
         return package['ver'];
 
-    def get_installed_version(self):
-        return self.split_ball(self.installed[0][self.packagename])[1];
+    def getInstalledVersion(self):
+        return self.splitBall(self.installed[0][self.packagename])[1];
 
     def version(self):
         """print installed version"""
         if self.packagename:
             if self.packagename not in self.installed[0]:
                 raise CygAptError(self.packagename + " is not installed");
-            print(self.version_to_string(self.get_installed_version()));
+            print(self.versionToString(self.getInstalledVersion()));
         else:
             for self.packagename in self.psort(list(self.installed[0].keys())):
                 if self.packagename not in self.installed[0]:
                     self.distname = 'installed';
-                    self.no_package();
+                    self.noPackage();
                     sys.exit(1);
                 print('{0:<20}{1:<12}'.format(self.packagename,
-                         self.version_to_string(self.get_installed_version())));
+                         self.versionToString(self.getInstalledVersion())));
 
-    def get_new(self):
+    def getNew(self):
         lst = [];
         for self.packagename in list(self.installed[0].keys()):
-            new = self.get_version();
-            ins = self.get_installed_version();
+            new = self.getVersion();
+            ins = self.getInstalledVersion();
             if new > ins:
                 self.debug(" {0} > {1}".format(new, ins));
                 lst.append(self.packagename);
@@ -412,12 +412,12 @@ class CygApt:
 
     def new(self):
         """list new (upgradable) packages in distribution"""
-        for self.packagename in self.psort(self.get_new()):
+        for self.packagename in self.psort(self.getNew()):
             print('{0:<20}{1:<12}'.format(self.packagename,
-                          self.version_to_string(self.get_version())));
+                          self.versionToString(self.getVersion())));
 
-    def get_md5(self):
-        url, md5 = self.get_url();
+    def getMd5(self):
+        url, md5 = self.getUrl();
         f = open("{0}/{1}".format(self.downloads, url), "rb");
         data = f.read();
         f.close();
@@ -426,19 +426,19 @@ class CygApt:
         digest = m.hexdigest();
         return digest;
 
-    def check_md5(self):
-        return self.get_url()[1] == self.get_md5();
+    def checkMd5(self):
+        return self.getUrl()[1] == self.getMd5();
 
     def md5(self):
         """check md5 sum of cached package against database"""
-        if not os.path.exists(self.get_ball()):
+        if not os.path.exists(self.getBall()):
             sys.stderr.write("{0}: {1} not installed. Exiting.\n".format(
                 os.path.basename(sys.argv[0]), self.packagename));
             return 1;
-        url, md5 = self.get_url();
+        url, md5 = self.getUrl();
         ball = os.path.basename(url);
         print('{0}  {1}'.format(md5, ball));
-        actual_md5 = self.get_md5();
+        actual_md5 = self.getMd5();
         print('{0}  {1}'.format(actual_md5, ball));
         if actual_md5 != md5:
             raise CygAptError("md5sum of cached package doesn't match md5 in setup.ini from mirror");
@@ -463,8 +463,8 @@ class CygApt:
         for i in keys:
             self.packagename = i;
             if not regexp or re.search(regexp, i) \
-               or re.search(regexp, self.get_field('sdesc')) \
-               or re.search(regexp, self.get_field('ldesc')):
+               or re.search(regexp, self.getField('sdesc')) \
+               or re.search(regexp, self.getField('ldesc')):
                 if self.distname in self.dists:
                     if self.INSTALL in self.dists[self.distname][i]:
                         packages.append(i);
@@ -472,7 +472,7 @@ class CygApt:
                     packages.append(i);
         for self.packagename in self.psort(packages):
             s = self.packagename;
-            d = self.get_field('sdesc');
+            d = self.getField('sdesc');
             if d:
                 s += ' - {0}'.format(d[1:-1]);
             print(s);
@@ -480,10 +480,10 @@ class CygApt:
     def show(self):
         """print package description"""
         s = self.packagename;
-        d = self.get_field('sdesc');
+        d = self.getField('sdesc');
         if d:
             s += ' - {0}'.format(d[1:-1]);
-        ldesc = self.get_field('ldesc');
+        ldesc = self.getField('ldesc');
         if ldesc != "":
             print(s + "\n");
             print(ldesc);
@@ -491,8 +491,8 @@ class CygApt:
             print("{0}: not found in setup.ini: {1}".format(self.sn, s));
 
     # return an array with all packages that must to be install
-    def get_missing(self):
-        reqs = self.get_requires();
+    def getMissing(self):
+        reqs = self.getRequires();
         missingreqs = [];  # List of missing package on requires list
         for i in reqs:
             if i not in self.installed[0]:
@@ -502,8 +502,8 @@ class CygApt:
         if missingreqs and self.packagename not in missingreqs:
             sys.stderr.write('warning: missing packages: {0}\n'.format(" ".join(missingreqs)));
         elif self.packagename in self.installed[0]:  # Check version
-            ins = self.get_installed_version();
-            new = self.get_version();
+            ins = self.getInstalledVersion();
+            new = self.getVersion();
             if ins >= new:
                 sys.stderr.write('{0} is already the newest version\n'.format(self.packagename));
                 # missingreqs.remove(self.packagename)
@@ -513,14 +513,14 @@ class CygApt:
 
     def missing(self):
         """print missing dependencies for package"""
-        missing = self.get_missing();
+        missing = self.getMissing();
         if len(missing) > 0:
             print('\n'.join(missing));
         else:
             print("All dependent packages for {0} installed".format(self.packagename));
 
-    def run_script(self, file_name, optional=True):
-        mapped_file = self.pm.map_path(file_name);
+    def runScript(self, file_name, optional=True):
+        mapped_file = self.pm.mapPath(file_name);
         mapped_file_done = mapped_file + ".done";
         if os.path.isfile(mapped_file):
             sys.stderr.write('running: {0}\n'.format(file_name));
@@ -539,13 +539,13 @@ class CygApt:
                 sys.stderr.write("{0}: WARNING couldn't find {1}.\n".format(
                     self.sn, mapped_file));
 
-    def run_all(self, dirname):
+    def runAll(self, dirname):
         if os.path.isdir(dirname):
             lst = [x for x in os.listdir(dirname) if x[-3:] == '.sh'];
             for i in lst:
-                self.run_script('{0}/{1}'.format(dirname, i));
+                self.runScript('{0}/{1}'.format(dirname, i));
 
-    def do_install_external(self, ball):
+    def doInstallExternal(self, ball):
         # Currently we use a temporary directory and extractall() then copy:
         # this is very slow. The Python documentation warns more sophisticated
         # approaches have pitfalls without specifying what they are.
@@ -564,16 +564,16 @@ class CygApt:
             tf.extractall(tempdir);
             for m in members:
                 if m.isdir():
-                    path = self.pm.map_path("/" + m.name);
+                    path = self.pm.mapPath("/" + m.name);
                     if not os.path.exists(path):
                         os.makedirs(path, m.mode);
             for m in members:
                 if m.isdir():
-                    path = self.pm.map_path("/" + m.name);
+                    path = self.pm.mapPath("/" + m.name);
                     if not os.path.exists(path):
                         os.makedirs(path, m.mode);
                 else:
-                    path = self.pm.map_path("/" + m.name);
+                    path = self.pm.mapPath("/" + m.name);
                     dirname = os.path.dirname(path);
                     if not os.path.exists(dirname):
                         os.makedirs(dirname);
@@ -589,7 +589,7 @@ class CygApt:
                     elif m.islnk() and self.can_use_ln:
                         # Hard link -- expect these to be very rare
                         link_target = m.linkname;
-                        mapped_target = self.pm.map_path("/" + m.linkname);
+                        mapped_target = self.pm.mapPath("/" + m.linkname);
                         # Must ensure target exists before forming hard link
                         if not os.path.exists(mapped_target):
                             shutil.move(tempdir + "/" + link_target, mapped_target);
@@ -600,11 +600,11 @@ class CygApt:
             tf.close();
             cautils.rmtree(tempdir);
 
-    def do_install(self):
-        ball = self.get_ball();
+    def doInstall(self):
+        ball = self.getBall();
         if tarfile.is_tarfile(ball):
             if not self.cygwin_p:
-                self.do_install_external(ball);
+                self.doInstallExternal(ball);
             tf = tarfile.open(ball);
             if self.cygwin_p:
                 tf.extractall(self.ABSOLUTE_ROOT);
@@ -622,16 +622,16 @@ class CygApt:
                                                                  ball),
                   file=sys.stderr);
             return
-        self.write_filelist(lst);
+        self.writeFileList(lst);
 
         status = 1;
-        if not self.packagename in self._integrity_control():
+        if not self.packagename in self._integrityControl():
             status = 0;
         self.installed[status][self.packagename] = os.path.basename(ball);
 
-        self.write_installed();
+        self.writeInstalled();
 
-    def get_filelist(self):
+    def getFileList(self):
         filelist_file = "{0}/{1}.lst.gz".format(self.config, self.packagename);
         if not os.path.exists(filelist_file):
             if self.packagename not in self.installed[0]:
@@ -650,7 +650,7 @@ class CygApt:
         os.utime(fname, times);
         f.close();
 
-    def write_filelist(self, lst):
+    def writeFileList(self, lst):
         gz_filename = '{0}/{1}.lst.gz'.format(self.config, self.packagename);
         lst_cr = [x + "\n" for x in lst];
 
@@ -671,7 +671,7 @@ class CygApt:
         mtime = stat_struct[8];
         self.touch(gz_filename, (atime, mtime));
 
-    def remove_filelist(self):
+    def removeFileList(self):
         lst_name = '{0}/{1}.lst.gz'.format(self.config, self.packagename);
         if os.path.exists(lst_name):
             os.remove(lst_name);
@@ -679,7 +679,7 @@ class CygApt:
             sys.stderr.write('{0}: warning {1} no such file\n'.format(
                  sys.argv[0], lst_name));
 
-    def uninstall_want_file_removed(self, filename, noremoves, nowarns):
+    def uninstallWantFileRemoved(self, filename, noremoves, nowarns):
         # Returns true if the path from the tarball should result in a file # removal operation, false if not.
         if not os.path.exists(filename) and not os.path.islink(filename):
             if filename not in nowarns:
@@ -688,7 +688,7 @@ class CygApt:
         elif not os.path.isdir(filename) and filename not in noremoves:
             return True;
 
-    def do_uninstall(self):
+    def doUninstall(self):
         postremove_sh = self.postremove_dir + "/" + self.packagename + ".sh";
         postinstall_sh = self.postinstall_dir + "/" + self.packagename + ".sh";
         preremove_sh = self.preremove_dir + "/" + self.packagename + ".sh";
@@ -698,13 +698,13 @@ class CygApt:
             "{0}: postremove suppressed: \"{1} postremove {2}\" to complete.".format(
             self.sn, self.sn, self.packagename);
 
-        lst = self.get_filelist();
+        lst = self.getFileList();
         expect_preremove = preremove_sh[1:] in lst;
         expect_postremove = postremove_sh[1:] in lst;
 
         if not self.nopostremove:
             if expect_preremove:
-                self.run_script(preremove_sh, optional=False);
+                self.runScript(preremove_sh, optional=False);
         else:
             print("{0}".format(suppression_msg),
                   file=sys.stderr);
@@ -712,20 +712,20 @@ class CygApt:
         # We don't expect these to be present: they are executed
         # and moved to $(packagename).sh.done
         nowarns = [];
-        nowarns.append(self.pm.map_path(postinstall_sh));
-        nowarns.append(self.pm.map_path(preremove_sh));
+        nowarns.append(self.pm.mapPath(postinstall_sh));
+        nowarns.append(self.pm.mapPath(preremove_sh));
 
         noremoves = [];
         if self.nopostremove:
-            noremoves.append(self.pm.map_path(preremove_sh));
-        noremoves.append(self.pm.map_path(postremove_sh));
+            noremoves.append(self.pm.mapPath(preremove_sh));
+        noremoves.append(self.pm.mapPath(postremove_sh));
 
         # remove files
         for i in lst:
-            filename = self.pm.map_path("/" + i);
+            filename = self.pm.mapPath("/" + i);
             if os.path.isdir(filename):
                 continue;
-            if (self.uninstall_want_file_removed(filename, noremoves, nowarns)):
+            if (self.uninstallWantFileRemoved(filename, noremoves, nowarns)):
                 if os.path.exists(filename):
                     if self.cygwin_p:
                         os.chmod(filename, 0o777);
@@ -739,9 +739,9 @@ class CygApt:
                             " not there.".format(self.sn, filename));
         if not self.nopostremove:
             if expect_postremove:
-                self.run_script(postremove_sh, optional=False);
-            if os.path.isfile(self.pm.map_path(postremove_sh)):
-                if os.remove(self.pm.map_path(postremove_sh)):
+                self.runScript(postremove_sh, optional=False);
+            if os.path.isfile(self.pm.mapPath(postremove_sh)):
+                if os.remove(self.pm.mapPath(postremove_sh)):
                     raise IOError;
 
         # We don't remove empty directories: the problem is are we sure no other
@@ -749,15 +749,15 @@ class CygApt:
 
         # setup.exe removes the filelist when a package is uninstalled: we try to be
         # as much like setup.exe as possible
-        self.remove_filelist();
+        self.removeFileList();
 
         # Clean up the postintall script: it's been moved to .done
-        if os.path.isfile(self.pm.map_path(postinstall_done)):
-            os.remove(self.pm.map_path(postinstall_done));
+        if os.path.isfile(self.pm.mapPath(postinstall_done)):
+            os.remove(self.pm.mapPath(postinstall_done));
 
         # update installed[]
         del(self.installed[0][self.packagename]);
-        self.write_installed();
+        self.writeInstalled();
 
     def remove(self):
         """uninstall packages"""
@@ -766,14 +766,14 @@ class CygApt:
             if self.packagename not in self.installed[0]:
                 sys.stderr.write('warning: {0} not installed\n'.format(self.packagename));
                 continue;
-            if self.is_barred_package(self.packagename):
+            if self.isBarredPackage(self.packagename):
                 barred.append(self.packagename);
                 continue;
             sys.stderr.write('uninstalling {0} {1}\n'.format(
                          self.packagename,
-                         self.version_to_string(self.get_installed_version())));
-            self.do_uninstall();
-        self.barred_warn_if_need(barred, "removing");
+                         self.versionToString(self.getInstalledVersion())));
+            self.doUninstall();
+        self.barredWarnIfNeed(barred, "removing");
 
     def purge(self):
         """uninstall packages and delete from cache"""
@@ -782,22 +782,22 @@ class CygApt:
         for self.packagename in self.files[1:]:
             try:
                 if self.packagename in self.installed[0]:
-                    if self.is_barred_package(self.packagename):
+                    if self.isBarredPackage(self.packagename):
                         barred.append(self.packagename);
                         continue;
                     sys.stderr.write('uninstalling {0} {1}\n'.format(
                         self.packagename,
-                        self.version_to_string(self.get_installed_version())));
-                    self.do_uninstall();
+                        self.versionToString(self.getInstalledVersion())));
+                    self.doUninstall();
                 scripts = [self.postinstall_dir + "/{0}.sh.done", \
                     self.preremove_dir + "/{0}.sh.done", \
                     self.postremove_dir + "/{0}.sh.done"];
                 scripts = [s.format(self.packagename) for s in scripts];
-                scripts = [self.pm.map_path(s) for s in scripts];
+                scripts = [self.pm.mapPath(s) for s in scripts];
                 for s in scripts:
                     if os.path.exists(s):
                         os.remove(s);
-                ball = self.get_ball();
+                ball = self.getBall();
                 if os.path.exists(ball):
                     print("{0}: removing {1}".format(self.sn, ball));
                     os.remove(ball);
@@ -806,9 +806,9 @@ class CygApt:
                 sys.stderr.write(self.sn + ": " + err.msg + \
                     " exiting.\n");
                 sys.exit(1);
-        self.barred_warn_if_need(barred, "purging");
+        self.barredWarnIfNeed(barred, "purging");
 
-    def barred_warn_if_need(self, barred, command):
+    def barredWarnIfNeed(self, barred, command):
         num_barred = len(barred);
         if num_barred > 0:
             if num_barred == 1:
@@ -846,7 +846,7 @@ Before that, you must close all Cygwin programs to perform rebasing
         missing = {};
         barred = [];
         for self.packagename in self.files[1:]:
-            missing.update(dict([(x, 0) for x in self.get_missing()]));
+            missing.update(dict([(x, 0) for x in self.getMissing()]));
 
         if len(missing) > 1:
             sys.stderr.write('to install: \n');
@@ -854,11 +854,11 @@ Before that, you must close all Cygwin programs to perform rebasing
             sys.stderr.write('\n');
 
         for self.packagename in list(missing.keys()):
-            if not self.get_url():
+            if not self.getUrl():
                 del missing[self.packagename];
 
         for self.packagename in list(missing.keys()):
-            if self.is_barred_package(self.packagename):
+            if self.isBarredPackage(self.packagename):
                 barred.append(self.packagename);
                 del missing[self.packagename];
 
@@ -869,20 +869,20 @@ Before that, you must close all Cygwin programs to perform rebasing
         for self.packagename in list(missing.keys()):
             if self.packagename in self.installed[0]:
                 sys.stderr.write('preparing to replace {0} {1}\n'.format(
-                    self.packagename, self.version_to_string(self.get_installed_version())));
-                self.do_uninstall();
+                    self.packagename, self.versionToString(self.getInstalledVersion())));
+                self.doUninstall();
             sys.stderr.write('installing {0} {1}\n'.format(
-                  self.packagename, self.version_to_string(self.get_version())));
-            self.do_install();
+                  self.packagename, self.versionToString(self.getVersion())));
+            self.doInstall();
 
         if self.nopostinstall:
             print(suppression_msg, file=sys.stderr);
         else:
-            self.postinstall();
+            self.postInstall();
 
-        self.barred_warn_if_need(barred, "installing");
+        self.barredWarnIfNeed(barred, "installing");
 
-    def _integrity_control(self, checklist=[]):
+    def _integrityControl(self, checklist=[]):
         options = "-c ";
         if self.verbose:
             options += '-v ';
@@ -934,18 +934,18 @@ Before that, you must close all Cygwin programs to perform rebasing
 
     def upgrade(self):
         """all installed packages"""
-        self.files[1:] = self.get_new();
+        self.files[1:] = self.getNew();
         self.install();
 
-    def printerr(self, err):
+    def printErr(self, err):
         print("{0}: {1}".format(self.sn, err));
 
-    def do_unpack(self):
-        ball = self.get_ball();
+    def doUnpack(self):
+        ball = self.getBall();
         basename = os.path.basename(ball);
         self.packagename = re.sub('(-src)*\.tar\.(bz2|gz)', '', basename);
         if os.path.exists(self.packagename):
-            self.printerr(self.packagename + " already exists. Not overwriting.\n");
+            self.printErr(self.packagename + " already exists. Not overwriting.\n");
             return 1;
         os.mkdir(self.packagename);
         if tarfile.is_tarfile(ball):
@@ -967,7 +967,7 @@ Before that, you must close all Cygwin programs to perform rebasing
         self.INSTALL = 'source';
         for self.packagename in self.files[1:]:
             self.download();
-            self.do_unpack();
+            self.doUnpack();
         sys.exit(0);
 
     def find(self):
@@ -981,20 +981,20 @@ Before that, you must close all Cygwin programs to perform rebasing
             filenames_file = "{0}/{1}.lst.gz".format(self.config, self.packagename);
             if not os.path.exists(filenames_file):
                 continue;
-            files = self.get_filelist();
+            files = self.getFileList();
             for i in files:
                 if re.search(file_to_find, '/{0}'.format(i)):
                     hits.append('{0}: /{1}'.format(self.packagename, i));
         print('\n'.join(hits));
 
-    def set_root(self, root):
+    def setRoot(self, root):
         if len(root) < 1 or root[-1] != "/":
             print("{0}: ROOT must end in a slash. Exiting.".format(self.sn));
             sys.exit(1);
         self.PREFIX_ROOT = root[:-1];
         self.ABSOLUTE_ROOT = root;
 
-    def get_rc(self, filename):
+    def getRessource(self, filename):
         f = open(filename);
         lines = f.readlines();
         f.close();
@@ -1016,13 +1016,13 @@ Before that, you must close all Cygwin programs to perform rebasing
         # We want ROOT + "/etc/setup" and cd(ROOT) to work:
         # necessitates two different forms, prefix and absolute
         if(self.cygwin_p):
-            self.set_root("/");
+            self.setRoot("/");
         else:
-            self.set_root(self.ROOT);
+            self.setRoot(self.ROOT);
         self.ROOT = None;
         self.pm = PathMapper(self.PREFIX_ROOT, self.cygwin_p);
-        self.config = self.pm.map_path("/etc/setup");
-        self.cache = self.pm.map_path(self.cache);
+        self.config = self.pm.mapPath("/etc/setup");
+        self.cache = self.pm.mapPath(self.cache);
         self.downloads = self.cache + '/' + urllib.quote(self.mirror, '').lower();
         self.installed_db = self.config + '/installed.db';
 
@@ -1033,13 +1033,13 @@ Before that, you must close all Cygwin programs to perform rebasing
         self.postremove_dir = "/etc/postremove";
         self.preremove_dir = "/etc/preremove";
 
-        self.setup_ini = self.pm.map_path(self.setup_ini);
+        self.setup_ini = self.pm.mapPath(self.setup_ini);
         self.dos_bin_dir = self.pm.mountroot + "/bin";
         self.dos_bash = self.pm.mountroot + "bin/bash";
         self.dos_ln = self.pm.mountroot + "bin/ln";
         return 0;
 
-    def is_barred_package(self, package):
+    def isBarredPackage(self, package):
         barred = [];
         # add user barred package
         barred.extend(self.barred.split());
@@ -1053,7 +1053,7 @@ Before that, you must close all Cygwin programs to perform rebasing
         depbarred = [];
         for self.packagename in barred:
             try:
-                depbarred.extend(self.get_requires());
+                depbarred.extend(self.getRequires());
             except SystemExit:
                 pass;
 
