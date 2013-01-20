@@ -29,7 +29,7 @@ class TestArgParser(unittest.TestCase):
     def test___init__(self):
         self.assertTrue(isinstance(self.obj, CygAptArgParser));
         self.assertEqual(self.obj.usage, "usage");
-        self.assertEqual(self.obj.scriptname, "scriptname");
+        self.assertEqual(self.obj.scriptName, "scriptname");
 
     def testParse(self):
         argv = sys.argv[:];

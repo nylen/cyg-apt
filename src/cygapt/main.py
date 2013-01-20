@@ -62,7 +62,7 @@ class CygAptMain():
         main_mirror = args.mirror;
         main_distname = args.distname;
         main_noupdate = args.noupdate;
-        main_nodeps_p = args.nodeps_p;
+        main_nodeps_p = args.noDeps;
         main_regex_search = args.regex_search;
         main_nobarred = args.force;
         main_verify = args.verify;

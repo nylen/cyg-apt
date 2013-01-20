@@ -31,7 +31,7 @@ class TestPathMapper(unittest.TestCase):
     def test__init__(self):
         self.assertTrue(isinstance(self.obj, PathMapper));
         self.assertEqual(self._var_root, self.obj.root);
-        self.assertEqual(self._var_cygwin_p, self.obj.cygwin_p);
+        self.assertEqual(self._var_cygwin_p, self.obj.cygwinPlatform);
 
     def testAddMapping(self):
         mount = r"""C:/cygwin/bin on /usr/bin type ntfs (binary,auto)
@@ -50,7 +50,7 @@ C: on /cygdrive/c type ntfs (binary,posix=0,user,noumount,auto)
                         '/cygdrive/c/': 'C:/'};
         self.obj.addMapping(mtab);
         self.assertEqual(self.obj.map, mapping);
-        self.assertEqual(self.obj.mountroot, "C:/cygwin/");
+        self.assertEqual(self.obj.mountRoot, "C:/cygwin/");
 
     def testMapPath(self):
         if sys.platform == "cygwin":

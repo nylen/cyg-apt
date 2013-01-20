@@ -18,20 +18,20 @@ class CygAptURLopener(urllib.FancyURLopener):
     def __init__(self, verbose, *args):
         urllib.FancyURLopener.__init__(self, *args);
         self.verbose = verbose;
-        self.errcode = 200;
-        self.barmax = 40;
+        self.errorCode = 200;
+        self.barMax = 40;
 
     def http_error_default(self, url, fp, errcode, errmsg, headers):
-        self.errcode = errcode;
+        self.errorCode = errcode;
         return urllib.FancyURLopener.http_error_default\
             (self, url, fp, errcode, errmsg, headers);
 
     def dlProgress(self, count, blockSize, totalSize):
-        if self.errcode != 200:
+        if self.errorCode != 200:
             return;
         if not self.verbose:
             return;
-        barmax = self.barmax;
+        barmax = self.barMax;
         ratio = min((count * blockSize), totalSize) / float(totalSize);
         bar = int(barmax * ratio);
         if ratio == 1.0:

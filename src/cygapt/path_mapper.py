@@ -21,9 +21,9 @@ class PathMapper:
         p = os.popen(self.root + "/bin/mount");
         mountout = p.readlines();
         p.close();
-        self.mountroot = "/";
+        self.mountRoot = "/";
         self.addMapping(mountout);
-        self.cygwin_p = cygwin_p;
+        self.cygwinPlatform = cygwin_p;
 
     def addMapping(self, mtab):
         self.map = {};
@@ -32,10 +32,10 @@ class PathMapper:
             if l[2] != "/":
                 self.map[l[2] + "/"] = l[0] + "/";
             else:
-                self.mountroot = l[0] + "/";
+                self.mountRoot = l[0] + "/";
 
     def mapPath(self, path):
-        if self.cygwin_p:
+        if self.cygwinPlatform:
             return path;
         # sort to map to /e/bar/foo in pefrence /e/bar
         l = cautils.prsort(list(self.map.keys()));

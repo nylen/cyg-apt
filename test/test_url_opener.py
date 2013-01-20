@@ -36,7 +36,7 @@ class TestUrlOpener(unittest.TestCase):
         errcode = 404;
         self.obj.http_error_default("url", f, errcode, "errmsg", "headers");
         f.close();
-        self.assertTrue(self.obj.errcode == errcode);
+        self.assertTrue(self.obj.errorCode == errcode);
 
     def testDlProgress(self):
         self.obj.verbose = 1;

@@ -96,17 +96,17 @@ def uri_get(directory, uri, verbose=False):
             opener.retrieve\
                 (uri, url_base + ".tmp", reporthook=opener.dlProgress);
         except IOError:
-            opener.errcode = 1;
+            opener.errorCode = 1;
         finally:
             opener.close();
-        if (opener.errcode == 200):
+        if (opener.errorCode == 200):
             rename(url_base + ".tmp", url_base);
         else:
             if os.path.exists(url_base + ".tmp"):
                 os.remove(url_base + ".tmp");
             os.chdir(old_cwd);
             raise CygAptError("{0} unreached URL {1}\n"\
-                              "".format(opener.errcode,
+                              "".format(opener.errorCode,
                                         uri));
         os.chdir(old_cwd);
     else:

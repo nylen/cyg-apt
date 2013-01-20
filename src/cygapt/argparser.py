@@ -16,7 +16,7 @@ import argparse;
 class CygAptArgParser():
     def __init__(self, usage=None, scriptname=None):
         self.usage = usage;
-        self.scriptname = scriptname;
+        self.scriptName = scriptname;
 
     def parse(self):
         commands = ['setup',
@@ -42,7 +42,7 @@ class CygAptArgParser():
                     'version',
                     ];
 
-        parser = argparse.ArgumentParser(prog=self.scriptname,
+        parser = argparse.ArgumentParser(prog=self.scriptName,
                                          add_help=False,
                                          usage=self.usage);
 
