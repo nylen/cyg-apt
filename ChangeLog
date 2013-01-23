@@ -853,3 +853,5 @@ d1c4232 Add the ability to overwrite the configuration file for setup command
 eec4e0f Update help message with version and license
 2507a92 Add any relevent documentation into the binary package
 6b88802 Add installtest fonctionnality to provide tests in installed location
+788579f Fix unprotected PYTHONPATH assignation
+5bb55a5 Update exceptions
