@@ -12,15 +12,17 @@
 ######################### END LICENSE BLOCK #########################
 
 from __future__ import print_function;
+from __future__ import absolute_import;
+
 import unittest;
 
-from test_utils import TestUtils;
-from test_url_opener import TestUrlOpener;
-from test_argparser import TestArgParser;
-from test_ob import TestOb;
-from test_path_mapper import TestPathMapper;
-from test_setup import TestSetup;
-from test_cygapt import TestCygApt as TestCygAptClass;
+from cygapt.test.test_utils import TestUtils;
+from cygapt.test.test_url_opener import TestUrlOpener;
+from cygapt.test.test_argparser import TestArgParser;
+from cygapt.test.test_ob import TestOb;
+from cygapt.test.test_path_mapper import TestPathMapper;
+from cygapt.test.test_setup import TestSetup;
+from cygapt.test.test_cygapt import TestCygApt as TestCygAptClass;
 
 class TestCygApt(unittest.TestSuite):
     def __init__(self):

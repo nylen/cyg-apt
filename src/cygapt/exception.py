@@ -11,6 +11,7 @@
 ######################### END LICENSE BLOCK #########################
 
 from __future__ import print_function;
+from __future__ import absolute_import;
 
 class ApplicationException(Exception):
     def __init__(self, message="", code=1, previous=None):

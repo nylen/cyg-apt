@@ -13,6 +13,8 @@
 ######################### END LICENSE BLOCK #########################
 
 from __future__ import print_function;
+from __future__ import absolute_import;
+
 from distutils.core import setup;
 import os;
 
@@ -37,7 +39,7 @@ long_description = f.read();
 f.close();
 
 setup(name=pkgname,
-      packages=[pkgname],
+      packages=[pkgname, pkgname + ".test"],
       package_data={pkgname: ['LICENSE']},
       version=version,
       description="A Cygwin command line package management tool.",

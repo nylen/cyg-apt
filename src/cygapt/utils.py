@@ -11,15 +11,17 @@
 ######################### END LICENSE BLOCK #########################
 
 from __future__ import print_function;
+from __future__ import absolute_import;
+
 import os;
 import re;
 import shutil;
 import sys;
 import urlparse;
 
-from exception import ApplicationException;
-from exception import InvalidArgumentException;
-from url_opener import CygAptURLopener;
+from cygapt.exception import ApplicationException;
+from cygapt.exception import InvalidArgumentException;
+from cygapt.url_opener import CygAptURLopener;
 
 def cygpath(path):
     p = os.popen("cygpath \"{0}\"".format(path));

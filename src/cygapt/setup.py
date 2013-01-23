@@ -11,6 +11,8 @@
 ######################### END LICENSE BLOCK #########################
 
 from __future__ import print_function;
+from __future__ import absolute_import;
+
 import bz2;
 import inspect;
 import os;
@@ -21,17 +23,17 @@ import sys;
 import urllib;
 import platform;
 
-from cygapt import CygApt;
-from exception import ApplicationException;
-from exception import ProcessException;
-from exception import PathExistsException;
-from exception import UnexpectedValueException;
-from utils import RequestException;
-from path_mapper import PathMapper;
-import utils as cautils;
-import version;
-import copying;
-from structure import ConfigStructure;
+from cygapt.cygapt import CygApt;
+from cygapt.exception import ApplicationException;
+from cygapt.exception import ProcessException;
+from cygapt.exception import PathExistsException;
+from cygapt.exception import UnexpectedValueException;
+from cygapt.utils import RequestException;
+from cygapt.path_mapper import PathMapper;
+import cygapt.utils as cautils;
+import cygapt.version as version;
+import cygapt.copying as copying;
+from cygapt.structure import ConfigStructure;
 
 class CygAptSetup:
     RC_OPTIONS = [

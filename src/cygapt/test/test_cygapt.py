@@ -12,6 +12,8 @@
 ######################### END LICENSE BLOCK #########################
 
 from __future__ import print_function;
+from __future__ import absolute_import;
+
 import unittest;
 import sys;
 import os;
@@ -20,13 +22,13 @@ import gzip;
 from cygapt.cygapt import CygApt;
 from cygapt.setup import CygAptSetup;
 from cygapt.ob import CygAptOb;
-import cygapt.utilstest;
+from cygapt.test.utils import TestCase;
 from cygapt.path_mapper import PathMapper;
 from cygapt.structure import ConfigStructure;
 
-class TestCygApt(cygapt.utilstest.TestCase):
+class TestCygApt(TestCase):
     def setUp(self):
-        cygapt.utilstest.TestCase.setUp(self);
+        TestCase.setUp(self);
 
         self._var_verbose = False;
         self._var_cygwin_p = sys.platform == "cygwin";

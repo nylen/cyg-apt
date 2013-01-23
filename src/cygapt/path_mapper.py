@@ -11,9 +11,11 @@
 ######################### END LICENSE BLOCK #########################
 
 from __future__ import print_function;
+from __future__ import absolute_import;
+
 import os;
 
-import utils as cautils;
+import cygapt.utils as cautils;
 
 class PathMapper:
     def __init__(self, root, cygwin_p):

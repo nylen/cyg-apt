@@ -12,15 +12,17 @@
 ######################### END LICENSE BLOCK #########################
 
 from __future__ import print_function;
+from __future__ import absolute_import;
+
 import unittest;
 import sys;
 import os;
 
 import cygapt.utils as utils;
 from cygapt.exception import ApplicationException;
-import cygapt.utilstest;
+from cygapt.test.utils import TestCase;
 
-class TestUtils(cygapt.utilstest.TestCase):
+class TestUtils(TestCase):
     def _getTmpDir(self):
         return self._dir_tmp;
     

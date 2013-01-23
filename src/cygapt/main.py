@@ -12,15 +12,17 @@
 ######################### END LICENSE BLOCK #########################
 
 from __future__ import print_function;
+from __future__ import absolute_import;
+
 import sys;
 import os;
 
-import utils as cautils;
-from setup import CygAptSetup;
-from ob import CygAptOb;
-from argparser import CygAptArgParser;
-from cygapt import CygApt;
-from exception import ApplicationException;
+import cygapt.utils as cautils;
+from cygapt.setup import CygAptSetup;
+from cygapt.ob import CygAptOb;
+from cygapt.argparser import CygAptArgParser;
+from cygapt.cygapt import CygApt;
+from cygapt.exception import ApplicationException;
 
 class CygAptMain():
     def __init__(self):

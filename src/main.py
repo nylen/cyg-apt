@@ -12,6 +12,8 @@
 # LICENSE file that was distributed with this source code.
 ######################### END LICENSE BLOCK #########################
 
+from __future__ import absolute_import;
+
 from cygapt.main import CygAptMain;
 
 if __name__ == '__main__':

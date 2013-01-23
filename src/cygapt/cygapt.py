@@ -11,6 +11,8 @@
 ######################### END LICENSE BLOCK #########################
 
 from __future__ import print_function;
+from __future__ import absolute_import;
+
 import gzip;
 import hashlib;
 import io;
@@ -21,14 +23,14 @@ import sys;
 import tarfile;
 import urllib;
 
-import utils as cautils;
-from exception import ApplicationException;
-from exception import PathExistsException;
-from exception import InvalidFileException;
-from exception import InvalidArgumentException;
-from exception import UnexpectedValueException;
-from path_mapper import PathMapper;
-from structure import ConfigStructure;
+import cygapt.utils as cautils;
+from cygapt.exception import ApplicationException;
+from cygapt.exception import PathExistsException;
+from cygapt.exception import InvalidFileException;
+from cygapt.exception import InvalidArgumentException;
+from cygapt.exception import UnexpectedValueException;
+from cygapt.path_mapper import PathMapper;
+from cygapt.structure import ConfigStructure;
 
 class CygApt:
     INSTALLED_DB_MAGIC = 'INSTALLED.DB 2\n';

@@ -9,10 +9,3 @@
 # For the full copyright and license information, please view the
 # LICENSE file that was distributed with this source code.
 ######################### END LICENSE BLOCK #########################
-
-from __future__ import print_function;
-from __future__ import absolute_import;
-
-import cygapt.version as version;
-
-__version__ = version.__version__;

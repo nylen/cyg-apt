@@ -15,21 +15,23 @@
 """
 
 from __future__ import print_function;
+from __future__ import absolute_import;
+
 import unittest;
 import sys;
 import os;
 import subprocess;
 
 from cygapt.setup import CygAptSetup;
-import cygapt.utilstest;
+from cygapt.test.utils import TestCase;
 from cygapt.setup import PlatformException;
 from cygapt.setup import EnvironementException;
 from cygapt.exception import PathExistsException;
 
 
-class TestSetup(cygapt.utilstest.TestCase):
+class TestSetup(TestCase):
     def setUp(self):
-        cygapt.utilstest.TestCase.setUp(self);
+        TestCase.setUp(self);
         self._var_verbose = False;
         self._var_cygwin_p = sys.platform == "cygwin";
         self.obj = CygAptSetup(self._var_cygwin_p, self._var_verbose);

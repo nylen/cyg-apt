@@ -1,6 +1,6 @@
 all:: sourcetest
 
-TEST_SCRIPT = test_all.py
+TEST_SCRIPT = -m cygapt.test.__main__
 ARGUMENTS =
 ARGUMENTS += -v
 
