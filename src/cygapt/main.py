@@ -20,10 +20,29 @@ from setup import CygAptSetup;
 from ob import CygAptOb;
 from argparser import CygAptArgParser;
 from cygapt import CygApt;
-from error import CygAptError;
+from exception import ApplicationException;
 
 class CygAptMain():
     def __init__(self):
+        self.__appName = None;
+        try:
+            exit_code = self.main();
+        except ApplicationException as e:
+            print("{0}: {1}".format(self.getAppName(), e),
+                  file=sys.stderr
+            );
+            exit_code = e.getCode();
+
+        sys.exit(exit_code);
+
+    def getAppName(self):
+        if self.__appName is None:
+            self.__appName = os.path.basename(sys.argv[0]);
+            if (self.__appName[-3:] == ".py"):
+                self.__appName = self.__appName[:-3];
+        return self.__appName;
+
+    def main(self):
         main_downloads = None;
         main_dists = 0;
         main_installed = 0;
@@ -37,15 +56,11 @@ class CygAptMain():
         update_not_needed = ["ball", "find", "help", "purge", "remove", "version",\
             "filelist", "update", "setup", "md5"];
 
-        main_scriptname = os.path.basename(sys.argv[0]);
-        if (main_scriptname[-3:] == ".py"):
-            main_scriptname = main_scriptname[:-3];
-
         ob = CygAptOb(True);
         cas.usage();
         usage = ob.getFlush();
 
-        cap = CygAptArgParser(usage=usage, scriptname=main_scriptname);
+        cap = CygAptArgParser(usage=usage, scriptname=self.getAppName());
         args = cap.parse();
 
         main_command = args.command;
@@ -74,11 +89,11 @@ class CygAptMain():
 
         # Take most of our configuration from .cyg-apt
         # preferring .cyg-apt in current directory over $(HOME)/.cyg-apt
-        cwd_cyg_apt_rc = os.getcwd() + '/.' + main_scriptname;
+        cwd_cyg_apt_rc = os.getcwd() + '/.' + self.getAppName();
         if os.path.exists(cwd_cyg_apt_rc):
             main_cyg_apt_rc = cwd_cyg_apt_rc;
         elif "HOME" in os.environ:
-            home_cyg_apt_rc = os.environ['HOME'] + '/.' + main_scriptname;
+            home_cyg_apt_rc = os.environ['HOME'] + '/.' + self.getAppName();
             if os.path.exists(home_cyg_apt_rc):
                 main_cyg_apt_rc = home_cyg_apt_rc;
 
@@ -88,19 +103,19 @@ class CygAptMain():
             # Command line options can override, but only for this run.
             main_cyg_apt_rc = main_cyg_apt_rc.replace("\\","/");
         elif (main_command != "setup"):
-            print("{sn}: no .{sn}: run \"{sn} setup\" Exiting.".format(
-                  {'sn':main_scriptname}));
-            sys.exit(1);
+            print("{0}: no .{0}: run \"{0} setup\"".format(self.getAppName()),
+                  file=sys.stderr);
+            return 1;
 
         if (main_command == "setup"):
             cas.setup(args.force);
-            sys.exit(0);
+            return 0;
         elif (main_command == "help"):
             cas.usage(main_cyg_apt_rc);
-            sys.exit(0);
+            return 0;
         elif (main_command == "update"):
             cas.update(main_cyg_apt_rc, main_verify, main_mirror = main_mirror);
-            sys.exit(0);
+            return 0;
         always_update = cautils.parse_rc(main_cyg_apt_rc);
         always_update = always_update and\
             main_command not in update_not_needed and\
@@ -109,38 +124,29 @@ class CygAptMain():
             cas.update(main_cyg_apt_rc, main_verify, main_mirror = main_mirror);
 
         if main_command and main_command in dir(CygApt):
-            try:
-                cyg_apt = CygApt(main_packagename,\
-                    main_files,\
-                    main_cyg_apt_rc,\
-                    main_cygwin_p,\
-                    main_download_p,\
-                    main_mirror,\
-                    main_downloads,\
-                    main_distname,\
-                    main_nodeps_p,\
-                    main_regex_search,\
-                    main_nobarred,\
-                    main_nopostinstall,\
-                    main_nopostremove,\
-                    main_dists,\
-                    main_installed,\
-                    main_scriptname,\
-                    main_verbose);
-            except CygAptError as exp:
-                print(exp);
-                sys.exit(1);
+            cyg_apt = CygApt(main_packagename,\
+                main_files,\
+                main_cyg_apt_rc,\
+                main_cygwin_p,\
+                main_download_p,\
+                main_mirror,\
+                main_downloads,\
+                main_distname,\
+                main_nodeps_p,\
+                main_regex_search,\
+                main_nobarred,\
+                main_nopostinstall,\
+                main_nopostremove,\
+                main_dists,\
+                main_installed,\
+                self.getAppName(),\
+                main_verbose);
 
-            # Launch!
-            try:
-                getattr(cyg_apt, main_command)();
-            except CygAptError as xxx_todo_changeme2:
-                (err) = xxx_todo_changeme2;
-                sys.stderr.write(main_scriptname + ": " + err.msg +\
-                    ", exiting.\n");
+            getattr(cyg_apt, main_command)();
         else:
             cas.usage(main_cyg_apt_rc);
 
+        return 0;
 
 if __name__ == '__main__':
     CygAptMain();

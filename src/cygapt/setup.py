@@ -22,7 +22,11 @@ import urllib;
 import platform;
 
 from cygapt import CygApt;
-from error import CygAptError;
+from exception import ApplicationException;
+from exception import ProcessException;
+from exception import PathExistsException;
+from exception import UnexpectedValueException;
+from utils import RequestException;
 from path_mapper import PathMapper;
 import utils as cautils;
 import version;
@@ -152,19 +156,17 @@ class CygAptSetup:
     def setup(self, force=False):
         """create cyg-apt configuration file, it overwrite with -f option"""
         if not self.__cygwinPlatform:
-            print("{0}: setup outside Cygwin not supported. Exiting.".format(self.__appName));
-            sys.exit(1);
+            msg = "setup outside Cygwin not supported.";
+            raise PlatformException(msg);
         if "HOME" in os.environ:
             rc_file = os.environ['HOME'] + '/.' + self.__appName;
         else:
-            sys.stderr.write("{0}: can't locate home directory. Setup "\
-                "failed, exiting.\n".format(self.__appName));
-            sys.exit(1);
+            msg = "Can't locate home directory. Setup "\
+                "failed.";
+            raise EnvironementException(msg);
         if os.path.exists(rc_file) and not force:
-            sys.stderr.write("{0}: {1} exists, not overwriting. "\
-                "\n".format(self.__appName, rc_file));
-            sys.exit(0);
-
+            msg = "{0} exists, not overwriting.".format(rc_file);
+            raise PathExistsException(msg, code=0);
 
         installed_db = self.__setupDir + '/installed.db';
         missing_cache_marker = "";
@@ -176,9 +178,8 @@ class CygAptSetup:
         self.__rc.always_update = False;
 
         if not self.__cygwinPlatform:
-            print("{0}: settup only supported under Cygwin."\
-                  "Exiting.".format(self.__appName));
-            return;
+            msg = "Setup only supported under Cygwin.";
+            raise PlatformException(msg);
 
         (last_cache, last_mirror) = self.getSetupRc(self.__setupDir);
         if ((not last_cache) or (not last_mirror)):
@@ -203,8 +204,8 @@ class CygAptSetup:
         print("{0}: creating {1}".format(self.__appName, rc_file));
 
         if not os.path.isdir(self.__rc.ROOT):
-            sys.stderr.write('error: {0} no root dir\n'.format(self.__rc.ROOT));
-            sys.exit(2);
+            msg = '{0} no root directory'.format(self.__rc.ROOT);
+            raise UnexpectedValueException(msg);
         if not os.path.isdir(self.__setupDir):
             sys.stderr.write('creating {0}\n'.format(self.__setupDir));
             os.makedirs(self.__setupDir);
@@ -275,17 +276,12 @@ class CygAptSetup:
 
         for (setup_ini_name, index) in zip(setup_ini_names, list(range(len(setup_ini_names)))):
             setup_ini_url = '{0}{1}{2}'.format(mirror, sep, setup_ini_name);
-            err = None;
             try:
                 cautils.uri_get(self.__tmpDir, setup_ini_url, verbose=self.__verbose);
-            except CygAptError as xxx_todo_changeme:
-                # Failed to find a possible .ini
-                (err) = xxx_todo_changeme;
+            except ApplicationException as e:
                 # Failed to find a possible .ini
                 if index == len(setup_ini_names) - 1:
-                    sys.stderr.write(self.__appName + ": " + err.msg +\
-                    ", exiting.\n");
-                    sys.exit(1);
+                    raise e;
                 else:
                     continue;
                     # Not an error to fail to find the first one
@@ -312,12 +308,13 @@ class CygAptSetup:
         if verify:
             sig_name = setup_ini_name + ".sig";
             sig_url = "{0}{1}{2}".format(mirror, sep, sig_name);
-            err = cautils.uri_get(self.__tmpDir, sig_url, verbose=self.__verbose);
-            if err:
-                print("{0}: failed to download signature {1} Use -X to ignore "\
-                    "signatures. Exiting".format(
-                    self.__appName, sig_url));
-                sys.exit(1);
+            try:
+                cautils.uri_get(self.__tmpDir, sig_url, verbose=self.__verbose);
+            except RequestException as e:
+                msg = "Failed to download signature {0} Use -X to ignore "\
+                      "signatures.".format(sig_url);
+                raise RequestException(msg, previous=e);
+
             if self.__cygwinPlatform:
                 gpg_path = "gpg ";
             else:
@@ -337,10 +334,10 @@ class CygAptSetup:
             else:
                 marker = self.GPG_GOOD_FINGER;
             if not marker in verify:
-                sys.stderr.write("{0}: {1} not signed by Cygwin's public key. "\
-                    "Use -X to ignore signatures. Exiting.\n".format(
-                    self.__appName, setup_ini_url));
-                sys.exit(1);
+                msg = "{0} not signed by Cygwin's public key. "\
+                      "Use -X to ignore signatures.".format(
+                          setup_ini_url);
+                raise SignatureException(msg);
 
         if not os.path.exists(downloads):
             os.makedirs(downloads);
@@ -372,9 +369,9 @@ class CygAptSetup:
 
     def _writeInstalled(self, installed_db):
         if not self.__cygwinPlatform:
-            print("{0}: fail to create {1} only supported under Cygwin. "\
-                  "Exiting.".format(self.__appName, installed_db));
-            return;
+            msg = "fail to create {0} only supported under Cygwin. "\
+                  "".format(installed_db);
+            raise PlatformException(msg);
 
         sys.stderr.write('creating {0} ... '.format(installed_db));
 
@@ -388,7 +385,7 @@ class CygAptSetup:
                     stderr=subprocess.PIPE);
 
             if proc.wait():
-                raise CygAptError(proc.stderr.readlines());
+                raise ProcessException(proc.stderr.readlines());
 
             lines = proc.stdout.readlines();
             # remove first two lines
@@ -419,4 +416,13 @@ class CygAptSetup:
                          stderr=subprocess.PIPE);
 
         if p.wait():
-            raise CygAptError(p.stderr.readlines());
+            raise ProcessException(p.stderr.readlines());
+
+class PlatformException(ApplicationException):
+    pass;
+
+class EnvironementException(ApplicationException):
+    pass;
+
+class SignatureException(ApplicationException):
+    pass;

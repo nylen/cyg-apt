@@ -343,7 +343,7 @@ class TestCygApt(cygapt.utilstest.TestCase):
 
     def testSource(self):
         os.chdir(self._dir_user);
-        self.assertRaises(SystemExit, self.obj.source);
+        self.obj.source();
         self.assertTrue(os.path.isdir(self.obj.getPkgName()));
 
     def testFind(self):

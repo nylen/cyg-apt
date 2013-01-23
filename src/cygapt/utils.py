@@ -17,7 +17,8 @@ import shutil;
 import sys;
 import urlparse;
 
-from error import CygAptError;
+from exception import ApplicationException;
+from exception import InvalidArgumentException;
 from url_opener import CygAptURLopener;
 
 def cygpath(path):
@@ -105,9 +106,12 @@ def uri_get(directory, uri, verbose=False):
             if os.path.exists(url_base + ".tmp"):
                 os.remove(url_base + ".tmp");
             os.chdir(old_cwd);
-            raise CygAptError("{0} unreached URL {1}\n"\
+            raise RequestException("{0} unreached URL {1}\n"\
                               "".format(opener.getErrorCode(),
                                         uri));
         os.chdir(old_cwd);
     else:
-        raise CygAptError("bad URL {0}".format(uri));
+        raise InvalidArgumentException("bad URL {0}".format(uri));
+
+class RequestException(ApplicationException):
+    pass;

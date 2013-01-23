@@ -29,10 +29,7 @@ class TestOb(unittest.TestCase):
     
     def tearDown(self):
         unittest.TestCase.tearDown(self);
-        try:
-            self.obj._end();
-        except:
-            pass;
+        self.obj._end();
     
     def makeOn(self):
         txt = "TestOb.makeOn ";

@@ -17,7 +17,7 @@ import sys;
 import os;
 
 import cygapt.utils as utils;
-import cygapt.error as error;
+from cygapt.exception import ApplicationException;
 import cygapt.utilstest;
 
 class TestUtils(cygapt.utilstest.TestCase):
@@ -171,7 +171,7 @@ class TestUtils(cygapt.utilstest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(directory, "setup.bz2.sig")),
                         "http request");
         
-        self.assertRaises(error.CygAptError,
+        self.assertRaises(ApplicationException,
                           utils.uri_get,
                           "", "", verbose);
         
@@ -181,7 +181,7 @@ class TestUtils(cygapt.utilstest.TestCase):
                         "ftp request");
 
         uri = "rsync://cygwin.uib.no/cygwin/setup-legacy.bz2.sig";
-        self.assertRaises(error.CygAptError,
+        self.assertRaises(ApplicationException,
                           utils.uri_get,
                           directory,
                           uri,

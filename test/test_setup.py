@@ -22,6 +22,10 @@ import subprocess;
 
 from cygapt.setup import CygAptSetup;
 import cygapt.utilstest;
+from cygapt.setup import PlatformException;
+from cygapt.setup import EnvironementException;
+from cygapt.exception import PathExistsException;
+
 
 class TestSetup(cygapt.utilstest.TestCase):
     def setUp(self):
@@ -85,18 +89,18 @@ class TestSetup(cygapt.utilstest.TestCase):
     
     def testSetup(self):
         if not self._var_cygwin_p:
-            self.assertRaises(SystemExit, self.obj.setup);
+            self.assertRaises(PlatformException, self.obj.setup);
             return;
         
         # env HOME not exists
         os.environ.pop('HOME');
-        self.assertRaises(SystemExit, self.obj.setup);
+        self.assertRaises(EnvironementException, self.obj.setup);
         os.environ['HOME'] = self._dir_user;
         
         # config file already isset
         f = open(self._file_user_config, "w");
         f.close();
-        self.assertRaises(SystemExit, self.obj.setup);
+        self.assertRaises(PathExistsException, self.obj.setup);
         self.assertTrue(os.path.exists(self._file_user_config));
         
         os.remove(self._file_user_config);

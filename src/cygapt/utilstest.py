@@ -137,8 +137,7 @@ last-action
 class SetupIniProvider():
     """Create a fictif setup.ini"""
     def __init__(self, app):
-        if not isinstance(app, TestCase):
-            raise Exception();
+        assert isinstance(app, TestCase);
         self._localMirror = app._dir_mirror;
 
         self.libpkg = PackageIni(app, name="libpkg");
@@ -191,8 +190,7 @@ setup-version: 2.774
 
 class PackageIni():
     def __init__(self, app, name="testpkg", category="test", requires=""):
-        if not isinstance(app, TestCase):
-            raise Exception();
+        assert isinstance(app, TestCase);
 
         self._localMirror = app._dir_mirror;
         self._mtRoot = app._dir_mtroot;
@@ -328,7 +326,7 @@ source: {self[source][test]}""".format(self=vars(self));
         ret += os.system('ln -s "' + bin_f + '" "' + link_bin_f + '"');
         ret += os.system('ln "' + bin_f + '" "' + hardlink_bin_f + '"');
         if ret > 0:
-            raise Exception("fail to create links");
+            raise OSError("fail to create links");
 
         # create postinstall > root/etc/postinstall
         f = open(postinstall_f, "w");
