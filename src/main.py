@@ -16,5 +16,5 @@ from __future__ import absolute_import;
 
 from cygapt.main import CygAptMain;
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     CygAptMain();

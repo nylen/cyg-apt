@@ -30,12 +30,13 @@ def cygpath(path):
     return dospath;
 
 def parse_rc(cyg_apt_rc):
-    # Currently main only needs to know if we alway call the update command
-    # before other commands
+    """Currently main only needs to know if we alway call the update command
+    before other commands
+    """
     f = open(cyg_apt_rc);
     lines = f.readlines();
     f.close();
-    rc_regex = re.compile("^\s*(\w+)\s*=\s*(.*)\s*$");
+    rc_regex = re.compile(r"^\s*(\w+)\s*=\s*(.*)\s*$");
     always_update = False;
     for i in lines:
         result = rc_regex.search(i);
@@ -96,21 +97,26 @@ def uri_get(directory, uri, verbose=False):
             print("\r{0}: downloading: {1}".format(scriptname, uri));
         try:
             opener = CygAptURLopener(verbose);
-            opener.retrieve\
-                (uri, url_base + ".tmp", reporthook=opener.dlProgress);
+            opener.retrieve(
+                uri,
+                "{0}.tmp".format(url_base),
+                reporthook=opener.dlProgress
+            );
         except IOError:
             opener.setErrorCode(1);
         finally:
             opener.close();
-        if (opener.getErrorCode() == 200):
+
+        if opener.getErrorCode() == 200:
             rename(url_base + ".tmp", url_base);
         else:
             if os.path.exists(url_base + ".tmp"):
                 os.remove(url_base + ".tmp");
             os.chdir(old_cwd);
-            raise RequestException("{0} unreached URL {1}\n"\
-                              "".format(opener.getErrorCode(),
-                                        uri));
+            raise RequestException(
+                "{0} unreached URL {1}"
+                "".format(opener.getErrorCode(), uri)
+            );
         os.chdir(old_cwd);
     else:
         raise InvalidArgumentException("bad URL {0}".format(uri));

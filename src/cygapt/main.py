@@ -55,8 +55,10 @@ class CygAptMain():
 
         main_cygwin_p = (sys.platform == "cygwin");
         cas = CygAptSetup(main_cygwin_p, main_verbose);
-        update_not_needed = ["ball", "find", "help", "purge", "remove", "version",\
-            "filelist", "update", "setup", "md5"];
+        update_not_needed = [
+            "ball", "find", "help", "purge", "remove", "version", 
+            "filelist", "update", "setup", "md5",
+        ];
 
         ob = CygAptOb(True);
         cas.usage();
@@ -91,11 +93,17 @@ class CygAptMain():
 
         # Take most of our configuration from .cyg-apt
         # preferring .cyg-apt in current directory over $(HOME)/.cyg-apt
-        cwd_cyg_apt_rc = os.getcwd() + '/.' + self.getAppName();
+        cwd_cyg_apt_rc = os.path.join(
+            os.getcwd(),
+            ".{0}".format(self.getAppName())
+        );
         if os.path.exists(cwd_cyg_apt_rc):
             main_cyg_apt_rc = cwd_cyg_apt_rc;
         elif "HOME" in os.environ:
-            home_cyg_apt_rc = os.environ['HOME'] + '/.' + self.getAppName();
+            home_cyg_apt_rc = os.path.join(
+                os.environ['HOME'],
+                ".{0}".format(self.getAppName())
+            );
             if os.path.exists(home_cyg_apt_rc):
                 main_cyg_apt_rc = home_cyg_apt_rc;
 
@@ -105,8 +113,10 @@ class CygAptMain():
             # Command line options can override, but only for this run.
             main_cyg_apt_rc = main_cyg_apt_rc.replace("\\","/");
         elif (main_command != "setup"):
-            print("{0}: no .{0}: run \"{0} setup\"".format(self.getAppName()),
-                  file=sys.stderr);
+            print(
+                "{0}: no .{0}: run \"{0} setup\"".format(self.getAppName()),
+                file=sys.stderr
+            );
             return 1;
 
         if (main_command == "setup"):
@@ -116,33 +126,35 @@ class CygAptMain():
             cas.usage(main_cyg_apt_rc);
             return 0;
         elif (main_command == "update"):
-            cas.update(main_cyg_apt_rc, main_verify, main_mirror = main_mirror);
+            cas.update(main_cyg_apt_rc, main_verify, main_mirror=main_mirror);
             return 0;
         always_update = cautils.parse_rc(main_cyg_apt_rc);
         always_update = always_update and\
             main_command not in update_not_needed and\
             not main_noupdate;
         if always_update:
-            cas.update(main_cyg_apt_rc, main_verify, main_mirror = main_mirror);
+            cas.update(main_cyg_apt_rc, main_verify, main_mirror=main_mirror);
 
         if main_command and main_command in dir(CygApt):
-            cyg_apt = CygApt(main_packagename,\
-                main_files,\
-                main_cyg_apt_rc,\
-                main_cygwin_p,\
-                main_download_p,\
-                main_mirror,\
-                main_downloads,\
-                main_distname,\
-                main_nodeps_p,\
-                main_regex_search,\
-                main_nobarred,\
-                main_nopostinstall,\
-                main_nopostremove,\
-                main_dists,\
-                main_installed,\
-                self.getAppName(),\
-                main_verbose);
+            cyg_apt = CygApt(
+                main_packagename,
+                main_files,
+                main_cyg_apt_rc,
+                main_cygwin_p,
+                main_download_p,
+                main_mirror,
+                main_downloads,
+                main_distname,
+                main_nodeps_p,
+                main_regex_search,
+                main_nobarred,
+                main_nopostinstall,
+                main_nopostremove,
+                main_dists,
+                main_installed,
+                self.getAppName(),
+                main_verbose
+            );
 
             getattr(cyg_apt, main_command)();
         else:

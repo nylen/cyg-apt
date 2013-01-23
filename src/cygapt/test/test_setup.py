@@ -33,27 +33,27 @@ class TestSetup(TestCase):
     def setUp(self):
         TestCase.setUp(self);
         self._var_verbose = False;
-        self._var_cygwin_p = sys.platform == "cygwin";
+        self._var_cygwin_p = sys.platform.startswith("cygwin");
         self.obj = CygAptSetup(self._var_cygwin_p, self._var_verbose);
         self.obj.setTmpDir(self._dir_tmp);
         self.obj.setAppName(self._var_exename);
         self.obj.setSetupDir(self._dir_confsetup);
         self.obj.getRC().ROOT = self._dir_mtroot;
-        
+
     def test__init__(self):
         self.assertTrue(isinstance(self.obj, CygAptSetup));
         self.assertEqual(self.obj.getCygwinPlatform(), self._var_cygwin_p);
         self.assertEqual(self.obj.getVerbose(), self._var_verbose);
-        
+
     def testGetSetupRc(self):
         if not self._var_cygwin_p:
             self.skipTest("requires cygwin");
-            
+
         badlocation = os.path.join(self._var_tmpdir, "not_exist_file");
         last_cache, last_mirror = self.obj.getSetupRc(badlocation);
         self.assertEqual(last_cache, None);
         self.assertEqual(last_mirror, None);
-        
+
         last_cache, last_mirror = self.obj.getSetupRc(self._dir_confsetup);
         self.assertEqual(last_cache, self._dir_execache);
         self.assertEqual(last_mirror, self._var_mirror_http);
@@ -61,60 +61,59 @@ class TestSetup(TestCase):
     def testGetPre17Last(self):
         if not self._var_cygwin_p:
             self.skipTest("requires cygwin");
-        
+
         location = self._var_tmpdir;
         last_mirror = "http://cygwin.xl-mirror.nl/";
         last_cache = os.path.join(self._var_tmpdir, "last_cache");
         os.mkdir(last_cache);
         lm_file = os.path.join(self._var_tmpdir, "last-mirror");
         lc_file = os.path.join(self._var_tmpdir, "last-cache");
-        lm_stream = open(lm_file, "w");
+        lm_stream = open(lm_file, 'w');
         lm_stream.write(last_mirror);
         lm_stream.close();
-        lc_stream = open(lc_file, "w");
+        lc_stream = open(lc_file, 'w');
         lc_stream.write(last_cache);
         lc_stream.close();
-        
-        
+
         rlast_cache, rlast_mirror = self.obj._getPre17Last(location);
         self.assertEqual(last_cache, rlast_cache);
         self.assertEqual(last_mirror, rlast_mirror);
-    
+
     def testUpdate(self):
         if not self._var_cygwin_p:
             self.skipTest("requires cygwin");
 
         self.obj._gpgImport(self.obj.GPG_CYG_PUBLIC_RING_URI);
         self.obj.setup();
-        
+
         self.obj.update(self._file_user_config, True);
-    
+
     def testSetup(self):
         if not self._var_cygwin_p:
             self.assertRaises(PlatformException, self.obj.setup);
             return;
-        
+
         # env HOME not exists
         os.environ.pop('HOME');
         self.assertRaises(EnvironementException, self.obj.setup);
         os.environ['HOME'] = self._dir_user;
-        
+
         # config file already isset
-        f = open(self._file_user_config, "w");
+        f = open(self._file_user_config, 'w');
         f.close();
         self.assertRaises(PathExistsException, self.obj.setup);
         self.assertTrue(os.path.exists(self._file_user_config));
-        
+
         os.remove(self._file_user_config);
 
         # next
         self.obj._gpgImport(self.obj.GPG_CYG_PUBLIC_RING_URI);
         self.obj.setup();
-        
+
     def testWriteInstalled(self):
         if not self._var_cygwin_p:
             self.skipTest("requires cygwin");
-        
+
         real_installed_db = self._file_installed_db.replace(self._var_tmpdir, "");
         self.obj._writeInstalled(self._file_installed_db);
         self.assertTrue(os.path.exists(self._file_installed_db));
@@ -125,16 +124,19 @@ class TestSetup(TestCase):
         expected = f.readlines().sort();
         f.close();
         self.assertEqual(ret, expected);
-    
+
     def testGpgImport(self):
         if not self._var_cygwin_p:
             self.skipTest("requires cygwin");
-        
+
         self.obj._gpgImport(self.obj.GPG_CYG_PUBLIC_RING_URI);
-        
-        cmd = "gpg ";
-        cmd += "--no-secmem-warning ";
-        cmd += "--list-public-keys --fingerprint ";
+
+        cmd = " ".join([
+            "gpg",
+            "--no-secmem-warning",
+            "--list-public-keys",
+            "--fingerprint",
+        ]);
         p = subprocess.Popen(cmd, shell=True,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE);
@@ -150,9 +152,9 @@ class TestSetup(TestCase):
             if marker in line:
                 findout = True;
                 break;
-            
+
         self.assertTrue(findout);
-        
+
     def testUsage(self):
         self.obj.usage();
 

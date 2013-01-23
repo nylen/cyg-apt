@@ -37,38 +37,50 @@ from cygapt.structure import ConfigStructure;
 
 class CygAptSetup:
     RC_OPTIONS = [
-                  'ROOT',
-                  'mirror',
-                  'cache',
-                  'setup_ini',
-                  'distname',
-                  'barred',
-                  'always_update'
-                  ];
-    RC_COMMENTS = {\
-        "ROOT" : "# The root of your Cygwin installation as a windows path\n",\
-        "mirror" : "# URL of your Cygwin mirror: example "\
-        "http://mirror.internode.on.net/pub/cygwin/\n",\
-        "cache" : "# Your package cache as a POSIX path: example "\
-        "/e/home/cygwin_package_cache\n",\
-        "setup_ini" : "# setup.ini lists available packages and is "\
-        "downloaded from the top level\n"\
-        "# of the downloaded mirror. Standard location is "\
-        "/etc/setup/setup.ini,\n"\
-        "# seutp-2.ini for Cygwin 1.7 Beta\n",\
-        "distname" : "# The distribution, current previous or test "\
-        "[curr, prev, test].\n"\
-        "# Usually you want the \"curr\" version of a package.\n",\
-        "barred" : "# Packages which cyg-apt can't change under Cygwin "\
-        "since it depends on them.\n"\
-        "# Run cyg-apt under DOS with -f (force) option to change "\
-        "these packages.\n"\
-        "# Treat Cygwin core packages with CAUTION.\n",\
-        "always_update" : "# Always update setup.ini before any command"\
-        " that uses it. cyg-apt will be\n# faster and use less bandwidth if"\
-        " False but you will have to run the update\n# command manually.\n"
+        'ROOT',
+        'mirror',
+        'cache',
+        'setup_ini',
+        'distname',
+        'barred',
+        'always_update'
+    ];
+    RC_COMMENTS = {
+        'ROOT' : "# The root of your Cygwin installation as a windows path\n",
+        'mirror' : (
+            "# URL of your Cygwin mirror: example "
+            "http://mirror.internode.on.net/pub/cygwin/\n"
+        ),
+        'cache' : (
+            "# Your package cache as a POSIX path: example "
+            "/e/home/cygwin_package_cache\n"
+        ),
+        "setup_ini" : (
+            "# setup.ini lists available packages and is "
+            "downloaded from the top level\n"
+            "# of the downloaded mirror. Standard location is "
+            "/etc/setup/setup.ini,\n"
+            "# seutp-2.ini for Cygwin 1.7 Beta\n"
+        ),
+        "distname" : (
+            "# The distribution, current previous or test "
+            "[curr, prev, test].\n"
+            "# Usually you want the \"curr\" version of a package.\n"
+        ),
+        "barred" : (
+            "# Packages which cyg-apt can't change under Cygwin "
+            "since it depends on them.\n"
+            "# Run cyg-apt under DOS with -f (force) option to change "
+            "these packages.\n"
+            "# Treat Cygwin core packages with CAUTION.\n"
+        ),
+        "always_update" : (
+            "# Always update setup.ini before any command "
+            "that uses it. cyg-apt will be\n# faster and use less bandwidth if "
+            "False but you will have to run the update\n# command manually.\n"
+        ),
     };
-    RC_REGEX = re.compile("^\s*(\w+)\s*=\s*(.*)\s*$");
+    RC_REGEX = re.compile(r"^\s*(\w+)\s*=\s*(.*)\s*$");
     GPG_GOOD_FINGER = "1169 DF9F 2273 4F74 3AA5  9232 A9A2 62FF 6760 41BA";
     GPG_CYG_PUBLIC_RING_URI = "http://cygwin.com/key/pubring.asc";
     VERSION = version.__version__;
@@ -79,7 +91,7 @@ class CygAptSetup:
         self.__appName = os.path.basename(sys.argv[0]);
         self.setTmpDir();
         self.setPathMapper();
-        self.__setupDir = '/etc/setup';
+        self.__setupDir = "/etc/setup";
         self.__rc = ConfigStructure();
         
         self.__rc.ROOT = self.__pm.getMountRoot();
@@ -140,17 +152,18 @@ class CygAptSetup:
         return float(platform.release()[:3]);
 
     def getSetupRc(self, location):
-        if not (os.path.exists(location + "/" + "setup.rc")):
+        filename = os.path.join(location, "setup.rc");
+        if not (os.path.exists(filename)):
             return (None, None);
-        f = open(location + "/" + "setup.rc");
+        f = open(filename);
         setup_rc = f.readlines();
         f.close();
         last_cache = None;
         last_mirror = None;
         for i in range(0, (len(setup_rc) -1)):
-            if "last-cache" in setup_rc[i]:
+            if 'last-cache' in setup_rc[i]:
                 last_cache = setup_rc[i+1].strip();
-            if "last-mirror" in setup_rc[i]:
+            if 'last-mirror' in setup_rc[i]:
                 last_mirror = setup_rc[i+1].strip();
         last_cache = cautils.cygpath(last_cache);
         return (last_cache, last_mirror);
@@ -161,19 +174,21 @@ class CygAptSetup:
             msg = "setup outside Cygwin not supported.";
             raise PlatformException(msg);
         if "HOME" in os.environ:
-            rc_file = os.environ['HOME'] + '/.' + self.__appName;
+            rc_file = os.path.join(
+                os.environ['HOME'],
+                ".{0}".format(self.__appName)
+            );
         else:
-            msg = "Can't locate home directory. Setup "\
-                "failed.";
+            msg = "Can't locate home directory. Setup failed.";
             raise EnvironementException(msg);
         if os.path.exists(rc_file) and not force:
             msg = "{0} exists, not overwriting.".format(rc_file);
             raise PathExistsException(msg, code=0);
 
-        installed_db = self.__setupDir + '/installed.db';
+        installed_db = os.path.join(self.__setupDir, "installed.db");
         missing_cache_marker = "";
         missing_mirror_marker = "";
-        self.__rc.distname = "curr";
+        self.__rc.distname = 'curr';
         # Refuse to remove/install any package including these substrings
         # since cyg-apt is dependent on them
         self.__rc.barred = "";
@@ -188,25 +203,29 @@ class CygAptSetup:
             (last_cache, last_mirror) = self._getPre17Last(self.__setupDir);
             if ((not last_cache) or (not last_mirror)):
                 print("{0}: {1}/setup.rc not found. Please edit {2} to "\
-                "provide mirror and cache.".format(self.__appName, self.__setupDir, rc_file));
+                "provide mirror and cache.".format(
+                    self.__appName,
+                    self.__setupDir,
+                    rc_file
+                ));
                 last_cache = missing_cache_marker;
                 last_mirror  = missing_mirror_marker;
         self.__rc.mirror = last_mirror;
         self.__rc.cache = last_cache;
-        self.__rc.setup_ini = self.__setupDir + "/setup.ini";
+        self.__rc.setup_ini = "{0}/setup.ini".format(self.__setupDir);
 
         contents = "";
         for i in self.__rc.__dict__:
             if i in list(self.RC_COMMENTS.keys()):
                 contents += self.RC_COMMENTS[i];
-            contents += '{0}="{1}"\n\n'.format(i, self.__rc.__dict__[i]);
-        f = open(rc_file, "w");
+            contents += "{0}=\"{1}\"\n\n".format(i, self.__rc.__dict__[i]);
+        f = open(rc_file, 'w');
         f.write(contents);
         f.close();
         print("{0}: creating {1}".format(self.__appName, rc_file));
 
         if not os.path.isdir(self.__rc.ROOT):
-            msg = '{0} no root directory'.format(self.__rc.ROOT);
+            msg = "{0} no root directory".format(self.__rc.ROOT);
             raise UnexpectedValueException(msg);
         if not os.path.isdir(self.__setupDir):
             sys.stderr.write('creating {0}\n'.format(self.__setupDir));
@@ -222,28 +241,34 @@ class CygAptSetup:
         print(copying.help_message, end="\n\n");
         if (cyg_apt_rc):
             print("Configuration: {0}".format(cyg_apt_rc));
-        print("Usage: {0} [OPTION]... COMMAND [PACKAGE]...".format(self.__appName));
+        print("Usage: {0} [OPTION]... COMMAND [PACKAGE]...".format(
+            self.__appName
+        ));
         print("\n  Commands:");
-        members = [m
-                for m in inspect.getmembers(CygAptSetup) + inspect.getmembers(CygApt)
-                if isinstance(m[1], type(self.usage)) and m[1].__doc__];
+        members = [];
+        for m in inspect.getmembers(CygAptSetup) + inspect.getmembers(CygApt):
+            if isinstance(m[1], type(self.usage)) and m[1].__doc__:
+                members.append(m);
+
         pad = max(len(m[0]) for m in members);
         for m in members:
-            print("    " + m[0].ljust(pad) + " : " + m[1].__doc__);
-        sys.stdout.write(r"""
-  Options:
-    -d, --download       download only
-    -h, --help           show brief usage
-    -m, --mirror=URL     use mirror
-    -t, --dist=NAME      set dist name (curr, test, prev)
-    -x, --no-deps        ignore dependencies
-    -s, --regexp         search as regex pattern
-    -f, --nobarred       add/remove packages cyg-apt depends on
-    -X, --no-verify      do not verify setup.ini signatures
-    -y, --nopostinstall  do not run postinstall scripts
-    -z, --nopostremove   do not run preremove/postremove scripts
-    -q, --quiet          Loggable output - no progress indicator.
-""");
+            print("    {0} : {1}".format(m[0].ljust(pad), m[1].__doc__));
+        sys.stdout.write(
+        "{LF}"
+        "  Options:{LF}"
+        "    -d, --download       download only{LF}"
+        "    -h, --help           show brief usage{LF}"
+        "    -m, --mirror=URL     use mirror{LF}"
+        "    -t, --dist=NAME      set dist name (curr, test, prev){LF}"
+        "    -x, --no-deps        ignore dependencies{LF}"
+        "    -s, --regexp         search as regex pattern{LF}"
+        "    -f, --nobarred       add/remove packages cyg-apt depends on{LF}"
+        "    -X, --no-verify      do not verify setup.ini signatures{LF}"
+        "    -y, --nopostinstall  do not run postinstall scripts{LF}"
+        "    -z, --nopostremove   do not run preremove/postremove scripts{LF}"
+        "    -q, --quiet          loggable output - no progress indicator{LF}"
+        "".format(LF="\n")
+        );
 
     def update(self, cyg_apt_rc, verify, main_mirror=None):
         """fetch current package database from mirror"""
@@ -267,19 +292,30 @@ class CygAptSetup:
             mirror = main_mirror;
         else:
             mirror = self.__rc.mirror;
-        downloads = self.__pm.mapPath(self.__rc.cache) + '/' + urllib.quote(mirror, '').lower();
+        downloads = os.path.join(
+            self.__pm.mapPath(self.__rc.cache),
+            urllib.quote(mirror, '').lower()
+        );
         if not mirror[-1] == "/":
             sep = "/";
         else:
             sep = "";
 
-        setup_ini_names = [os.path.basename(setup_ini).replace(".ini", ".bz2"),\
-            os.path.basename(setup_ini)];
+        setup_ini_names = [
+            os.path.basename(setup_ini).replace(".ini", ".bz2"),
+            os.path.basename(setup_ini)
+        ];
 
-        for (setup_ini_name, index) in zip(setup_ini_names, list(range(len(setup_ini_names)))):
+        bag = zip(setup_ini_names, list(range(len(setup_ini_names))));
+
+        for (setup_ini_name, index) in bag:
             setup_ini_url = '{0}{1}{2}'.format(mirror, sep, setup_ini_name);
             try:
-                cautils.uri_get(self.__tmpDir, setup_ini_url, verbose=self.__verbose);
+                cautils.uri_get(
+                    self.__tmpDir,
+                    setup_ini_url,
+                    verbose=self.__verbose
+                );
             except ApplicationException as e:
                 # Failed to find a possible .ini
                 if index == len(setup_ini_names) - 1:
@@ -291,15 +327,16 @@ class CygAptSetup:
             break;
 
         if setup_ini_name[-4:] == ".bz2":
-            f = open(self.__tmpDir + "/" + setup_ini_name, "rb");
+            bz_file = os.path.join(self.__tmpDir, setup_ini_name);
+            f = open(bz_file, "rb");
             compressed = f.read();
             f.close();
 
             decomp = bz2.decompress(compressed);
-            os.remove(self.__tmpDir + "/" + setup_ini_name);
+            os.remove(bz_file);
             setup_ini_name =  os.path.basename(setup_ini);
 
-            f = open(self.__tmpDir + "/" + setup_ini_name, "wb");
+            f = open(os.path.join(self.__tmpDir, setup_ini_name), "wb");
             f.write(decomp);
             f.close();
 
@@ -308,13 +345,15 @@ class CygAptSetup:
             verify = False;
 
         if verify:
-            sig_name = setup_ini_name + ".sig";
+            sig_name = "{0}.sig".format(setup_ini_name);
             sig_url = "{0}{1}{2}".format(mirror, sep, sig_name);
             try:
                 cautils.uri_get(self.__tmpDir, sig_url, verbose=self.__verbose);
             except RequestException as e:
-                msg = "Failed to download signature {0} Use -X to ignore "\
-                      "signatures.".format(sig_url);
+                msg = (
+                    "Failed to download signature {0} Use -X to ignore "
+                    "signatures.".format(sig_url)
+                );
                 raise RequestException(msg, previous=e);
 
             if self.__cygwinPlatform:
@@ -325,10 +364,13 @@ class CygAptSetup:
                 else:
                     gpg_path = "/usr/local/bin/gpg ";
             cmd = gpg_path + "--verify --no-secmem-warning ";
-            cmd += self.__tmpDir + "/" + sig_name + " ";
-            cmd += self.__tmpDir + "/" + setup_ini_name;
-            p = subprocess.Popen(cmd, shell=True,
-                    stderr=subprocess.PIPE);
+            cmd += "{0}/{1} ".format(self.__tmpDir, sig_name);
+            cmd += "{0}/{1} ".format(self.__tmpDir, setup_ini_name);
+            p = subprocess.Popen(
+                cmd,
+                shell=True,
+                stderr=subprocess.PIPE
+            );
             p.wait();
             verify = p.stderr.read();
             if isinstance(verify, bytes):
@@ -336,56 +378,65 @@ class CygAptSetup:
             else:
                 marker = self.GPG_GOOD_FINGER;
             if not marker in verify:
-                msg = "{0} not signed by Cygwin's public key. "\
-                      "Use -X to ignore signatures.".format(
-                          setup_ini_url);
+                msg = (
+                    "{0} not signed by Cygwin's public key. "
+                    "Use -X to ignore signatures.".format(setup_ini_url)
+                );
                 raise SignatureException(msg);
 
         if not os.path.exists(downloads):
             os.makedirs(downloads);
 
-        shutil.copy(self.__tmpDir + "/" + setup_ini_name, downloads + "/" +\
-                    setup_ini_name);
+        shutil.copy(
+            os.path.join(self.__tmpDir, setup_ini_name),
+            os.path.join(downloads, setup_ini_name)
+        );
         if os.path.exists(setup_ini):
-            shutil.copy(setup_ini, setup_ini + ".bak");
-        shutil.copy(downloads + "/" + setup_ini_name, setup_ini);
-        if os.path.exists(self.__tmpDir + "/" + setup_ini_name):
-            os.remove(self.__tmpDir + "/" + setup_ini_name);
+            shutil.copy(setup_ini, "{0}.bak".format(setup_ini));
+        shutil.copy(
+            os.path.join(downloads, setup_ini_name),
+            setup_ini
+        );
+        if os.path.exists(os.path.join(self.__tmpDir, setup_ini_name)):
+            os.remove(os.path.join(self.__tmpDir, setup_ini_name));
         if sig_name:
-            if os.path.exists(self.__tmpDir + "/" + sig_name):
-                os.remove(self.__tmpDir + "/" + sig_name);
+            if os.path.exists(os.path.join(self.__tmpDir, sig_name)):
+                os.remove(os.path.join(self.__tmpDir, sig_name));
 
     def _getPre17Last(self, location):
-        if not os.path.exists(location + "/last-mirror" or\
-            not os.path.exists(location + "/last-cache")):
+        if not os.path.exists(os.path.join(location, "last-mirror")) \
+            or not os.path.exists(os.path.join(location, "last-cache")):
             return (None, None);
         else:
-            f = open(location + "/last-cache");
+            f = open(os.path.join(location, "last-cache"));
             last_cache = f.read().strip();
             f.close();
             last_cache = cautils.cygpath(last_cache);
-            f = open(location + "/last-mirror");
+            f = open(os.path.join(location, "last-mirror"));
             last_mirror = f.read().strip();
             f.close();
             return (last_cache, last_mirror);
 
     def _writeInstalled(self, installed_db):
         if not self.__cygwinPlatform:
-            msg = "fail to create {0} only supported under Cygwin. "\
-                  "".format(installed_db);
-            raise PlatformException(msg);
+            raise PlatformException(
+                "fail to create {0} only supported under Cygwin."
+                "".format(installed_db)
+            );
 
-        sys.stderr.write('creating {0} ... '.format(installed_db));
+        sys.stderr.write("creating {0} ... ".format(installed_db));
 
         db_contents = CygApt.INSTALLED_DB_MAGIC;
         cygcheck_path = self.__pm.mapPath("/bin/cygcheck");
 
         if os.path.exists(cygcheck_path):
             cmd = cygcheck_path + " -cd ";
-            proc = subprocess.Popen(cmd, shell=True,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE);
-
+            proc = subprocess.Popen(
+                cmd,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            );
             if proc.wait():
                 raise ProcessException(proc.stderr.readlines());
 
@@ -397,8 +448,7 @@ class CygAptSetup:
                 pkg = pkg.split();
                 db_contents += "{0} {0}-{1}.tar.bz2 0\n".format(pkg[0], pkg[1]);
 
-
-        f = open(installed_db, "w");
+        f = open(installed_db, 'w');
         f.write(db_contents);
         f.close();
 
@@ -413,10 +463,12 @@ class CygAptSetup:
         cmd = "gpg ";
         cmd += "--no-secmem-warning ";
         cmd += "--import {0}".format(tmpfile);
-        p = subprocess.Popen(cmd, shell=True,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE);
-
+        p = subprocess.Popen(
+            cmd,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        );
         if p.wait():
             raise ProcessException(p.stderr.readlines());
 

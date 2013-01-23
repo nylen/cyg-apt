@@ -17,10 +17,12 @@ import sys;
 from cStringIO import StringIO;
 
 class CygAptOb:
-    """ Output Buffering Control (like php)
+    """Output Buffering Control (like php)
+
     The Output Control functions allow you to control
     when output is sent from the script.
     """
+
     def __init__(self, start=False):
         self._state = False;
         self._buffer = None;
@@ -30,7 +32,8 @@ class CygAptOb:
             self.start();
 
     def start(self):
-        """ Turn on output buffering """
+        """Turn on output buffering
+        """
         self._stdout = sys.stdout;
         sys.stdout = StringIO();
         self._buffer = sys.stdout;
@@ -38,7 +41,8 @@ class CygAptOb:
         self._value = None;
 
     def _end(self):
-        """ Turn off output buffering """
+        """Turn off output buffering
+        """
         if self._state:
             self._buffer.close();
             self._buffer = None;
@@ -46,7 +50,8 @@ class CygAptOb:
             self._state = False;
 
     def flush(self):
-        """ Flush (send) the output buffer """
+        """Flush (send) the output buffer
+        """
         self.clean();
         if self._value:
             self._stdout.write(self._value);
@@ -54,8 +59,8 @@ class CygAptOb:
         self._value = None;
 
     def getFlush(self):
-        """ Flush the output buffer,
-            return it as a string and turn off output buffering
+        """Flush the output buffer,
+        return it as a string and turn off output buffering
         """
         self.clean();
         content = self.getContents();
@@ -63,18 +68,21 @@ class CygAptOb:
         return content;
 
     def endFlush(self):
-        """ Flush (send) the output buffer and turn off output buffering """
+        """Flush (send) the output buffer and turn off output buffering
+        """
         self.flush();
         self._end();
 
     def clean(self):
-        """ Clean (erase) the output buffer """
+        """Clean (erase) the output buffer
+        """
         if self._state:
             self._value = self._buffer.getvalue();
             self._buffer.truncate(0);
 
     def getClean(self):
-        """ Get current buffer contents and delete current output buffer """
+        """Get current buffer contents and delete current output buffer
+        """
         if not self._state:
             return False;
 
@@ -83,19 +91,22 @@ class CygAptOb:
         return content;
 
     def endClean(self):
-        """ Clean (erase) the output buffer and turn off output buffering """
+        """Clean (erase) the output buffer and turn off output buffering
+        """
         self._value = None;
         self._end();
 
     def implicitFlush(self, flag=True):
-        """ Turn implicit flush on/off """
+        """Turn implicit flush on/off
+        """
         if flag and self._state:
             self._end();
         elif not flag and not self._state:
             self.start();
 
     def getContents(self):
-        """ Return the contents of the output buffer """
+        """Return the contents of the output buffer
+        """
         if not self._state:
             return False;
 
@@ -105,7 +116,8 @@ class CygAptOb:
         return self._value;
 
     def getLength(self):
-        """ Return the length of the output buffer """
+        """Return the length of the output buffer
+        """
         if not self._state:
             return False;
 

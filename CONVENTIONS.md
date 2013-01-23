@@ -83,3 +83,12 @@ class ClassNameException(Exception):
     pass;
 
 ```
+
+
+String
+------
+
+* Double quotes for text
+* Single quotes for anything that behaves like an identifier
+* Double quoted raw string literals for regexps
+* Tripled double quotes for docstrings

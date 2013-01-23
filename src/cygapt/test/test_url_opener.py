@@ -22,9 +22,8 @@ from cStringIO import StringIO;
 from cygapt.url_opener import CygAptURLopener;
 
 class TestUrlOpener(unittest.TestCase):
-    '''
-    Unit test for cygapt.url_opener
-    '''
+    """Unit test for cygapt.url_opener
+    """
 
     def setUp(self):
         unittest.TestCase.setUp(self);
@@ -38,7 +37,7 @@ class TestUrlOpener(unittest.TestCase):
         errcode = 404;
         self.obj.http_error_default("url", f, errcode, "errmsg", "headers");
         f.close();
-        self.assertTrue(self.obj.getErrorCode() == errcode);
+        self.assertEqual(self.obj.getErrorCode(), errcode);
 
     def testDlProgress(self):
         old_stdout = sys.stdout;
@@ -50,9 +49,8 @@ class TestUrlOpener(unittest.TestCase):
         out = buf.readline();
         buf.close();
         expect_out = "[====================>                   ]\r";
-        
+
         self.assertEqual(out, expect_out);
-        
-        
+
 if __name__ == "__main__":
     unittest.main();

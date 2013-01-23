@@ -31,7 +31,7 @@ class TestCygApt(TestCase):
         TestCase.setUp(self);
 
         self._var_verbose = False;
-        self._var_cygwin_p = sys.platform == "cygwin";
+        self._var_cygwin_p = sys.platform.startswith("cygwin");
 
         if not self._var_cygwin_p:
             self.skipTest("requires cygwin");
@@ -45,11 +45,11 @@ class TestCygApt(TestCase):
         setup._gpgImport(setup.GPG_CYG_PUBLIC_RING_URI);
         setup.setup();
 
-        f = open(self._file_setup_ini, "w");
+        f = open(self._file_setup_ini, 'w');
         f.write(self._var_setupIni.contents);
         f.close();
 
-        f = open(self._file_installed_db, "w");
+        f = open(self._file_installed_db, 'w');
         f.write(CygApt.INSTALLED_DB_MAGIC);
         f.close();
 
@@ -66,40 +66,41 @@ class TestCygApt(TestCase):
         self._var_dists = 0;
         self._var_installed = 0;
 
-        self.obj = CygApt(self._var_packagename,
-                          self._var_files,
-                          self._file_user_config,
-                          self._var_cygwin_p,
-                          self._var_download_p,
-                          self._var_mirror,
-                          self._var_downloads,
-                          self._var_distname,
-                          self._var_nodeps_p,
-                          self._var_regex_search,
-                          self._var_nobarred,
-                          self._var_nopostinstall,
-                          self._var_nopostremove,
-                          self._var_dists,
-                          self._var_installed,
-                          self._var_exename,
-                          self._var_verbose);
+        self.obj = CygApt(
+            self._var_packagename,
+            self._var_files,
+            self._file_user_config,
+            self._var_cygwin_p,
+            self._var_download_p,
+            self._var_mirror,
+            self._var_downloads,
+            self._var_distname,
+            self._var_nodeps_p,
+            self._var_regex_search,
+            self._var_nobarred,
+            self._var_nopostinstall,
+            self._var_nopostremove,
+            self._var_dists,
+            self._var_installed,
+            self._var_exename,
+            self._var_verbose
+        );
 
+        # set attributes
         rc = ConfigStructure();
         rc.cache = self._dir_execache;
-        rc.distname = "curr";
+        rc.distname = 'curr';
         rc.setup_ini = self._file_setup_ini;
         rc.ROOT = self._dir_mtroot;
         rc.always_update = False;
         rc.mirror = self._var_mirror;
-        
         self.obj.setRC(rc);
-        
+
         self.obj.setDownlaodDir(self._dir_downloads);
         self.obj.setInstalledDbFile(self._file_installed_db);
         self.obj.setSetupDir(self._dir_confsetup);
 
-        # set attributes
-        pm = PathMapper("", False)
+        pm = PathMapper("", False);
         pm.setRoot(self._dir_mtroot[:-1]);
         pm.setMountRoot(self._dir_mtroot);
         pm.setMap({self._dir_mtroot:self._dir_mtroot});
@@ -148,79 +149,80 @@ class TestCygApt(TestCase):
         script_done = script + ".done";
         map_script = self.obj.getPathMapper().mapPath(script);
         map_script_done = self.obj.getPathMapper().mapPath(script_done);
-        f = open(map_script, "w");
+        f = open(map_script, 'w');
         f.write("#!/bin/bash\nexit 0;");
         f.close();
 
         self.obj._runScript(script, False);
         self.assertTrue(os.path.exists(map_script_done));
-        
+
     def testVersionToString(self):
         versiont = [1,12,3,1];
         out = "1.12.3-1";
         ret = self.obj._versionToString(versiont);
         self.assertEqual(ret, out);
-        
+
     def testStringToVersion(self):
         string = "1.12.3-1";
         out = [1,12,3,1];
         ret = self.obj._stringToVersion(string);
         self.assertEqual(list(ret), out);
-        
+
     def testSplitBall(self):
-        input = "pkgball-1.12.3-1.tar.bz2";
+        value = "pkgball-1.12.3-1.tar.bz2";
         output = ["pkgball", (1,12,3,1)];
-        ret = self.obj._splitBall(input);
+        ret = self.obj._splitBall(value);
         self.assertEqual(list(ret), output);
         
     def testJoinBall(self):
-        input = ["pkgball", [1,12,3,1]];
+        value = ["pkgball", [1,12,3,1]];
         output = "pkgball-1.12.3-1";
-        ret = self.obj._joinBall(input);
+        ret = self.obj._joinBall(value);
         self.assertEqual(ret, output);
         
     def testGetSetupIni(self):
         self.obj.setDists(0);
         self.obj._getSetupIni();
-        self.assertEqual(self.obj.getDists(), self._var_setupIni.dists.__dict__);
+        self.assertEqual(
+            self.obj.getDists(),
+            self._var_setupIni.dists.__dict__
+        );
 
     def testGetUrl(self):
         ret = self.obj._getUrl();
-        filename, size, md5 = self._var_setupIni.pkg.install.curr.toString().split(
-                                           " ",
-                                           3);
+        install = self._var_setupIni.pkg.install.curr.toString();
+        filename, size, md5 = install.split(" ", 3);
 
         self.assertEqual(ret, (filename, md5));
 
     #test also doDownload ball getmd5 and md5
     def testDownload(self):
         self.obj.download();
-        filename = os.path.join(self._dir_downloads,
-                                self._var_setupIni.pkg.install.curr.url);
-
+        filename = os.path.join(
+            self._dir_downloads,
+            self._var_setupIni.pkg.install.curr.url
+        );
         self.assertTrue(os.path.exists(filename));
 
     def testGetRequires(self):
         expected = self._var_setupIni.pkg.requires.split(" ");
         ret = self.obj.getRequires();
-
         self.assertEqual(ret, expected);
 
     def testGetInstalled(self):
-        pkg = ['pkgname', 'pkgname-1.1-1.tar.bz2', "0"];
-        f = open(self._file_installed_db, "a");
+        pkg = ["pkgname", "pkgname-1.1-1.tar.bz2", "0"];
+        f = open(self._file_installed_db, 'a');
         f.write(" ".join(pkg));
         f.close();
-
         expected = {int(pkg[2]):{pkg[0]:pkg[1]}};
-
         self.obj.setInstalled(0);
+
         ret = self.obj.getInstalled();
 
         self.assertEqual(ret, expected);
 
     def testWriteInstalled(self):
-        pkg = ['pkgname', 'pkgname-1.1-1.tar.bz2', "0"];
+        pkg = ["pkgname", "pkgname-1.1-1.tar.bz2", "0"];
         expected = CygApt.INSTALLED_DB_MAGIC;
         expected += " ".join(pkg);
 
@@ -235,7 +237,7 @@ class TestCygApt(TestCase):
 
     def testGetField(self):
         expected = self._var_setupIni.pkg.category;
-        ret = self.obj.getField("category");
+        ret = self.obj.getField('category');
         self.assertEqual(ret, expected);
 
     def testGetVersion(self):
@@ -255,10 +257,10 @@ class TestCygApt(TestCase):
     def testSearch(self):
         self.obj.setPkgName("libp");
 
-        expected = self._var_setupIni.libpkg.name + \
-                   " - " + \
-                   self._var_setupIni.libpkg.shortDesc.replace('"','') + \
-                   "\n";
+        expected = "{0} - {1}\n".format(
+            self._var_setupIni.libpkg.name,
+            self._var_setupIni.libpkg.shortDesc.replace('"','')
+        );
 
         ob = CygAptOb(True);
         self.obj.search();
@@ -283,7 +285,6 @@ class TestCygApt(TestCase):
         self.obj.setCygwinPlatform(False);
         self.obj._doInstall();
         self.assertInstall([self.obj.getPkgName()]);
-
 
     def testPostInstall(self):
         self.testDoInstall();
@@ -319,10 +320,12 @@ class TestCygApt(TestCase):
     def testUpgrade(self):
         self.testInstall();
         pkgname = self._var_setupIni.pkg.name;
-        version_file = os.path.join(self._dir_mtroot,
-                                    "var",
-                                    pkgname,
-                                    "version");
+        version_file = os.path.join(
+            self._dir_mtroot,
+            "var",
+            pkgname,
+            "version"
+        );
         f = open(version_file);
         retcurr = f.read();
         f.close();
@@ -330,7 +333,6 @@ class TestCygApt(TestCase):
         self.obj.getRC().distname = "test";
         self.obj.upgrade();
 
-        expected = self._var_setupIni.pkg.version.test;
         f = open(version_file);
         rettest = f.read();
         f.close();
@@ -354,20 +356,28 @@ class TestCygApt(TestCase):
         self.obj.setPkgName("version");
 
         pkgname = self._var_setupIni.pkg.name;
-        expected = pkgname + ": " + os.path.join("/var",
-                                    pkgname,
-                                    "version") + "\n";
-
+        expected = "{0}: {1}\n".format(
+            pkgname,
+            os.path.join("/var", pkgname, "version")
+        );
         ob = CygAptOb(True);
         self.obj.find();
         ret = ob.getClean();
         self.assertEqual(ret, expected);
 
     def testIsBarredPackage(self):
-        self.assertTrue(self.obj._isBarredPackage(self._var_setupIni.libbarredpkg.name));
-        self.assertTrue(self.obj._isBarredPackage(self._var_setupIni.barredpkg.name));
-        self.assertFalse(self.obj._isBarredPackage(self._var_setupIni.libpkg.name));
-        self.assertFalse(self.obj._isBarredPackage(self._var_setupIni.pkg.name));
+        self.assertTrue(
+            self.obj._isBarredPackage(self._var_setupIni.libbarredpkg.name)
+        );
+        self.assertTrue(
+            self.obj._isBarredPackage(self._var_setupIni.barredpkg.name)
+        );
+        self.assertFalse(
+            self.obj._isBarredPackage(self._var_setupIni.libpkg.name)
+        );
+        self.assertFalse(
+            self.obj._isBarredPackage(self._var_setupIni.pkg.name)
+        );
         self.obj._isBarredPackage("not_exists_pkg");
 
     def assertInstall(self, pkgname_list):
@@ -376,21 +386,26 @@ class TestCygApt(TestCase):
             pkg_ini_list.append(self._var_setupIni.__dict__[pkg]);
 
         for pkg in pkg_ini_list:
-            f = gzip.open(os.path.join(self._dir_confsetup,
-                                  "{0}.lst.gz".format(pkg.name)));
+            gz_file = os.path.join(
+                self._dir_confsetup,
+                "{0}.lst.gz".format(pkg.name)
+            );
+            f = gzip.open(gz_file);
             lines = f.readlines();
             f.close();
             self.assertEqual(pkg.filelist.sort(), lines.sort());
             for filename in pkg.filelist:
                 filename = self._dir_mtroot + filename;
                 if os.path.dirname(filename) != self._dir_postinstall:
-                    self.assertTrue(os.path.exists(filename),
-                                    filename + " not exists");
+                    self.assertTrue(
+                        os.path.exists(filename),
+                        "{0} not exists".format(filename)
+                    );
 
     def assertPostInstall(self):
         for filename in os.listdir(self._dir_postinstall):
             if filename[-3:] == ".sh":
-                self.assertTrue(False, filename + " runing fail");
+                self.fail("{0} running fail".format(filename));
 
     def assertRemove(self, pkgname_list):
         pkg_ini_list = [];
@@ -401,16 +416,18 @@ class TestCygApt(TestCase):
             for filename in pkg.filelist:
                 if filename[-1] != "/":
                     filename = self._dir_mtroot + filename;
-                    self.assertFalse(os.path.exists(filename),
-                                     filename + " exists");
+                    self.assertFalse(
+                        os.path.exists(filename),
+                        "{0} exists".format(filename)
+                    );
 
             for filename in os.listdir(self._dir_preremove):
                 if filename == pkg.name + ".sh":
-                    self.assertTrue(False, filename + " preremove runing fail");
+                    self.fail("{0} preremove runing fail".format(filename));
 
             for filename in os.listdir(self._dir_postremove):
                 if filename == pkg.name + ".sh":
-                    self.assertTrue(False, filename + " postremove runing fail");
+                    self.fail("{0} postremove runing fail".format(filename));
 
 if __name__ == "__main__":
     unittest.main();

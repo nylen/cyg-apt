@@ -32,8 +32,14 @@ class CygAptURLopener(urllib.FancyURLopener):
 
     def http_error_default(self, url, fp, errcode, errmsg, headers):
         self.__errorCode = errcode;
-        return urllib.FancyURLopener.http_error_default\
-            (self, url, fp, errcode, errmsg, headers);
+        return urllib.FancyURLopener.http_error_default(
+            self,
+            url,
+            fp,
+            errcode,
+            errmsg,
+            headers
+        );
 
     def dlProgress(self, count, blockSize, totalSize):
         if self.__errorCode != 200:

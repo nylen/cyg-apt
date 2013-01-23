@@ -38,27 +38,28 @@ f = open("../README.md");
 long_description = f.read();
 f.close();
 
-setup(name=pkgname,
-      packages=[pkgname, pkgname + ".test"],
-      package_data={pkgname: ['LICENSE']},
-      version=version,
-      description="A Cygwin command line package management tool.",
-      long_description=long_description,
-      license="GNU GPLv3",
-      url="https://github.com/alquerci/cyg-apt",
-      author="Jan Nieuwenhuizen, Chris Cormie, James Nylen, Alexandre Quercia",
-      author_email="cjcormie@gmail.com, janneke@gnu.org, jnylen@gmail.com, alquerci@email.com",
-      maintainer="Alexandre Quercia",
-      maintainer_email="alquerci@email.com",
-      platforms="cygwin",
-      classifiers=[
-          'Development Status :: 1 - Beta',
-          'Environment :: Console',
-          'Intended Audience :: System Administrators',
-          'License :: OSI Approved :: GNU General Public License, Version 3',
-          'Operating System :: Microsoft :: Windows',
-          'Programming Language :: Python',
-          ],
-      );
+setup(
+    name=pkgname,
+    packages=[pkgname, pkgname + ".test"],
+    package_data={pkgname: ['LICENSE']},
+    version=version,
+    description="A Cygwin command line package management tool.",
+    long_description=long_description,
+    license="GPL-3.0",
+    url="https://github.com/nylen/cyg-apt",
+    author="Jan Nieuwenhuizen, Chris Cormie, James Nylen, Alexandre Quercia",
+    author_email="cjcormie@gmail.com, janneke@gnu.org, jnylen@gmail.com, alquerci@email.com",
+    maintainer="Alexandre Quercia",
+    maintainer_email="alquerci@email.com",
+    platforms="cygwin",
+    classifiers=[
+        'Development Status :: 1 - Beta',
+        'Environment :: Console',
+        'Intended Audience :: System Administrators',
+        'License :: OSI Approved :: GNU General Public License, Version 3',
+        'Operating System :: Microsoft :: Windows',
+        'Programming Language :: Python',
+    ],
+);
 
 os.chdir(realpathcwd);

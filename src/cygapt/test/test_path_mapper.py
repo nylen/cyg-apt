@@ -10,9 +10,6 @@
 # For the full copyright and license information, please view the
 # LICENSE file that was distributed with this source code.
 ######################### END LICENSE BLOCK #########################
-'''
-
-'''
 
 from __future__ import print_function;
 from __future__ import absolute_import;
@@ -27,48 +24,51 @@ class TestPathMapper(unittest.TestCase):
     def setUp(self):
         unittest.TestCase.setUp(self);
         self._var_root = "";
-        self._var_cygwin_p = sys.platform == 'cygwin';
+        self._var_cygwin_p = sys.platform.startswith("cygwin");
         self.obj = PathMapper(self._var_root, self._var_cygwin_p);
-        
+
     def test__init__(self):
         self.assertTrue(isinstance(self.obj, PathMapper));
         self.assertEqual(self._var_root, self.obj.getRoot());
 
     def testAddMapping(self):
-        mount = r"""C:/cygwin/bin on /usr/bin type ntfs (binary,auto)
-C:/cygwin/lib on /usr/lib type ntfs (binary,auto)
-C:/cygwin on / type ntfs (binary,auto)
-C: on /cygdrive/c type ntfs (binary,posix=0,user,noumount,auto)
-"""
-        f = TemporaryFile(mode="w+");
+        mount = (
+        "C:/cygwin/bin on /usr/bin type ntfs (binary,auto){LF}"
+        "C:/cygwin/lib on /usr/lib type ntfs (binary,auto){LF}"
+        "C:/cygwin on / type ntfs (binary,auto){LF}"
+        "C: on /cygdrive/c type ntfs (binary,posix=0,user,noumount,auto){LF}"
+        "".format(LF="\n")
+        );
+        f = TemporaryFile(mode='w+');
         f.writelines(mount);
         f.seek(0);
         mtab = f.readlines();
         f.close();
-        
-        mapping = {'/usr/bin/': 'C:/cygwin/bin/',
-                        '/usr/lib/': 'C:/cygwin/lib/',
-                        '/cygdrive/c/': 'C:/'};
+
+        mapping = {
+            '/usr/bin/': "C:/cygwin/bin/",
+            '/usr/lib/': "C:/cygwin/lib/",
+            '/cygdrive/c/': "C:/",
+        };
         self.obj._addMapping(mtab);
         self.assertEqual(self.obj.getMap(), mapping);
         self.assertEqual(self.obj.getMountRoot(), "C:/cygwin/");
 
     def testMapPath(self):
-        if sys.platform == "cygwin":
+        if self._var_cygwin_p:
             self.assertEqual(self.obj.mapPath("/usr/bin/"), "/usr/bin/");
             return;
-        
+
         mapping = {
              '/usr/bin/': 'C:/cygwin/bin/',
              '/usr/lib/': 'C:/cygwin/lib/',
              '/cygdrive/c/': 'C:/',
         };
-        
+
         self.obj.setMap(mapping);
-        
+
         for cyg in list(mapping.keys()):
             self.assertEqual(self.obj.mapPath(cyg), mapping[cyg]);
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main();

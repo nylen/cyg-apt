@@ -22,7 +22,6 @@ import sys;
 
 from cygapt.argparser import CygAptArgParser;
 
-
 class TestArgParser(unittest.TestCase):
     def setUp(self):
         unittest.TestCase.setUp(self);
@@ -38,15 +37,14 @@ class TestArgParser(unittest.TestCase):
         sys.argv = sys.argv[:1];
         sys.argv.append("install");
         sys.argv.append("pkg");
-        
+
         ret = self.obj.parse();
-        
+
         self.assertTrue(ret.verbose);
         self.assertEqual(ret.command, "install");
         self.assertEqual(ret.package, ['pkg']);
-        
-        sys.argv = argv;
 
+        sys.argv = argv;
 
 if __name__ == "__main__":
     unittest.main();
