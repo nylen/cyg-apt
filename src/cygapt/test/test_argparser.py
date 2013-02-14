@@ -27,14 +27,18 @@ class TestArgParser(unittest.TestCase):
         unittest.TestCase.setUp(self);
         self.obj = CygAptArgParser("usage", "scriptname");
 
+        self.__originArgv = sys.argv[:];
+        sys.argv = sys.argv[:1];
+
+        def tearDown(self):
+            sys.argv = self.__originArgv;
+
     def test___init__(self):
         self.assertTrue(isinstance(self.obj, CygAptArgParser));
         self.assertEqual(self.obj.getUsage(), "usage");
         self.assertEqual(self.obj.getAppName(), "scriptname");
 
     def testParse(self):
-        argv = sys.argv[:];
-        sys.argv = sys.argv[:1];
         sys.argv.append("install");
         sys.argv.append("pkg");
 
@@ -44,7 +48,24 @@ class TestArgParser(unittest.TestCase):
         self.assertEqual(ret.command, "install");
         self.assertEqual(ret.package, ['pkg']);
 
-        sys.argv = argv;
+
+    def testArgumentType(self):
+        sys.argv.append("--mirror=http://a.mirror.str");
+        sys.argv.append("update");
+        sys.argv.append("--dist=test");
+
+        ret = self.obj.parse();
+
+        self.assertEqual("test", ret.distname);
+        self.assertEqual("http://a.mirror.str", ret.mirror);
+
+
+    def testArgumentTypeDefault(self):
+        ret = self.obj.parse();
+
+        self.assertEqual("curr", ret.distname);
+        self.assertEqual(True, ret.verbose);
+
 
 if __name__ == "__main__":
     unittest.main();
