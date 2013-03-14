@@ -27,7 +27,7 @@ if realpathfile != realpathcwd:
 try:
     version = os.environ['VERSION'];
 except KeyError:
-    version = "1.1.0beta2";
+    version = "1.1.0b3";
 
 try:
     pkgname = os.environ['PYPKG'];
