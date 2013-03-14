@@ -11,55 +11,120 @@
 # LICENSE file that was distributed with this source code.
 ######################### END LICENSE BLOCK #########################
 #
-# bash completion support for cyf-apt.
+# bash completion support for cyg-apt.
 #
+
+
+##
+# Sets all available packages in $_cyg_apt_all_packages
+##
+_cyg_apt_set_all_packages()
+{
+    if [ -z "${_cyg_apt_all_packages}" ] ; then
+        _cyg_apt_all_packages="$("${COMP_WORDS[0]}" search . -s | cut -d " " -f 1)";
+    fi;
+    return 0;
+}
+
 _cyg_apt()
 {
-    local cur prev opts cmds long_opts dist_opts must_package must_file;
+    local cur prev cmds long_opts dist_opts mirrors;
     COMPREPLY=();
     cur="${COMP_WORDS[COMP_CWORD]}";
     prev="${COMP_WORDS[COMP_CWORD-1]}";
-    cmds="setup update ball download filelist find help install list md5 missing new purge remove requires search show source upgrade url version";
-    long_opts="--quiet --download --help --mirror --dist --no-deps --regexp --force --nobarred --no-verify --nopostinstall --nopostremove";
-    dist_opts="curr test prev";
-    must_package="ball requires show download md5 purge search source url file list install missing remove version";
-    must_file="find";
-    
-    if [[ $COMP_CWORD -eq 1 ]] ; then
-        COMPREPLY=( $(compgen -W "${cmds}" -- ${cur}) );
-        return 0;
-    fi
-    
-    if [[ $COMP_CWORD -eq 2 ]] ; then
-        if [[ `echo "$must_package" | grep -Ec "${prev}"` == 1 ]] ; then
-            if [[ -z $cyg_apt_packages ]] ; then
-                packList=`cyg-apt search . | cut -d " " -f 1`;
-                for rpack in $packList
-                do
-                    cyg_apt_packages="$cyg_apt_packages $rpack";
-                done
-                cyg_apt_packages="$cyg_apt_packages cygwin ";
-                unset rpack packList;
+    cmds="
+setup
+update
+ball
+download
+filelist
+find
+help
+install
+list
+md5
+missing
+new
+purge
+remove
+requires
+search
+show
+source
+upgrade
+url
+version
+";
+    long_opts="
+--quiet
+--download
+--mirror
+--dist
+--no-deps
+--regexp
+--force
+--no-verify
+--nopostinstall
+--nopostremove
+--help
+";
+    dist_opts="
+curr
+test
+prev
+";
+    mirrors="
+ftp://ftp.is.co.za/mirrors/cygwin/
+http://mirrors.163.com/cygwin/
+ftp://ftp.iitm.ac.in/cygwin/
+http://mirror.internode.on.net/pub/cygwin/
+ftp://mirror.csclub.uwaterloo.ca/cygwin/
+http://cygwin.mirror.rafal.ca/
+http://cygwin.uib.no/
+ftp://ftp.heanet.ie/pub/cygwin/
+http://cygwin.osuosl.org/
+ftp://lug.mtu.edu/cygwin/
+";
+
+    case "${COMP_CWORD}" in
+        1 )
+            COMPREPLY=( $(compgen -W "${cmds}" -- "${cur}") );
+            return 0;
+            ;;
+        * )
+            case "$prev" in
+                --dist|-t )
+                    # list available distribution
+                    COMPREPLY=( $(compgen -W "${dist_opts}" -- "${cur}") );
+                    return 0;
+                    ;;
+                --mirror|-m )
+                    # list some mirrors
+                    COMPREPLY=( $(compgen -W "${mirrors}" -- "${cur}") );
+                    return 0;
+                    ;;
+                * )
+                    ;;
+            esac;
+
+            if [[ "$cur" == -* ]] ; then
+                COMPREPLY=( $(compgen -W "${long_opts}" -- "${cur}") );
+                return 0;
             fi
-            COMPREPLY=( $(compgen -W "${cyg_apt_packages}" -- ${cur}) );
-            return 0;
-        elif [[ `echo "$must_file" | grep -Ec "${prev}"` == 1 ]] ; then
-            COMPREPLY=( $(compgen -W "`ls`" -- ${cur}) );
-            return 0;
-        elif [[ ${cur} == -* ]] ; then
-            COMPREPLY=( $(compgen -W "${long_opts}" -- ${cur}) );
-            return 0;
-        fi
-    fi
-    
-    if [[ $COMP_CWORD -eq 3 ]] && [[ ${cur} == -* ]] ; then
-        COMPREPLY=( $(compgen -W "${long_opts}" -- ${cur}) );
-        return 0;
-    fi
-    
-    if [[ ${prev} == "--dist" ]] || [[ ${prev} == "-t" ]] ; then
-        COMPREPLY=( $(compgen -W "${dist_opts}" -- ${cur}) );
-        return 0;
-    fi
+
+            case "${COMP_WORDS[1]}" in
+                ball|requires|show|download|md5|purge|search|source|url|filelist|install|missing|remove|version )
+                    _cyg_apt_set_all_packages;
+                    COMPREPLY=( $(compgen -W "${_cyg_apt_all_packages}" -- "${cur}") );
+                    return 0;
+                    ;;
+                * )
+                    ;;
+            esac;
+        ;;
+    esac;
+
+    return 0;
 }
+
 complete -F _cyg_apt cyg-apt;
