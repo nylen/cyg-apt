@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ######################## BEGIN LICENSE BLOCK ########################
 # This file is part of the cygapt package.
 #
