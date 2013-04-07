@@ -26,7 +26,7 @@ class CygAptOb:
     def __init__(self, start=False):
         self._state = False;
         self._buffer = None;
-        self._value = None;
+        self._value = '';
         self._stdout = None;
         if start:
             self.start();
@@ -38,7 +38,7 @@ class CygAptOb:
         sys.stdout = StringIO();
         self._buffer = sys.stdout;
         self._state = True;
-        self._value = None;
+        self._value = '';
 
     def _end(self):
         """Turn off output buffering
@@ -56,7 +56,7 @@ class CygAptOb:
         if self._value:
             self._stdout.write(self._value);
             self._stdout.flush();
-        self._value = None;
+        self._value = '';
 
     def getFlush(self):
         """Flush the output buffer,
@@ -93,7 +93,7 @@ class CygAptOb:
     def endClean(self):
         """Clean (erase) the output buffer and turn off output buffering
         """
-        self._value = None;
+        self._value = '';
         self._end();
 
     def implicitFlush(self, flag=True):
