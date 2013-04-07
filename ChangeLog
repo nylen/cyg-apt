@@ -855,3 +855,6 @@ eec4e0f Update help message with version and license
 6b88802 Add installtest fonctionnality to provide tests in installed location
 788579f Fix unprotected PYTHONPATH assignation
 5bb55a5 Update exceptions
+8f67467 [doc] Fix target install directory
+df5fd72 Fix sha-bang
+a8f01f4 Fix content initialisation on cygapt.ob
