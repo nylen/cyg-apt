@@ -26,7 +26,7 @@ if realpathfile != realpathcwd:
 try:
     version = os.environ['VERSION'];
 except KeyError:
-    version = "1.1.0b3";
+    version = "1.1.0rc1";
 
 try:
     pkgname = os.environ['PYPKG'];
@@ -52,7 +52,7 @@ setup(
     maintainer_email="alquerci@email.com",
     platforms="cygwin",
     classifiers=[
-        'Development Status :: 1 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
         'Intended Audience :: System Administrators',
         'License :: OSI Approved :: GNU General Public License, Version 3',
