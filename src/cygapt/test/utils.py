@@ -10,7 +10,6 @@
 # LICENSE file that was distributed with this source code.
 ######################### END LICENSE BLOCK #########################
 
-from __future__ import print_function;
 from __future__ import absolute_import;
 
 import unittest;
