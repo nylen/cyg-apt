@@ -13,7 +13,7 @@ Requirements
 
 * `cygwin` 1.7+
 * `gnupg` 1.4+
-* `python` 2.6+, <3.0
+* `python` 2.6+, &lt;3.0
 * `python-argparse` 1.2+
 
 
@@ -33,7 +33,7 @@ Briefly the following commands should build, test and install this package.
     $ make test
     $ make install
 
-See the `INSTALL` file for more detailed instructions.
+See the [`INSTALL.md`](blob/master/INSTALL.md) file for more detailed instructions.
 
 
 Usage

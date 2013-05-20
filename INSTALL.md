@@ -1,5 +1,5 @@
 Installation Instructions
-*************************
+=========================
 
 Copyright (C) 1994-1996, 1999-2002, 2004-2012 Free Software Foundation,
 Inc.
@@ -10,7 +10,7 @@ notice and this notice are preserved.  This file is offered as-is,
 without warranty of any kind.
 
 Basic Installation
-==================
+------------------
 
    Briefly, the shell commands `make; make install` should
 build, and install this package.
@@ -21,7 +21,9 @@ build, and install this package.
      `make package` to compile the package.
 
   2. Optionally, type `make test` to run any self-tests that come with
-     the package, generally using the just-built uninstalled binaries.
+     the package, generally using the just-built uninstalled binaries.  (If you
+     run into problems with some of the network-related tests, for example, FTP
+     URIs not working, this change may help: `6a2f7cd`)
 
   3. Type `make install` to install the programs and any data files and
      documentation.  When installing into a prefix owned by root, it is
@@ -41,7 +43,7 @@ build, and install this package.
      genereted fils type `make mrproper`.
 
 Installation Names
-==================
+------------------
 
    By default, `make install` installs the package's commands under
 `/usr/bin`, share files under `/usr/share`, etc.
