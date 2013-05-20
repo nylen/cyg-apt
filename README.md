@@ -33,7 +33,7 @@ Briefly the following commands should build, test and install this package.
     $ make test
     $ make install
 
-See the [`INSTALL.md`](blob/master/INSTALL.md) file for more detailed instructions.
+See the [`INSTALL.md`](INSTALL.md) file for more detailed instructions.
 
 
 Usage
