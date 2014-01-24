@@ -195,16 +195,18 @@ class CygApt:
         self.__rc = rc_structure;
 
     def _checkForSetupExe(self):
-        # It's far from bulletpoof, but it's surprisingly hard to detect
+        # It's far from bulletproof, but it's surprisingly hard to detect
         # setup.exe running since it doesn't lock any files.
         p = os.popen(self.__pm.mapPath("/usr/bin/ps -W"));
         psout = p.readlines();
         p.close();
+        setup_re = re.compile(r"(?<![a-z0-9_ -])setup(|-1\.7|-x86|-x86_64)\.exe", re.IGNORECASE)
         for l in psout:
-            if "setup.exe" in l or "setup-1.7.exe" in l:
+            m = setup_re.search(l)
+            if m:
                 raise AppConflictException(
-                    "Please close setup.exe while "
-                    "running {0}".format(self.__appName)
+                    "Please close {0} while "
+                    "running {1}".format(m.group(0), self.__appName)
                 );
 
     def _versionToString(self, t):
