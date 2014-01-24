@@ -15,6 +15,7 @@ Requirements
 * `gnupg` 1.4+
 * `python` 2.6+, &lt;3.0
 * `python-argparse` 1.2+
+* `xz` (should be installed with Cygwin by default)
 
 
 Build requirements

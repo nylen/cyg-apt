@@ -21,7 +21,6 @@ import os;
 import re;
 import shutil;
 import sys;
-import tarfile;
 import urllib;
 
 import cygapt.utils as cautils;
@@ -229,7 +228,7 @@ class CygApt:
         return tuple(map(try_atoi, (s.split(' '))));
 
     def _splitBall(self, p):
-        m = re.match(r"^(.*)-([0-9].*-[0-9]+)(.tar.bz2)?$", p);
+        m = re.match(r"^(.*)-([0-9].*-[0-9]+)(.tar.(bz2|xz))?$", p);
         if not m:
             print("splitBall: {0}".format(p));
             return (p[:2], (0, 0));
@@ -689,7 +688,7 @@ class CygApt:
         # Currently we use a temporary directory and extractall() then copy:
         # this is very slow. The Python documentation warns more sophisticated
         # approaches have pitfalls without specifying what they are.
-        tf = tarfile.open(ball);
+        tf = cautils.open_tarfile(ball);
         members = tf.getmembers();
         tempdir = "{0}-tmp".format(os.path.basename(tf.name));
         tempdir = tempdir.replace(".tar.bz2", "");
@@ -752,10 +751,10 @@ class CygApt:
 
     def _doInstall(self):
         ball = self.getBall();
-        if tarfile.is_tarfile(ball):
+        if cautils.is_tarfile(ball):
             if not self.__cygwinPlatform:
                 self._doInstallExternal(ball);
-            tf = tarfile.open(ball);
+            tf = cautils.open_tarfile(ball);
             if self.__cygwinPlatform:
                 tf.extractall(self.__absRoot);
             # Force slash to the end of each directories
@@ -1154,8 +1153,8 @@ class CygApt:
             ));
             return 1;
         os.mkdir(self.__pkgName);
-        if tarfile.is_tarfile(ball):
-            tf = tarfile.open(ball);
+        if cautils.is_tarfile(ball):
+            tf = cautils.open_tarfile(ball);
             tf.extractall(self.__pkgName);
             tf.close();
         else:
