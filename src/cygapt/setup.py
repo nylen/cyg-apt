@@ -308,9 +308,13 @@ class CygAptSetup:
         ];
 
         bag = zip(setup_ini_names, list(range(len(setup_ini_names))));
+        if platform.machine() == 'x86_64':
+            platform_dir = 'x86_64/'
+        else:
+            platform_dir = 'x86/'
 
         for (setup_ini_name, index) in bag:
-            setup_ini_url = '{0}{1}{2}'.format(mirror, sep, setup_ini_name);
+            setup_ini_url = '{0}{1}{2}{3}'.format(mirror, sep, platform_dir, setup_ini_name);
             try:
                 cautils.uri_get(
                     self.__tmpDir,
@@ -347,7 +351,7 @@ class CygAptSetup:
 
         if verify:
             sig_name = "{0}.sig".format(setup_ini_name);
-            sig_url = "{0}{1}{2}".format(mirror, sep, sig_name);
+            sig_url = "{0}{1}{2}{3}".format(mirror, sep, platform_dir, sig_name);
             try:
                 cautils.uri_get(self.__tmpDir, sig_url, verbose=self.__verbose);
             except RequestException as e:

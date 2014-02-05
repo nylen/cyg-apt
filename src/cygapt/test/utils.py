@@ -60,7 +60,7 @@ class TestCase(unittest.TestCase):
 
         self._dir_mirror = os.path.join(self._dir_mtroot, "_tcm");
         self._var_mirror = "file://{0}".format(self._dir_mirror);
-        self._var_mirror_http = "http://cygwin.xl-mirror.nl/";
+        self._var_mirror_http = "http://cygwin.uib.no/";
 
         # exe tree
         self._dir_confsetup = os.path.join(self._dir_sysconf, "setup");
@@ -110,7 +110,7 @@ class TestCase(unittest.TestCase):
         "{2}{0}{LF}"
         "mirrors-lst{LF}"
         "{2}http://mirrors.163.com/cygwin/;mirrors.163.com;Asia;China{LF}"
-        "{2}http://cygwin.xl-mirror.nl/;cygwin.xl-mirror.nl;Europe;Netherlands{LF}"
+        "{2}http://cygwin.uib.no/;cygwin.uib.no;Europe;Norway{LF}"
         "new-cygwin-version{LF}"
         "{2}1{LF}"
         "avahi{LF}"

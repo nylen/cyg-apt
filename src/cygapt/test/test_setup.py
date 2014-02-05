@@ -63,7 +63,7 @@ class TestSetup(TestCase):
             self.skipTest("requires cygwin");
 
         location = self._var_tmpdir;
-        last_mirror = "http://cygwin.xl-mirror.nl/";
+        last_mirror = "http://cygwin.uib.no/";
         last_cache = os.path.join(self._var_tmpdir, "last_cache");
         os.mkdir(last_cache);
         lm_file = os.path.join(self._var_tmpdir, "last-mirror");

@@ -152,7 +152,7 @@ class TestUtils(TestCase):
 
     def testUriGet(self):
         directory = self._getTmpDir();
-        uri = "http://cygwin.uib.no/setup.bz2.sig";
+        uri = "http://cygwin.uib.no/x86/setup.bz2.sig";
         verbose = False;
         utils.uri_get(directory, uri, verbose);
         self.assertTrue(
@@ -168,14 +168,14 @@ class TestUtils(TestCase):
             verbose
         );
 
-        uri = "ftp://cygwin.uib.no/pub/cygwin/setup.ini.sig";
+        uri = "ftp://cygwin.uib.no/pub/cygwin/x86/setup.ini.sig";
         utils.uri_get(directory, uri, verbose);
         self.assertTrue(
             os.path.exists(os.path.join(directory, "setup.ini.sig")),
             "ftp request"
         );
 
-        uri = "rsync://cygwin.uib.no/cygwin/setup-legacy.bz2.sig";
+        uri = "rsync://cygwin.uib.no/cygwin/x86/setup-legacy.bz2.sig";
         self.assertRaises(
             ApplicationException,
             utils.uri_get,
