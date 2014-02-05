@@ -583,8 +583,8 @@ class CygApt:
         for i in keys:
             self.__pkgName = i;
             if not regexp or re.search(regexp, i) \
-               or re.search(regexp, self.getField('sdesc')) \
-               or re.search(regexp, self.getField('ldesc')):
+               or re.search(regexp, self.getField('sdesc'), re.IGNORECASE) \
+               or re.search(regexp, self.getField('ldesc'), re.IGNORECASE):
                 if self.__rc.distname in self.__dists:
                     if self.__ballTarget in self.__dists[self.__rc.distname][i]:
                         packages.append(i);
