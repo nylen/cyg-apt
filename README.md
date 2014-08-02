@@ -5,7 +5,7 @@ A Cygwin command line package manager.
 
 Like `apt-get`, `cyg-apt` allows you to install and remove packages on the Cygwin command line, and provides other package management functions.
 
-This project is a fork of http://code.google.com/p/cyg-apt/ with extensive improvements by [@alquerci](https://github.com/alquerci), [@nylen](https://github.com/nylen), and others.
+This project is a fork of http://code.google.com/p/cyg-apt/ with extensive improvements and lots of bugfixes by [@alquerci](https://github.com/alquerci), [@nylen](https://github.com/nylen), and others.
 
 Requirements
 ------------
@@ -39,8 +39,7 @@ See the [`INSTALL.md`](INSTALL.md) file for more detailed instructions.
 Usage
 -----
 
-cyg-apt is similar to apt-get.
-You can install, use it and remove packages from the Cygwin command prompt:
+`cyg-apt` is similar to `apt-get`.  You can use it to install and remove packages (and more) from the Cygwin command prompt:
 
     $ cyg-apt install gdb
     ...
