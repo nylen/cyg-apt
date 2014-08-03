@@ -27,6 +27,7 @@ from cygapt.test.utils import TestCase;
 from cygapt.setup import PlatformException;
 from cygapt.setup import EnvironementException;
 from cygapt.exception import PathExistsException;
+from cygapt.exception import UnexpectedValueException;
 
 
 class TestSetup(TestCase):
@@ -87,6 +88,30 @@ class TestSetup(TestCase):
         self.obj.setup();
 
         self.obj.update(self._file_user_config, True);
+
+    def testUpdateWithoutMirror(self):
+        if not self._var_cygwin_p:
+            self.skipTest("requires cygwin");
+
+        self.obj._gpgImport(self.obj.GPG_CYG_PUBLIC_RING_URI);
+        self._var_mirror_http = "";
+        self._writeSetupRc();
+
+        try:
+            self.obj.setup();
+            self.obj.update(self._file_user_config, True);
+        except Exception as e:
+            self.assertTrue(isinstance(e, UnexpectedValueException));
+            self.assertEqual(e.getMessage(), (
+                "A mirror must be specified on the configuration file \"{0}\" "
+                "or with the command line option \"--mirror\"."
+                "".format(self._file_user_config)
+            ));
+        else:
+            self.fail(
+                ".update() raises an UnexpectedValueException if the mirror "
+                "was not defined."
+            );
 
     def testSetup(self):
         if not self._var_cygwin_p:
