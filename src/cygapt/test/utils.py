@@ -104,7 +104,36 @@ class TestCase(unittest.TestCase):
             ".{0}".format(self._var_exename)
         );
 
-        f = open(self._file_setup_rc, 'w');
+        self._writeSetupRc();
+
+        os.environ['TMP'] = self._dir_tmp;
+        os.environ['HOME'] = self._dir_user;
+
+        os.chdir(self._dir_user);
+
+        self._var_setupIni = SetupIniProvider(self);
+
+    def tearDown(self):
+        unittest.TestCase.tearDown(self);
+
+        os.environ = self._var_old_env;
+        os.chdir(self._var_old_cwd);
+        def rmtree(path):
+            files = os.listdir(path);
+            for filename in files:
+                subpath = os.path.join(path, filename);
+                if os.path.isdir(subpath):
+                    rmtree(subpath);
+                else:
+                    os.remove(subpath);
+            os.rmdir(path);
+        rmtree(self._var_tmpdir);
+
+    def _writeSetupRc(self, path=None):
+        if None is path :
+            path = self._file_setup_rc;
+
+        f = open(path, 'w');
         f.write(
         "last-cache{LF}"
         "{2}{0}{LF}"
@@ -132,29 +161,6 @@ class TestCase(unittest.TestCase):
             LF="\n"
         ));
         f.close();
-
-        os.environ['TMP'] = self._dir_tmp;
-        os.environ['HOME'] = self._dir_user;
-
-        os.chdir(self._dir_user);
-
-        self._var_setupIni = SetupIniProvider(self);
-
-    def tearDown(self):
-        unittest.TestCase.tearDown(self);
-
-        os.environ = self._var_old_env;
-        os.chdir(self._var_old_cwd);
-        def rmtree(path):
-            files = os.listdir(path);
-            for filename in files:
-                subpath = os.path.join(path, filename);
-                if os.path.isdir(subpath):
-                    rmtree(subpath);
-                else:
-                    os.remove(subpath);
-            os.rmdir(path);
-        rmtree(self._var_tmpdir);
 
 class SetupIniProvider():
     """Create a fictif setup.ini"""

@@ -293,6 +293,14 @@ class CygAptSetup:
             mirror = main_mirror;
         else:
             mirror = self.__rc.mirror;
+
+        if not mirror :
+            raise UnexpectedValueException(
+                "A mirror must be specified on the configuration file \"{0}\" "
+                "or with the command line option \"--mirror\"."
+                "".format(cyg_apt_rc)
+            );
+
         downloads = os.path.join(
             self.__pm.mapPath(self.__rc.cache),
             urllib.quote(mirror, '').lower()
