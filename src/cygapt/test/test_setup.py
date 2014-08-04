@@ -104,7 +104,8 @@ class TestSetup(TestCase):
             self.assertTrue(isinstance(e, UnexpectedValueException));
             self.assertEqual(e.getMessage(), (
                 "A mirror must be specified on the configuration file \"{0}\" "
-                "or with the command line option \"--mirror\"."
+                "or with the command line option \"--mirror\". "
+                "See cygwin.com/mirrors.html for the list of mirrors."
                 "".format(self._file_user_config)
             ));
         else:

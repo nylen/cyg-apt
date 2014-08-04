@@ -204,7 +204,8 @@ class CygAptSetup:
             (last_cache, last_mirror) = self._getPre17Last(self.__setupDir);
             if ((not last_cache) or (not last_mirror)):
                 print("{0}: {1}/setup.rc not found. Please edit {2} to "\
-                "provide mirror and cache.".format(
+                "provide mirror and cache. See cygwin.com/mirrors.html "\
+                "for the list of mirrors.".format(
                     self.__appName,
                     self.__setupDir,
                     rc_file
@@ -297,7 +298,8 @@ class CygAptSetup:
         if not mirror :
             raise UnexpectedValueException(
                 "A mirror must be specified on the configuration file \"{0}\" "
-                "or with the command line option \"--mirror\"."
+                "or with the command line option \"--mirror\". "
+                "See cygwin.com/mirrors.html for the list of mirrors."
                 "".format(cyg_apt_rc)
             );
 
