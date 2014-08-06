@@ -368,7 +368,19 @@ class TestUtils(TestCase):
     def testOpenTarfileFromBzip2Ball(self):
         self._successOpenTarfile("pkg");
 
-    def _successOpenTarfile(self, pkgname):
+    def testOpenTarfileFromLZMABallWithoutPATH(self):
+        if not sys.platform.startswith("cygwin") and not sys.platform.startswith("linux") :
+            self.skipTest("requires cygwin or linux");
+
+        old_path = os.environ['PATH'];
+
+        try:
+            os.environ['PATH'] = "";
+            self._successOpenTarfile("pkgxz", "/usr/bin/xz");
+        finally:
+            os.environ['PATH'] = old_path;
+
+    def _successOpenTarfile(self, pkgname, xzPath="xz"):
         ball = os.path.join(
             self._dir_mirror,
             self._var_setupIni.__dict__[pkgname].install.curr.url,
@@ -376,7 +388,7 @@ class TestUtils(TestCase):
 
         filesOnBallDir = os.listdir(os.path.dirname(ball));
 
-        tf = utils.open_tarfile(ball);
+        tf = utils.open_tarfile(ball, xzPath);
         members = tf.getmembers();
         tf.close();
 
