@@ -169,7 +169,10 @@ class TestUtils(TestCase):
         );
 
         uri = "ftp://cygwin.uib.no/pub/cygwin/x86/setup.ini.sig";
-        utils.uri_get(directory, uri, verbose);
+        try:
+            utils.uri_get(directory, uri, verbose);
+        except utils.RequestException:
+            self.skipTest("Your network doesn't allow FTP requests.");
         self.assertTrue(
             os.path.exists(os.path.join(directory, "setup.ini.sig")),
             "ftp request"
