@@ -63,13 +63,24 @@ def remove_if_exists(fn):
     except OSError:
         pass;
 
-def open_tarfile(ball):
+def open_tarfile(ball, xzPath='xz'):
+    """Opens a tar file like `tarfile.open`.
+
+    Supports also LZMA compressed tarballs.
+
+    @param ball:   str A tar file, it can be compressed
+    @param xzPath: str A path to the lzma program
+
+    @return: TarFile An appropriate TarFile instance
+    """
+    assert isinstance(xzPath, str);
+
     ball_orig = ball;
     if ball.lower().endswith('.tar.xz'):
         ball_orig = ball;
         ball = ball[:-3]; # remove .xz extension
         remove_if_exists(ball);
-        subprocess.check_call(['xz', '-k', '-d', ball_orig]);
+        subprocess.check_call([xzPath, '-k', '-d', ball_orig]);
     tf = tarfile.open(ball);
     if ball_orig != ball:
         tf_close_orig = tf.close;
