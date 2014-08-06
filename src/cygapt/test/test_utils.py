@@ -184,5 +184,34 @@ class TestUtils(TestCase):
             verbose
         );
 
+    def testOpenTarfileFromLZMABall(self):
+        self._successOpenTarfile("pkgxz");
+
+    def testOpenTarfileFromBzip2Ball(self):
+        self._successOpenTarfile("pkg");
+
+    def _successOpenTarfile(self, pkgname):
+        ball = os.path.join(
+            self._dir_mirror,
+            self._var_setupIni.__dict__[pkgname].install.curr.url,
+        );
+
+        filesOnBallDir = os.listdir(os.path.dirname(ball));
+
+        tf = utils.open_tarfile(ball);
+        members = tf.getmembers();
+        tf.close();
+
+        self.assertEqual(filesOnBallDir, os.listdir(os.path.dirname(ball)));
+
+        filelist = [];
+        for member in members :
+            path = member.name;
+            if member.isdir() :
+                path = path.rstrip("/")+"/";
+            filelist.append(path);
+
+        self.assertEqual(sorted(filelist), sorted(self._var_setupIni.__dict__[pkgname].filelist));
+
 if __name__ == "__main__":
     unittest.main();
