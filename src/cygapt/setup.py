@@ -319,9 +319,9 @@ class CygAptSetup:
 
         bag = zip(setup_ini_names, list(range(len(setup_ini_names))));
         if platform.machine() == 'x86_64':
-            platform_dir = 'x86_64/'
+            platform_dir = 'x86_64/';
         else:
-            platform_dir = 'x86/'
+            platform_dir = 'x86/';
 
         for (setup_ini_name, index) in bag:
             setup_ini_url = '{0}{1}{2}{3}'.format(mirror, sep, platform_dir, setup_ini_name);

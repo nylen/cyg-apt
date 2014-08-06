@@ -58,25 +58,25 @@ def parse_rc(cyg_apt_rc):
 
 def remove_if_exists(fn):
     try:
-        os.remove(fn)
+        os.remove(fn);
     except OSError:
-        pass
+        pass;
 
 def open_tarfile(ball):
-    ball_orig = ball
+    ball_orig = ball;
     if ball.lower().endswith('.tar.xz'):
-        ball_orig = ball
-        ball = ball[:-3] # remove .xz extension
-        remove_if_exists(ball)
-        subprocess.check_call(['xz', '-k', '-d', ball_orig])
-    tf = tarfile.open(ball)
+        ball_orig = ball;
+        ball = ball[:-3]; # remove .xz extension
+        remove_if_exists(ball);
+        subprocess.check_call(['xz', '-k', '-d', ball_orig]);
+    tf = tarfile.open(ball);
     if ball_orig != ball:
-        tf_close_orig = tf.close
+        tf_close_orig = tf.close;
         def tf_close():
-            remove_if_exists(ball)
-            return tf_close_orig()
-        tf.close = tf_close
-    return tf
+            remove_if_exists(ball);
+            return tf_close_orig();
+        tf.close = tf_close;
+    return tf;
 
 def is_tarfile(ball):
     return ball.lower().endswith('.tar.xz') or tarfile.is_tarfile(ball)
