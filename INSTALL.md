@@ -22,10 +22,6 @@ build, and install this package.
 
   2. Optionally, type `make test` to run any self-tests that come with
      the package, generally using the just-built uninstalled binaries.
-     (If you run into problems with some of the network-related tests,
-     for example, FTP URIs not working,
-     [this change](https://github.com/nylen/cyg-apt/commit/skip-ftp-uri)
-     may help.)
 
   3. Type `make install` to install the programs and any data files and
      documentation.  When installing into a prefix owned by root, it is
