@@ -66,7 +66,14 @@ class TestCygApt(TestCase):
         self._var_dists = 0;
         self._var_installed = 0;
 
-        self.obj = CygApt(
+        self.obj = self._createCygApt();
+
+    def _createCygApt(self):
+        """Creates a CygApt instance.
+
+        @return: CygApt
+        """
+        cygapt = CygApt(
             self._var_packagename,
             self._var_files,
             self._file_user_config,
@@ -94,11 +101,11 @@ class TestCygApt(TestCase):
         rc.ROOT = self._dir_mtroot;
         rc.always_update = False;
         rc.mirror = self._var_mirror;
-        self.obj.setRC(rc);
+        cygapt.setRC(rc);
 
-        self.obj.setDownlaodDir(self._dir_downloads);
-        self.obj.setInstalledDbFile(self._file_installed_db);
-        self.obj.setSetupDir(self._dir_confsetup);
+        cygapt.setDownlaodDir(self._dir_downloads);
+        cygapt.setInstalledDbFile(self._file_installed_db);
+        cygapt.setSetupDir(self._dir_confsetup);
 
         pm = PathMapper("", False);
         pm.setRoot(self._dir_mtroot[:-1]);
@@ -112,22 +119,24 @@ class TestCygApt(TestCase):
         ret = pm.mapPath(expected);
         self.assertEqual(ret, expected);
 
-        self.obj.setPathMapper(pm);
+        cygapt.setPathMapper(pm);
 
-        self.obj.setDists(self._var_setupIni.dists.__dict__);
+        cygapt.setDists(self._var_setupIni.dists.__dict__);
 
-        self.obj.CYG_POSTINSTALL_DIR = self._dir_postinstall;
-        self.obj.CYG_PREREMOVE_DIR = self._dir_preremove;
-        self.obj.CYG_POSTREMOVE_DIR = self._dir_postremove;
+        cygapt.CYG_POSTINSTALL_DIR = self._dir_postinstall;
+        cygapt.CYG_PREREMOVE_DIR = self._dir_preremove;
+        cygapt.CYG_POSTREMOVE_DIR = self._dir_postremove;
 
-        self.obj.setDosBash("/usr/bin/bash");
-        self.obj.setDosLn("/usr/bin/ln");
+        cygapt.setDosBash("/usr/bin/bash");
+        cygapt.setDosLn("/usr/bin/ln");
 
-        self.obj.setPrefixRoot(self._dir_mtroot[:-1]);
-        self.obj.setAbsRoot(self._dir_mtroot);
-        self.obj.setInstalled({0:{}});
+        cygapt.setPrefixRoot(self._dir_mtroot[:-1]);
+        cygapt.setAbsRoot(self._dir_mtroot);
+        cygapt.setInstalled({0:{}});
 
-        self.obj.FORCE_BARRED = [self._var_setupIni.barredpkg.name];
+        cygapt.FORCE_BARRED = [self._var_setupIni.barredpkg.name];
+
+        return cygapt;
 
     def test___init__(self):
         self.assertTrue(isinstance(self.obj, CygApt));
@@ -200,7 +209,7 @@ class TestCygApt(TestCase):
         self.obj.download();
         filename = os.path.join(
             self._dir_downloads,
-            self._var_setupIni.pkg.install.curr.url
+            self._var_setupIni.__dict__[self.obj.getPkgName()].install.curr.url
         );
         self.assertTrue(os.path.exists(filename));
 
@@ -286,6 +295,14 @@ class TestCygApt(TestCase):
         self.obj._doInstall();
         self.assertInstall([self.obj.getPkgName()]);
 
+    def testDoInstallExternalWithLZMACompression(self):
+        self.obj.setPkgName("pkgxz");
+
+        self.testDownload();
+        self.obj.setCygwinPlatform(False);
+        self.obj._doInstall();
+        self.assertInstall([self.obj.getPkgName()]);
+
     def testPostInstall(self):
         self.testDoInstall();
         self.obj._postInstall();
@@ -309,6 +326,17 @@ class TestCygApt(TestCase):
         expected = self._var_setupIni.pkg.requires.split(" ");
         expected.append(self.obj.getPkgName());
         self.assertInstall(expected);
+        self.assertPostInstall();
+
+    def testInstallWithLZMACompression(self):
+        self._var_packagename = self._var_setupIni.pkgxz.name;
+        self._var_files = ["", self._var_packagename];
+        self.obj = self._createCygApt();
+
+        # INSTALL
+        self.obj.install();
+
+        self.assertInstall([self._var_packagename]);
         self.assertPostInstall();
 
     def testRemove(self):
