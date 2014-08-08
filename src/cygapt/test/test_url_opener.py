@@ -19,14 +19,15 @@ import sys;
 from tempfile import TemporaryFile;
 from cStringIO import StringIO;
 
+from cygapt.test.case import TestCase;
 from cygapt.url_opener import CygAptURLopener;
 
-class TestUrlOpener(unittest.TestCase):
+class TestUrlOpener(TestCase):
     """Unit test for cygapt.url_opener
     """
 
     def setUp(self):
-        unittest.TestCase.setUp(self);
+        TestCase.setUp(self);
         self.obj = CygAptURLopener(True);
 
     def test__init__(self):

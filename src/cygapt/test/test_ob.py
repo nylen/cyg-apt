@@ -21,18 +21,19 @@ from __future__ import absolute_import;
 import unittest;
 import sys;
 
+from cygapt.test.case import TestCase;
 from cygapt.ob import CygAptOb;
 
 REPR_STDOUT = repr(sys.stdout);
 
-class TestOb(unittest.TestCase):
+class TestOb(TestCase):
     def setUp(self):
-        unittest.TestCase.setUp(self);
+        TestCase.setUp(self);
         self.obj = CygAptOb(False);
 
     def tearDown(self):
-        unittest.TestCase.tearDown(self);
         self.obj._end();
+        TestCase.tearDown(self);
 
     def makeOn(self):
         txt = "TestOb.makeOn ";

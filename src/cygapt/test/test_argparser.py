@@ -21,11 +21,12 @@ import unittest;
 import sys;
 import warnings;
 
+from cygapt.test.case import TestCase;
 from cygapt.argparser import CygAptArgParser;
 
-class TestArgParser(unittest.TestCase):
+class TestArgParser(TestCase):
     def setUp(self):
-        unittest.TestCase.setUp(self);
+        TestCase.setUp(self);
         self.obj = CygAptArgParser("usage", "scriptname");
 
         self.__originArgv = sys.argv[:];
@@ -34,7 +35,7 @@ class TestArgParser(unittest.TestCase):
     def tearDown(self):
         sys.argv = self.__originArgv;
 
-        unittest.TestCase.tearDown(self);
+        TestCase.tearDown(self);
 
     def test___init__(self):
         self.assertTrue(isinstance(self.obj, CygAptArgParser));
