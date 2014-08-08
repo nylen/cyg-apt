@@ -36,7 +36,7 @@ class CygApt:
     INSTALLED_DB_MAGIC = "INSTALLED.DB 2\n";
     DIST_NAMES = ('curr', 'test', 'prev');
     RC_REGEX = re.compile(r"^\s*(\w+)\s*=\s*(.*)\s*$");
-    FORCE_BARRED = ["python", "python-argparse", "gnupg"];
+    FORCE_BARRED = ["python", "python-argparse", "gnupg", "xz"];
     SH_OPTIONS = " --norc --noprofile ";
     CYG_POSTINSTALL_DIR = "/etc/postinstall";
     CYG_PREREMOVE_DIR = "/etc/preremove";

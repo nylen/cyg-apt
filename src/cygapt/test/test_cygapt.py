@@ -134,7 +134,9 @@ class TestCygApt(TestCase):
         cygapt.setAbsRoot(self._dir_mtroot);
         cygapt.setInstalled({0:{}});
 
-        cygapt.FORCE_BARRED = [self._var_setupIni.barredpkg.name];
+        cygapt.FORCE_BARRED.extend([
+            self._var_setupIni.barredpkg.name,
+        ]);
 
         return cygapt;
 
@@ -407,6 +409,17 @@ class TestCygApt(TestCase):
             self.obj._isBarredPackage(self._var_setupIni.pkg.name)
         );
         self.obj._isBarredPackage("not_exists_pkg");
+
+        barredPackages = [
+            "python",
+            "python-argparse",
+            "gnupg",
+            "xz",
+        ];
+        for package in barredPackages:
+            result = self.obj._isBarredPackage(package);
+            message = "The package `{0}` is barred.".format(package);
+            self.assertTrue(result, message);
 
     def assertInstall(self, pkgname_list):
         pkg_ini_list = [];
