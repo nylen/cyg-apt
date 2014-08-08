@@ -47,7 +47,47 @@ Usage
     (gdb)
     $ cyg-apt remove gdb
 
-Type `cyg-apt --help` or `man cyg-apt` for see all commands and options.
+Type `cyg-apt --help` or `man cyg-apt` to see all commands and options:
+
+```
+Usage: cyg-apt [OPTION]... COMMAND [PACKAGE]...
+
+  Commands:
+    setup    : create cyg-apt configuration file, it overwrite with -f option
+    update   : fetch current package database from mirror
+    ball     : print tarball name
+    download : download package (only, do not install)
+    filelist : list files installed by given packages
+    find     : find package containing file
+    help     : this help message
+    install  : download and install packages with dependencies
+    list     : list installed packages
+    md5      : check md5 sum of cached package against database
+    missing  : print missing dependencies for package
+    new      : list new (upgradable) packages in distribution
+    purge    : uninstall packages and delete from cache
+    remove   : uninstall packages
+    requires : print requires: for package
+    search   : search all package descriptions for string
+    show     : print package description
+    source   : download source package
+    upgrade  : all installed packages
+    url      : print tarball url
+    version  : print installed version
+
+  Options:
+    -d, --download       download only
+    -h, --help           show brief usage
+    -m, --mirror=URL     use mirror
+    -t, --dist=NAME      set dist name (curr, test, prev)
+    -x, --no-deps        ignore dependencies
+    -s, --regexp         search as regex pattern
+    -f, --nobarred       add/remove packages cyg-apt depends on
+    -X, --no-verify      do not verify setup.ini signatures
+    -y, --nopostinstall  do not run postinstall scripts
+    -z, --nopostremove   do not run preremove/postremove scripts
+    -q, --quiet          loggable output - no progress indicator
+```
 
 
 Acknowledgments
