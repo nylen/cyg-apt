@@ -79,7 +79,7 @@ def open_tarfile(ball):
     return tf;
 
 def is_tarfile(ball):
-    return ball.lower().endswith('.tar.xz') or tarfile.is_tarfile(ball)
+    return ball.lower().endswith('.tar.xz') or tarfile.is_tarfile(ball);
 
 def prsort(lst):
     lst.sort();
