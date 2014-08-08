@@ -21,8 +21,11 @@ import tarfile;
 import bz2;
 import hashlib;
 import subprocess;
+import atexit;
 
 class TestCase(unittest.TestCase):
+    __mirrorDir = None;
+
     def setUp(self):
         unittest.TestCase.setUp(self);
         self._var_tmpdir = tempfile.mkdtemp();
@@ -59,7 +62,7 @@ class TestCase(unittest.TestCase):
         os.mkdir(self._dir_man);
         os.mkdir(self._dir_info);
 
-        self._dir_mirror = os.path.join(self._dir_mtroot, "_tcm");
+        self._dir_mirror = self.__getMirrorDir();
         self._var_mirror = "file://{0}".format(self._dir_mirror);
         self._var_mirror_http = "http://cygwin.uib.no/";
 
@@ -81,7 +84,6 @@ class TestCase(unittest.TestCase):
         os.mkdir(self._dir_confsetup);
         os.mkdir(self._dir_user);
         os.mkdir(self._dir_exedata);
-        os.makedirs(self._dir_mirror);
 
         # exe files
         self._file_cygwin_sig = os.path.join(
@@ -112,24 +114,18 @@ class TestCase(unittest.TestCase):
 
         os.chdir(self._dir_user);
 
-        self._var_setupIni = SetupIniProvider(self);
+        # build the mirror
+        isBuilt = os.path.isdir(self._dir_mirror);
+        if not isBuilt :
+            os.makedirs(self._dir_mirror);
+        self._var_setupIni = SetupIniProvider(self, isBuilt);
 
     def tearDown(self):
         unittest.TestCase.tearDown(self);
 
         os.environ = self._var_old_env;
         os.chdir(self._var_old_cwd);
-        def rmtree(path):
-            files = os.listdir(path);
-            for filename in files:
-                subpath = os.path.join(path, filename);
-                if os.path.isdir(subpath):
-                    os.chmod(subpath, 0o400);
-                    rmtree(subpath);
-                else:
-                    os.remove(subpath);
-            os.rmdir(path);
-        rmtree(self._var_tmpdir);
+        self.__rmtree(self._var_tmpdir);
 
     def _writeSetupRc(self, path=None):
         if None is path :
@@ -164,9 +160,61 @@ class TestCase(unittest.TestCase):
         ));
         f.close();
 
+    def _writeUserConfig(self, path=None):
+        if None is path :
+            path = self._file_user_config;
+
+        f = open(path, 'w');
+        f.write("\n".join([
+            "ROOT=\"{self[_dir_mtroot]}\"",
+            "mirror=\"{self[_var_mirror_http]}\"",
+            "cache=\"{self[_dir_execache]}\"",
+            "setup_ini=\"{self[_file_setup_ini]}\"",
+            "distname=\"curr\"",
+            "barred=\"\"",
+            "always_update=\"False\"",
+            "",
+        ]).format(self=vars(self)));
+        f.close();
+
+    @classmethod
+    def __getMirrorDir(cls):
+        """Gets the mirror directory.
+
+        @return: str The mirror directory.
+        """
+        if None is not TestCase.__mirrorDir :
+            return TestCase.__mirrorDir;
+
+        tmpDir = tempfile.mkdtemp();
+        TestCase.__mirrorDir = os.path.join(tmpDir, "mirror");
+
+        atexit.register(cls.__rmtree, tmpDir);
+
+        return TestCase.__mirrorDir;
+
+    @classmethod
+    def __rmtree(cls, path):
+        """Removes a directory.
+
+        @param path: str A path to a directory.
+        """
+        if not os.path.isdir(path) :
+            return;
+
+        files = os.listdir(path);
+        for filename in files:
+            subpath = os.path.join(path, filename);
+            if os.path.isdir(subpath):
+                os.chmod(subpath, 0o400);
+                cls.__rmtree(subpath);
+            else:
+                os.remove(subpath);
+        os.rmdir(path);
+
 class SetupIniProvider():
     """Create a fictif setup.ini"""
-    def __init__(self, app):
+    def __init__(self, app, isBuilt=False):
         assert isinstance(app, TestCase);
 
         self.dists = DistNameStruct();
@@ -183,11 +231,11 @@ class SetupIniProvider():
         self._localMirror = app._dir_mirror;
 
         packages = [
-            PackageIni(app, name="libpkg"),
-            PackageIni(app, name="pkg", requires="libpkg"),
-            PackageIni(app, name="libbarredpkg"),
-            PackageIni(app, name="barredpkg", requires="libbarredpkg"),
-            PackageIni(app, name="pkgxz", compression="xz"),
+            PackageIni(app, isBuilt=isBuilt, name="libpkg"),
+            PackageIni(app, isBuilt=isBuilt, name="pkg", requires="libpkg"),
+            PackageIni(app, isBuilt=isBuilt, name="libbarredpkg"),
+            PackageIni(app, isBuilt=isBuilt, name="barredpkg", requires="libbarredpkg"),
+            PackageIni(app, isBuilt=isBuilt, name="pkgxz", compression="xz"),
         ];
 
         for package in packages :
@@ -203,7 +251,8 @@ class SetupIniProvider():
                     self.dists.__dict__[distname] = dict();
                 self.dists.__dict__[distname][name] = package.dists.__dict__[distname].__dict__;
 
-        self._buildMirror();
+        if not isBuilt:
+            self._buildMirror();
 
     def _buildMirror(self):
         setup_ini = os.path.join(self._localMirror, "setup.ini");
@@ -218,14 +267,25 @@ class SetupIniProvider():
         f.write(compressed);
         f.close();
 
+        # Add a README file for the mirror
+        readmePath = os.path.join(self._localMirror, "README.md");
+        f = open(readmePath, 'w');
+        f.write("\n".join([
+            "The mirror has been auto-generated by the `cygapt.test.utils.TestCase` class.",
+            "",
+            "For update it just delete the parent directory of the current file.",
+            "",
+        ]).format(self._localMirror));
+        f.close();
+
 class PackageIni():
-    def __init__(self, app, name="testpkg", category="test", requires="", compression="bz2"):
+    def __init__(self, app, isBuilt=False, name="testpkg", category="test", requires="", compression="bz2"):
         assert isinstance(app, TestCase);
 
         self._localMirror = app._dir_mirror;
-        self._mtRoot = app._dir_mtroot;
         self._tmpdir = app._dir_tmp;
         self._compression = compression;
+        self._generated = isBuilt;
 
         self.name = name;
         self.category = category;
@@ -328,6 +388,23 @@ class PackageIni():
 
     def _buildDistFiles(self, distname='curr'):
         # create build directory
+        if not self._generated :
+            self._generateDistFiles(distname);
+
+        tar_name = os.path.join(self._localMirror, self.install.__dict__[distname].url);
+        tar_src_name = os.path.join(self._localMirror, self.source.__dict__[distname].url);
+
+        md5sum = self._md5Sum(tar_name);
+        md5sum_src = self._md5Sum(tar_src_name);
+
+        self.install.__dict__[distname].size = self._fileSize(tar_name);
+        self.source.__dict__[distname].size = self._fileSize(tar_src_name);
+        self.install.__dict__[distname].md5 = md5sum;
+        self.source.__dict__[distname].md5 = md5sum_src;
+
+        self.filelist = self._getFileList(distname);
+
+    def _generateDistFiles(self, distname='curr'):
         mirror_pkg_dir = os.path.join(self._localMirror, self.pkgPath);
         if not os.path.exists(mirror_pkg_dir):
             os.makedirs(mirror_pkg_dir);
@@ -341,7 +418,6 @@ class PackageIni():
         postinstall_d = os.path.join(dirname, "etc", "postinstall");
         postremove_d = os.path.join(dirname, "etc", "postremove");
         preremove_d = os.path.join(dirname, "etc", "preremove");
-        sys_marker_d = os.path.join(self._mtRoot, "var", self.name);
         marker_d = os.path.join(dirname, "var", self.name);
         os.makedirs(bin_d);
         os.makedirs(postinstall_d);
@@ -363,7 +439,7 @@ class PackageIni():
         f.write('#!/bin/sh\necho "running";');
         f.close();
         ret = 0;
-        ret += os.system('ln -s "' + bin_f + '" "' + link_bin_f + '"');
+        ret += os.system('ln -s "' + self.name + '" "' + link_bin_f + '"');
         ret += os.system('ln "' + bin_f + '" "' + hardlink_bin_f + '"');
         if ret > 0:
             raise OSError("fail to create links");
@@ -372,24 +448,24 @@ class PackageIni():
         f = open(postinstall_f, 'w');
         f.write(
         "#!/bin/sh{LF}"
-        "echo \"postinstall ... ok\" >> {marker_d}/log;{LF}"
-        "".format(marker_d=sys_marker_d, LF="\n")
+        "exit 0;{LF}"
+        "".format(LF="\n")
         );
         f.close();
         # create preremove > root/etc/postremove
         f = open(preremove_f, 'w');
         f.write(
         "#!/bin/sh{LF}"
-        "echo \"preremove ... ok\" >> {marker_d}/log;{LF}"
-        "".format(marker_d=sys_marker_d, LF="\n")
+        "exit 0;{LF}"
+        "".format(LF="\n")
         );
         f.close();
         # create postremmove > root/etc/preremmove
         f = open(postremove_f, 'w');
         f.write(
         "#!/bin/sh{LF}"
-        "echo \"postremove ... ok\" >> {marker_d}/log;{LF}"
-        "".format(marker_d=sys_marker_d, LF="\n")
+        "exit 0;{LF}"
+        "".format(LF="\n")
         );
         f.close();
         # create version marker > root/var/<pkg>/<version>
@@ -417,7 +493,9 @@ class PackageIni():
                 lst.append(m.name + "/");
             else:
                 lst.append(m.name);
-        self.filelist = lst;
+        f = open("{0}.lst".format(tar_name), 'w');
+        f.write("\n".join(lst));
+        f.close();
 
         # build source tar
         tar_src_name = os.path.join(
@@ -433,15 +511,8 @@ class PackageIni():
         self._compressFollowingTargetExtension(tarSrcPath, tar_src_name);
         del tarSrcPath;
 
-        f = open(tar_name, 'rb');
-        content = f.read();
-        f.close();
-        md5sum = hashlib.md5(content).hexdigest();
-
-        f = open(tar_src_name, 'rb');
-        content = f.read();
-        f.close();
-        md5sum_src = hashlib.md5(content).hexdigest();
+        md5sum = self._md5Sum(tar_name);
+        md5sum_src = self._md5Sum(tar_src_name);
 
         md5_sum_f = os.path.join(os.path.dirname(tar_name), "md5.sum");
 
@@ -458,11 +529,6 @@ class PackageIni():
         ));
         f.close();
 
-        self.install.__dict__[distname].size = long(os.path.getsize(tar_name));
-        self.source.__dict__[distname].size = long(os.path.getsize(tar_src_name));
-        self.install.__dict__[distname].md5 = md5sum;
-        self.source.__dict__[distname].md5 = md5sum_src;
-
     def _compressFollowingTargetExtension(self, srcPath, targetPath):
         compression = targetPath.split(".")[-1];
         if "bz2" == compression :
@@ -476,6 +542,45 @@ class PackageIni():
             os.remove(srcPath);
         elif "xz" == compression :
             subprocess.check_call(['xz', '-f', srcPath]);
+
+    def _md5Sum(self, path):
+        """Generate the md5sum from a file.
+
+        @param path: str The path to a file for unsed to generate md5sum.
+
+        @return: str The resulted md5sum.
+        """
+        f = open(path, 'rb');
+        content = f.read();
+        f.close();
+
+        return hashlib.md5(content).hexdigest();
+
+    def _fileSize(self, path):
+        """Determine the file size for the specified path.
+
+        @param path: str The path to check the file size.
+
+        @return: integer The file size.
+        """
+        return long(os.path.getsize(path));
+
+    def _getFileList(self, distname):
+        """Gets file list from a distribution.
+
+        @param distname: str The distribution name.
+
+        @return: list A list of paths that contains the given distribution.
+        """
+        tar_name = os.path.join(self._localMirror, self.install.__dict__[distname].url);
+
+        f = open("{0}.lst".format(tar_name), 'r');
+        contents = f.read();
+        f.close();
+
+        lst = contents.split("\n");
+
+        return lst;
 
 class DistNameStruct():
     def __init__(self):
