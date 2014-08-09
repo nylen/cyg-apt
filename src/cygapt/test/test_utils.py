@@ -98,57 +98,157 @@ class TestUtils(TestCase):
         if os.path.exists(src):
             os.unlink(src);
 
-    def testRmtree(self):
-        # create tree
-        root = os.path.join(self._getTmpDir(), "root~");
-        subdir = os.path.join(root, "subdir~");
-        rootfile = os.path.join(root, "file~");
-        subdirfile = os.path.join(subdir, "file~");
-        def build_tree():
-            if not os.path.exists(subdir):
-                os.makedirs(subdir);
-            f = open(rootfile, 'w');
-            e = open(subdirfile, 'w');
-            f.close();
-            e.close();
+    def testRmtreeCleansFilesAndDirectories(self):
+        basePath = self._getTmpDir()+os.path.sep;
 
-        def rm_tree():
-            if os.path.exists(rootfile):
-                os.unlink(rootfile);
-            if os.path.exists(rootfile):
-                os.unlink(subdirfile);
-            if os.path.exists(rootfile):
-                os.rmdir(subdir);
-            if os.path.exists(rootfile):
-                os.rmdir(root);
+        os.mkdir(basePath+"dir");
+        open(basePath+"file", 'w').close();
 
-        build_tree();
+        utils.rmtree(basePath+"dir");
+        utils.rmtree(basePath+"file");
 
-        utils.rmtree(root);
-        ok = False;
-        if os.path.exists(subdirfile) or \
-           os.path.exists(subdir) or \
-           os.path.exists(rootfile) or \
-           os.path.exists(root):
-            ok = False;
-        else:
-            ok = True;
+        self.assertFalse(os.path.isdir(basePath+"dir"));
+        self.assertFalse(os.path.isfile(basePath+"file"));
 
-        self.assertTrue(ok);
-        rm_tree();
+    def testRmtreeCleansFilesAndDirectoriesIteratively(self):
+        basePath = os.path.join(self._getTmpDir(), "directory")+os.path.sep;
 
-        build_tree();
-        utils.rmtree(rootfile);
-        ok = False;
-        if  os.path.exists(subdirfile) and \
-            os.path.exists(subdir) and \
-            not os.path.exists(rootfile) and \
-            os.path.exists(root):
-            ok = True;
-        else:
-            ok = False;
-        self.assertTrue(ok);
-        rm_tree();
+        os.mkdir(basePath);
+        os.mkdir(basePath+"dir");
+        open(basePath+"file", 'w').close();
+
+        utils.rmtree(basePath);
+
+        self.assertFalse(os.path.isdir(basePath));
+
+    def testRmtreeCleansWithoutReadPermission(self):
+        basePath = os.path.join(self._getTmpDir(), "directory")+os.path.sep;
+
+        os.mkdir(basePath);
+        os.mkdir(basePath+"dir");
+        open(basePath+"file", 'w').close();
+
+        # Removes read permission
+        os.chmod(basePath+"dir", 0o000);
+        os.chmod(basePath+"file", 0o000);
+
+        utils.rmtree(basePath+"dir");
+        utils.rmtree(basePath+"file");
+
+        self.assertFalse(os.path.isdir(basePath+"dir"));
+        self.assertFalse(os.path.isfile(basePath+"file"));
+
+    def testRmtreeCleansWithoutReadPermissionIteratively(self):
+        basePath = os.path.join(self._getTmpDir(), "directory")+os.path.sep;
+
+        os.mkdir(basePath);
+        os.mkdir(basePath+"dir");
+        open(basePath+"file", 'w').close();
+
+        # Removes read permission
+        os.chmod(basePath+"dir", 0o000);
+        os.chmod(basePath+"file", 0o000);
+
+        utils.rmtree(basePath);
+
+        self.assertFalse(os.path.isdir(basePath));
+
+    def testRmtreeIgnoresNonExistingFiles(self):
+        basePath = self._getTmpDir()+os.path.sep;
+
+        os.mkdir(basePath+"dir");
+
+        utils.rmtree(basePath+"dir");
+        utils.rmtree(basePath+"file");
+
+        self.assertFalse(os.path.isdir(basePath+"dir"));
+
+    def testRmtreeCleansValidLinksToFile(self):
+        if not hasattr(os, "symlink") :
+            self.skipTest("symlink is not supported");
+
+        basePath = self._getTmpDir()+os.path.sep;
+
+        open(basePath+"file", 'w').close();
+        os.symlink(basePath+"file", basePath+"link");
+
+        utils.rmtree(basePath+"link");
+
+        self.assertTrue(os.path.isfile(basePath+"file"));
+        self.assertFalse(os.path.islink(basePath+"link"));
+
+    def testRmtreeCleansValidLinksToFileIteratively(self):
+        if not hasattr(os, "symlink") :
+            self.skipTest("symlink is not supported");
+
+        basePath = self._getTmpDir()+os.path.sep;
+
+        os.mkdir(basePath+"dir");
+        open(basePath+"file", 'w').close();
+        os.symlink(basePath+"file", basePath+"dir"+os.path.sep+"link");
+
+        utils.rmtree(basePath+"dir");
+
+        self.assertTrue(os.path.isfile(basePath+"file"));
+        self.assertFalse(os.path.isdir(basePath+"dir"));
+
+    def testRmtreeCleansValidLinksToDirectory(self):
+        if not hasattr(os, "symlink") :
+            self.skipTest("symlink is not supported");
+
+        basePath = self._getTmpDir()+os.path.sep;
+
+        os.mkdir(basePath+"dir");
+        os.symlink(basePath+"dir", basePath+"link");
+
+        utils.rmtree(basePath+"link");
+
+        self.assertTrue(os.path.isdir(basePath+"dir"));
+        self.assertFalse(os.path.islink(basePath+"link"));
+
+    def testRmtreeCleansValidLinksToDirectoryIteratively(self):
+        if not hasattr(os, "symlink") :
+            self.skipTest("symlink is not supported");
+
+        basePath = self._getTmpDir()+os.path.sep;
+
+        os.mkdir(basePath+"dir");
+        os.mkdir(basePath+"dir2");
+        os.symlink(basePath+"dir2", basePath+"dir"+os.path.sep+"link");
+
+        utils.rmtree(basePath+"dir");
+
+        self.assertTrue(os.path.isdir(basePath+"dir2"));
+        self.assertFalse(os.path.isdir(basePath+"dir"));
+
+    def testRmtreeCleansInvalidLinks(self):
+        if not hasattr(os, "symlink") :
+            self.skipTest("symlink is not supported");
+
+        basePath = self._getTmpDir()+os.path.sep;
+
+        # create symlink to unexisting file
+        os.symlink(basePath+"file", basePath+"link");
+
+        utils.rmtree(basePath+"link");
+
+        self.assertFalse(os.path.islink(basePath+"link"));
+
+    def testRmtreeCleansInvalidLinksIteratively(self):
+        if not hasattr(os, "symlink") :
+            self.skipTest("symlink is not supported");
+
+        basePath = os.path.join(self._getTmpDir(), "directory")+os.path.sep;
+
+        os.mkdir(basePath);
+        os.mkdir(basePath+"dir");
+
+        # create symlink to unexisting file
+        os.symlink(basePath+"file", basePath+"link");
+
+        utils.rmtree(basePath);
+
+        self.assertFalse(os.path.isdir(basePath));
 
     def testUriGet(self):
         directory = self._getTmpDir();
