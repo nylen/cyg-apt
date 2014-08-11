@@ -124,6 +124,7 @@ class TestCase(unittest.TestCase):
             for filename in files:
                 subpath = os.path.join(path, filename);
                 if os.path.isdir(subpath):
+                    os.chmod(subpath, 0o400);
                     rmtree(subpath);
                 else:
                     os.remove(subpath);

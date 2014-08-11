@@ -21,6 +21,7 @@ import subprocess;
 import sys;
 import tarfile;
 import urlparse;
+import stat;
 
 from cygapt.exception import ApplicationException;
 from cygapt.exception import InvalidArgumentException;
@@ -92,20 +93,37 @@ def rename(src, dest):
     os.rename(src, dest);
 
 def rmtree(path):
-    if os.path.exists(path):
-        if os.path.isdir(path):
-            rmtree_helper(path);
-            shutil.rmtree(path);
-        else:
-            os.chmod(path, 0o777);
-            os.remove(path);
+    """Removes the given path without following symlinks.
+
+    It can remove directory content also if it does not reading permission.
+
+    @param path: str A link, file or directory path.
+
+    @raise OSError: When the path cannot be removed.
+    """
+    if os.path.islink(path) or os.path.isfile(path) :
+        os.remove(path);
+
+        return;
+
+    if os.path.isdir(path) :
+        rmtree_helper(path);
+        shutil.rmtree(path);
 
 def rmtree_helper(path):
-    if os.path.isdir:
+    """Adds a reading permission for owner for each directories recursively.
+
+    @param path: str The directory path.
+
+    @raise OSError: When the reading permission cannot be set.
+    """
+    if os.path.isdir(path):
+        # Adds read permission for owner.
+        os.chmod(path, stat.S_IRUSR | os.stat(path)[stat.ST_MODE]);
+
         files = os.listdir(path);
         for x in files:
             fullpath = os.path.join(path, x);
-            os.chmod(fullpath, 0o777);
             if os.path.isdir(fullpath):
                 rmtree_helper(fullpath);
 
