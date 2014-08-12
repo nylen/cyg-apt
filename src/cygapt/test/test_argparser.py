@@ -75,24 +75,24 @@ class TestArgParser(unittest.TestCase):
     def testNoPostInstallOptionIsDeprecated(self):
         sys.argv.append("-y");
 
-        with warnings.catch_warnings(record=True) as warnList:
-            # Cause all warnings to always be triggered.
-            warnings.simplefilter("always");
-
-            # Trigger a warning.
-            ret = self.obj.parse();
-
-            # Verify some things
-            self.assertTrue(warnList, "At least one warning.");
-            warn = warnList[-1];
-            self.assertTrue(issubclass(warn.category, DeprecationWarning));
-            self.assertEqual(
-                "The option -y, --nopostinstall is deprecated since version "
-                "1.1 and will be removed in 2.0.",
-                str(warn.message)
-            );
+        ret = self._assertDeprecatedWarning(
+            "The option -y, --nopostinstall is deprecated since version "
+            "1.1 and will be removed in 2.0.",
+            self.obj.parse
+        );
 
         self.assertTrue(ret.nopostinstall);
+
+    def testNoPostRemoveOptionIsDeprecated(self):
+        sys.argv.append("-z");
+
+        ret = self._assertDeprecatedWarning(
+            "The option -z, --nopostremove is deprecated since version "
+            "1.1 and will be removed in 2.0.",
+            self.obj.parse
+        );
+
+        self.assertTrue(ret.nopostremove);
 
     def _assertParseCommand(self, command, args=None):
         """
@@ -110,6 +110,22 @@ class TestArgParser(unittest.TestCase):
 
         self.assertEqual(ret.command, command);
         self.assertEqual(ret.package, args);
+
+    def _assertDeprecatedWarning(self, message, callback, *args, **kwargs):
+        with warnings.catch_warnings(record=True) as warnList:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always");
+
+            # Trigger a warning.
+            ret = callback(*args, **kwargs);
+
+            # Verify some things
+            self.assertTrue(warnList, "At least one warning.");
+            warn = warnList[-1];
+            self.assertTrue(issubclass(warn.category, DeprecationWarning));
+            self.assertEqual(message, str(warn.message));
+
+        return ret;
 
 if __name__ == "__main__":
     unittest.main();
