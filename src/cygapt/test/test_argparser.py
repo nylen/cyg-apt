@@ -19,6 +19,7 @@ from __future__ import absolute_import;
 
 import unittest;
 import sys;
+import warnings;
 
 from cygapt.argparser import CygAptArgParser;
 
@@ -67,6 +68,28 @@ class TestArgParser(unittest.TestCase):
 
         self.assertEqual("curr", ret.distname);
         self.assertEqual(True, ret.verbose);
+
+    def testNoPostInstallOptionIsDeprecated(self):
+        sys.argv.append("-y");
+
+        with warnings.catch_warnings(record=True) as warnList:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always");
+
+            # Trigger a warning.
+            ret = self.obj.parse();
+
+            # Verify some things
+            self.assertTrue(warnList, "At least one warning.");
+            warn = warnList[-1];
+            self.assertTrue(issubclass(warn.category, DeprecationWarning));
+            self.assertEqual(
+                "The option -y, --nopostinstall is deprecated since version "
+                "1.1 and will be removed in 2.0.",
+                str(warn.message)
+            );
+
+        self.assertTrue(ret.nopostinstall);
 
     def _assertParseCommand(self, command, args=None):
         """
