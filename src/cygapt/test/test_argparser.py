@@ -48,6 +48,8 @@ class TestArgParser(unittest.TestCase):
         self.assertEqual(ret.command, "install");
         self.assertEqual(ret.package, ['pkg']);
 
+    def testParsePostInstall(self):
+        self._assertParseCommand("postinstall");
 
     def testArgumentType(self):
         sys.argv.append("--mirror=http://a.mirror.str");
@@ -66,6 +68,22 @@ class TestArgParser(unittest.TestCase):
         self.assertEqual("curr", ret.distname);
         self.assertEqual(True, ret.verbose);
 
+    def _assertParseCommand(self, command, args=None):
+        """
+        @param command: str
+        @param args:    list
+        """
+        if None is args :
+            args = list();
+
+        sys.argv.append(command);
+        for arg in args :
+            sys.argv.append(arg);
+
+        ret = self.obj.parse();
+
+        self.assertEqual(ret.command, command);
+        self.assertEqual(ret.package, args);
 
 if __name__ == "__main__":
     unittest.main();

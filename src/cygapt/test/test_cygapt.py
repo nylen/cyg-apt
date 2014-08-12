@@ -302,6 +302,31 @@ class TestCygApt(TestCase):
         self.obj._postInstall();
         self.assertPostInstall();
 
+    def testPostInstallWhenScriptSuccess(self):
+        foo = os.path.join(self._dir_postinstall, "foo.sh");
+        bar = os.path.join(self._dir_postinstall, "bar.sh");
+        self._writeScript(foo, 0);
+        self._writeScript(bar, 0);
+
+        self.obj.postinstall();
+
+        self.assertPostInstall();
+        self.assertTrue(os.path.isfile(foo+".done"));
+        self.assertTrue(os.path.isfile(bar+".done"));
+
+    def testPostInstallWhenScriptFails(self):
+        foo = os.path.join(self._dir_postinstall, "foo.sh");
+        self._writeScript(foo, 1);
+        bar = os.path.join(self._dir_postinstall, "bar.sh");
+        self._writeScript(bar, 2);
+
+        self.obj.postinstall();
+
+        self.assertTrue(os.path.isfile(foo));
+        self.assertFalse(os.path.isfile(foo+".done"));
+        self.assertTrue(os.path.isfile(bar));
+        self.assertFalse(os.path.isfile(bar+".done"));
+
     def testGetFileList(self):
         self.testDoInstall();
         expected = self._var_setupIni.pkg.filelist;
@@ -491,6 +516,23 @@ class TestCygApt(TestCase):
                 contents = f.read();
             for line in contents.splitlines() :
                 self.assertNotEqual(line.split()[0], pkg.name, message);
+
+    def _writeScript(self, path, exitCode=0):
+        """Writes sh script to path.
+
+        @param path:     str     A file to write the sript.
+        @param exitCode: integer The exit code of the script.
+        """
+        directory = os.path.dirname(path);
+        if not os.path.isdir(directory) :
+            os.makedirs(directory);
+
+        with open(path, 'w') as f :
+            f.write("\n".join([
+                "#!/bin/sh",
+                "exit {0:d};",
+                "",
+            ]).format(exitCode));
 
 if __name__ == "__main__":
     unittest.main();
