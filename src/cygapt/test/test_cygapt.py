@@ -20,7 +20,6 @@ import os;
 import gzip;
 
 from cygapt.cygapt import CygApt;
-from cygapt.setup import CygAptSetup;
 from cygapt.ob import CygAptOb;
 from cygapt.test.utils import TestCase;
 from cygapt.path_mapper import PathMapper;
@@ -36,14 +35,7 @@ class TestCygApt(TestCase):
         if not self._var_cygwin_p:
             self.skipTest("requires cygwin");
 
-        setup = CygAptSetup(self._var_cygwin_p, self._var_verbose);
-        setup.setTmpDir(self._dir_tmp);
-        setup.setAppName(self._var_exename);
-        setup.setSetupDir(self._dir_confsetup);
-        setup.getRC().ROOT = self._dir_mtroot;
-
-        setup._gpgImport(setup.GPG_CYG_PUBLIC_RING_URI);
-        setup.setup();
+        self._writeUserConfig();
 
         f = open(self._file_setup_ini, 'w');
         f.write(self._var_setupIni.contents);
