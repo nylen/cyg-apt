@@ -189,6 +189,13 @@ class CygAptArgParser():
                 DeprecationWarning
             );
 
+        if args.nopostremove :
+            warnings.warn(
+                "The option -z, --nopostremove is deprecated since version "
+                "1.1 and will be removed in 2.0.",
+                DeprecationWarning
+            );
+
         return args;
 
     def __castTypes(self, args):
