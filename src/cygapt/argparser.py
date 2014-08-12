@@ -51,6 +51,7 @@ class CygAptArgParser():
             'upgrade',
             'url',
             'version',
+            'postinstall',
         ];
 
 
