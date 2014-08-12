@@ -53,6 +53,7 @@ class CygAptArgParser():
             'url',
             'version',
             'postinstall',
+            'postremove',
         ];
 
 
