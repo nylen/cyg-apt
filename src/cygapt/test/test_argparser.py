@@ -52,6 +52,9 @@ class TestArgParser(unittest.TestCase):
     def testParsePostInstall(self):
         self._assertParseCommand("postinstall");
 
+    def testParsePostRemove(self):
+        self._assertParseCommand("postremove", ["pkg"]);
+
     def testArgumentType(self):
         sys.argv.append("--mirror=http://a.mirror.str");
         sys.argv.append("update");

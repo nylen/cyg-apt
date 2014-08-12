@@ -327,6 +327,52 @@ class TestCygApt(TestCase):
         self.assertTrue(os.path.isfile(bar));
         self.assertFalse(os.path.isfile(bar+".done"));
 
+    def testPostRemoveWhenScriptSuccess(self):
+        self._var_packagename = "foo";
+        self._var_files = ["", "foo", "bar"];
+        self.obj = self._createCygApt();
+
+        prefoo = os.path.join(self._dir_preremove, "foo.sh");
+        foo = os.path.join(self._dir_postremove, "foo.sh");
+        bar = os.path.join(self._dir_postremove, "bar.sh");
+        baz = os.path.join(self._dir_postremove, "baz.sh");
+        self._writeScript(prefoo, 0);
+        self._writeScript(foo, 0);
+        self._writeScript(bar, 0);
+        self._writeScript(baz, 0);
+
+        self.obj.postremove();
+
+        self.assertFalse(os.path.isfile(prefoo));
+        self.assertTrue(os.path.isfile(prefoo+".done"));
+        self.assertFalse(os.path.isfile(foo));
+        self.assertTrue(os.path.isfile(foo+".done"));
+        self.assertFalse(os.path.isfile(bar));
+        self.assertTrue(os.path.isfile(bar+".done"));
+        self.assertTrue(os.path.isfile(baz));
+        self.assertFalse(os.path.isfile(baz+".done"));
+
+    def testPostRemoveWhenScriptFails(self):
+        self._var_packagename = "foo";
+        self._var_files = ["", "foo", "bar"];
+        self.obj = self._createCygApt();
+
+        prefoo = os.path.join(self._dir_preremove, "foo.sh");
+        foo = os.path.join(self._dir_postremove, "foo.sh");
+        bar = os.path.join(self._dir_postremove, "bar.sh");
+        self._writeScript(prefoo, 1);
+        self._writeScript(foo, 1);
+        self._writeScript(bar, 2);
+
+        self.obj.postremove();
+
+        self.assertTrue(os.path.isfile(prefoo));
+        self.assertFalse(os.path.isfile(prefoo+".done"));
+        self.assertTrue(os.path.isfile(foo));
+        self.assertFalse(os.path.isfile(foo+".done"));
+        self.assertTrue(os.path.isfile(bar));
+        self.assertFalse(os.path.isfile(bar+".done"));
+
     def testGetFileList(self):
         self.testDoInstall();
         expected = self._var_setupIni.pkg.filelist;

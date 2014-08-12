@@ -233,11 +233,17 @@ class TestSetup(TestCase):
         self.obj.usage();
 
     def testUsageContainPostInstallCommand(self):
+        self._assertUsageContainCommand("postinstall");
+
+    def testUsageContainPostRemoveCommand(self):
+        self._assertUsageContainCommand("postremove");
+
+    def _assertUsageContainCommand(self, command):
         ob = CygAptOb(True);
         self.obj.usage();
         ret = ob.getClean();
 
-        self.assertTrue("    postinstall" in ret);
+        self.assertTrue("    {0}".format(command) in ret);
 
     def _assertUpdate(self):
         """Asserts that the local setup.ini has been updated.
