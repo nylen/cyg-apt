@@ -46,7 +46,10 @@ setup(
         'cygapt.test.case.py2',
         'cygapt.test.case.py2.minor6',
     ],
-    package_data={pkgname: ['LICENSE']},
+    package_data={pkgname: [
+        'LICENSE',
+        'test/fixtures/utils/*',
+    ]},
     version=version,
     description="A Cygwin command line package management tool.",
     long_description=long_description,

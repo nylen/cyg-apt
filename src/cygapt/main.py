@@ -17,13 +17,13 @@ from __future__ import absolute_import;
 
 import sys;
 import os;
-import platform;
 
 import cygapt.utils as cautils;
 from cygapt.setup import CygAptSetup;
 from cygapt.argparser import CygAptArgParser;
 from cygapt.cygapt import CygApt;
 from cygapt.exception import ApplicationException;
+from cygapt.path_mapper import PathMapper;
 
 class CygAptMain():
     def __init__(self):
@@ -86,11 +86,23 @@ class CygAptMain():
             return 1;
 
         # create a CygAptSetup instance and its dependencies
-        main_arch = "x86";
-        if "x86_64" == platform.machine() :
-            main_arch = "x86_64";
-
         main_cygwin_p = (sys.platform == "cygwin");
+
+        is_64_bit = False;
+        if main_cygwin_p :
+            # Running Cygwin python, so python architecture == Cygwin architecture
+            if 2**32 < sys.maxsize :
+                is_64_bit = True;
+        elif config and main_command != 'setup' :
+            # Running Windows python, so examine cygwin1.dll
+            pathMapper = PathMapper(config.ROOT.rstrip('\\/'), main_cygwin_p);
+            if cautils.pe_is_64_bit(pathMapper.mapPath("/bin/cygwin1.dll")) :
+                is_64_bit = True;
+
+        if is_64_bit :
+            main_arch = 'x86_64';
+        else:
+            main_arch = 'x86';
 
         cas = CygAptSetup(main_cygwin_p, main_verbose, main_arch);
 

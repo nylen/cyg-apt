@@ -21,6 +21,7 @@ import stat;
 
 import cygapt.utils as utils;
 from cygapt.exception import ApplicationException;
+from cygapt.exception import UnexpectedValueException;
 from cygapt.test.utils import TestCase;
 from cygapt.structure import ConfigStructure;
 
@@ -411,6 +412,76 @@ class TestUtils(TestCase):
             filelist.append(path);
 
         self.assertEqual(sorted(filelist), sorted(self._var_setupIni.__dict__[pkgname].filelist));
+
+    def testPEArchitecture(self):
+        p = os.path.dirname(__file__); # ./src/cygapt/test
+        p = os.path.join(p, 'fixtures', 'utils');
+
+        fn = os.path.join(p, 'cyglsa.dll');
+        self.assertFalse(utils.pe_is_64_bit(fn));
+
+        fn = os.path.join(p, 'cyglsa64.dll');
+        self.assertTrue(utils.pe_is_64_bit(fn));
+
+        try:
+            fn = os.path.join(p, 'cyglsa-bad1.dll');
+            utils.pe_is_64_bit(fn);
+        except Exception as e:
+            self.assertTrue(isinstance(e, UnexpectedValueException));
+            self.assertEqual(
+                str(e),
+                "File '{0}' is not a DOS executable.".format(fn)
+            );
+        else:
+            self.fail(
+                "Expected UnexpectedValueException"
+                " (not a DOS executable)."
+            );
+
+        try:
+            fn = os.path.join(p, 'cyglsa-bad2.dll');
+            utils.pe_is_64_bit(fn);
+        except Exception as e:
+            self.assertTrue(isinstance(e, UnexpectedValueException));
+            self.assertEqual(
+                str(e),
+                "Could not find PE header in file '{0}'.".format(fn)
+            );
+        else:
+            self.fail(
+                "Expected UnexpectedValueException"
+                " (could not find PE header)."
+            );
+
+        try:
+            fn = os.path.join(p, 'cyglsa-bad3.dll');
+            utils.pe_is_64_bit(fn);
+        except Exception as e:
+            self.assertTrue(isinstance(e, UnexpectedValueException));
+            self.assertEqual(
+                str(e),
+                "Bad machine value 0xDEAD in file '{0}'.".format(fn)
+            );
+        else:
+            self.fail(
+                "Expected UnexpectedValueException"
+                " (bad machine value)."
+            );
+
+        try:
+            fn = os.path.join(p, 'cyglsa-bad4.dll');
+            utils.pe_is_64_bit(fn);
+        except Exception as e:
+            self.assertTrue(isinstance(e, UnexpectedValueException));
+            self.assertEqual(
+                str(e),
+                "Could not find PE header in file '{0}'.".format(fn)
+            );
+        else:
+            self.fail(
+                "Expected UnexpectedValueException"
+                " (truncated before PE header)."
+            );
 
 if __name__ == "__main__":
     unittest.main();

@@ -17,6 +17,7 @@ from __future__ import absolute_import;
 import os;
 import re;
 import shutil;
+import struct;
 import subprocess;
 import sys;
 import tarfile;
@@ -26,6 +27,7 @@ import warnings;
 
 from cygapt.exception import ApplicationException;
 from cygapt.exception import InvalidArgumentException;
+from cygapt.exception import UnexpectedValueException;
 from cygapt.url_opener import CygAptURLopener;
 from cygapt.structure import ConfigStructure;
 
@@ -196,6 +198,43 @@ def uri_get(directory, uri, verbose=False):
         os.chdir(old_cwd);
     else:
         raise InvalidArgumentException("bad URL {0}".format(uri));
+
+def pe_is_64_bit(fn):
+    """Reads the header of a PE (.exe or .dll) file to determine its
+    architecture.
+
+    @param fn: str The PE filename to read.
+
+    @return: bool Whether the PE file is 64-bit.
+
+    @raise UnexpectedValueException: If an invalid value is found.
+    @raise IOError: If a read error occurs.
+    """
+    with open(fn, "rb") as f:
+        if "MZ" != f.read(2) :
+            raise UnexpectedValueException(
+                "File '{0}' is not a DOS executable."
+                "".format(fn)
+            );
+        f.seek(0x3c); # Offset of PE header (e_lfanew in DOS header)
+        pe_header = struct.unpack('<L', f.read(4))[0];
+        f.seek(pe_header);
+        if "PE\0\0" != f.read(4) :
+            raise UnexpectedValueException(
+                "Could not find PE header in file '{0}'."
+                "".format(fn)
+            );
+        f.seek(pe_header + 0x4); # Machine field of COFF header
+        machine = struct.unpack('<H', f.read(2))[0];
+        if 0x014c == machine :
+            return False;
+        elif 0x8664 == machine :
+            return True;
+        else:
+            raise UnexpectedValueException(
+                "Bad machine value 0x{0:X} in file '{1}'."
+                "".format(machine, fn)
+            );
 
 class RequestException(ApplicationException):
     pass;
