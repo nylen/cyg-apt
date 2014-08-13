@@ -17,6 +17,7 @@ from __future__ import absolute_import;
 import unittest;
 import sys;
 import os;
+import stat;
 
 import cygapt.utils as utils;
 from cygapt.exception import ApplicationException;
@@ -121,14 +122,14 @@ class TestUtils(TestCase):
 
         self.assertFalse(os.path.isdir(basePath));
 
-    def testRmtreeCleansWithoutReadPermission(self):
+    def testRmtreeCleansWithoutPermission(self):
         basePath = os.path.join(self._getTmpDir(), "directory")+os.path.sep;
 
         os.mkdir(basePath);
         os.mkdir(basePath+"dir");
         open(basePath+"file", 'w').close();
 
-        # Removes read permission
+        # Removes permissions
         os.chmod(basePath+"dir", 0o000);
         os.chmod(basePath+"file", 0o000);
 
@@ -138,14 +139,14 @@ class TestUtils(TestCase):
         self.assertFalse(os.path.isdir(basePath+"dir"));
         self.assertFalse(os.path.isfile(basePath+"file"));
 
-    def testRmtreeCleansWithoutReadPermissionIteratively(self):
+    def testRmtreeCleansWithoutPermissionIteratively(self):
         basePath = os.path.join(self._getTmpDir(), "directory")+os.path.sep;
 
         os.mkdir(basePath);
         os.mkdir(basePath+"dir");
         open(basePath+"file", 'w').close();
 
-        # Removes read permission
+        # Removes permissions
         os.chmod(basePath+"dir", 0o000);
         os.chmod(basePath+"file", 0o000);
 
@@ -192,6 +193,43 @@ class TestUtils(TestCase):
         self.assertTrue(os.path.isfile(basePath+"file"));
         self.assertFalse(os.path.isdir(basePath+"dir"));
 
+    def testRmtreeKeepsTargetLinkPermissionsToFile(self):
+        if not hasattr(os, "symlink") :
+            self.skipTest("symlink is not supported");
+
+        basePath = self._getTmpDir()+os.path.sep;
+
+        open(basePath+"file", 'w').close();
+        os.symlink(basePath+"file", basePath+"link");
+
+        # Removes permissions
+        os.chmod(basePath+"file", 0o000);
+        fileMode = os.stat(basePath+"file")[stat.ST_MODE];
+
+        utils.rmtree(basePath+"link");
+
+        self.assertTrue(os.path.isfile(basePath+"file"));
+        self.assertEqual(fileMode, os.stat(basePath+"file")[stat.ST_MODE]);
+
+    def testRmtreeKeepsTargetLinkPermissionsToFileIteratively(self):
+        if not hasattr(os, "symlink") :
+            self.skipTest("symlink is not supported");
+
+        basePath = self._getTmpDir()+os.path.sep;
+
+        os.mkdir(basePath+"dir");
+        open(basePath+"file", 'w').close();
+        os.symlink(basePath+"file", basePath+"dir"+os.path.sep+"link");
+
+        # Removes permissions
+        os.chmod(basePath+"file", 0o000);
+        fileMode = os.stat(basePath+"file")[stat.ST_MODE];
+
+        utils.rmtree(basePath+"dir");
+
+        self.assertTrue(os.path.isfile(basePath+"file"));
+        self.assertEqual(fileMode, os.stat(basePath+"file")[stat.ST_MODE]);
+
     def testRmtreeCleansValidLinksToDirectory(self):
         if not hasattr(os, "symlink") :
             self.skipTest("symlink is not supported");
@@ -220,6 +258,43 @@ class TestUtils(TestCase):
 
         self.assertTrue(os.path.isdir(basePath+"dir2"));
         self.assertFalse(os.path.isdir(basePath+"dir"));
+
+    def testRmtreeKeepsTargetLinkPermissionsToDirectory(self):
+        if not hasattr(os, "symlink") :
+            self.skipTest("symlink is not supported");
+
+        basePath = self._getTmpDir()+os.path.sep;
+
+        os.mkdir(basePath+"dir");
+        os.symlink(basePath+"dir", basePath+"link");
+
+        # Removes permissions
+        os.chmod(basePath+"dir", 0o000);
+        fileMode = os.stat(basePath+"dir")[stat.ST_MODE];
+
+        utils.rmtree(basePath+"link");
+
+        self.assertTrue(os.path.isdir(basePath+"dir"));
+        self.assertEqual(fileMode, os.stat(basePath+"dir")[stat.ST_MODE]);
+
+    def testRmtreeKeepsTargetLinkPermissionsToDirectoryIteratively(self):
+        if not hasattr(os, "symlink") :
+            self.skipTest("symlink is not supported");
+
+        basePath = self._getTmpDir()+os.path.sep;
+
+        os.mkdir(basePath+"dir");
+        os.mkdir(basePath+"dir2");
+        os.symlink(basePath+"dir2", basePath+"dir"+os.path.sep+"link");
+
+        # Removes permissions
+        os.chmod(basePath+"dir2", 0o000);
+        fileMode = os.stat(basePath+"dir2")[stat.ST_MODE];
+
+        utils.rmtree(basePath+"dir");
+
+        self.assertTrue(os.path.isdir(basePath+"dir2"));
+        self.assertEqual(fileMode, os.stat(basePath+"dir2")[stat.ST_MODE]);
 
     def testRmtreeCleansInvalidLinks(self):
         if not hasattr(os, "symlink") :
