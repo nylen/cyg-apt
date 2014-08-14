@@ -435,6 +435,19 @@ class TestCygApt(TestCase):
                         "{0} not exists".format(filename)
                     );
 
+            # Confirm the package is represented in installed.db
+            message = "The package '{0}' is in '{1}'.".format(
+                pkg.name,
+                self._file_installed_db,
+            );
+            with open(self._file_installed_db, 'r') as f :
+                contents = f.read();
+            line = "{0} {1} 0".format(
+                pkg.name,
+                os.path.basename(pkg.install.curr.url),
+            );
+            self.assertTrue(line in contents.splitlines(), message);
+
     def assertPostInstall(self):
         for filename in os.listdir(self._dir_postinstall):
             if filename[-3:] == ".sh":
@@ -461,6 +474,23 @@ class TestCygApt(TestCase):
             for filename in os.listdir(self._dir_postremove):
                 if filename == pkg.name + ".sh":
                     self.fail("{0} postremove runing fail".format(filename));
+
+            # Next confirm that the filelist file is gone
+            # Not the original cyg-apt behaviour but setup.exe removes
+            # this file, so that's taken as correct behaviour.
+            filelist = os.path.join(self._dir_confsetup, pkg.name+".lst.gz");
+            message = "The '{0}' file is gone.".format(filelist);
+            self.assertFalse(os.path.isfile(filelist), message);
+
+            # Confirm the package is not represented in installed.db
+            message = "The package '{0}' is not in '{1}'.".format(
+                pkg.name,
+                self._file_installed_db,
+            );
+            with open(self._file_installed_db, 'r') as f :
+                contents = f.read();
+            for line in contents.splitlines() :
+                self.assertNotEqual(line.split()[0], pkg.name, message);
 
 if __name__ == "__main__":
     unittest.main();
