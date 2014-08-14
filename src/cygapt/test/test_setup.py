@@ -30,6 +30,7 @@ from cygapt.setup import EnvironementException;
 from cygapt.exception import PathExistsException;
 from cygapt.exception import UnexpectedValueException;
 from cygapt.setup import SignatureException;
+from cygapt.ob import CygAptOb;
 
 
 class TestSetup(TestCase):
@@ -230,6 +231,19 @@ class TestSetup(TestCase):
 
     def testUsage(self):
         self.obj.usage();
+
+    def testUsageContainPostInstallCommand(self):
+        self._assertUsageContainCommand("postinstall");
+
+    def testUsageContainPostRemoveCommand(self):
+        self._assertUsageContainCommand("postremove");
+
+    def _assertUsageContainCommand(self, command):
+        ob = CygAptOb(True);
+        self.obj.usage();
+        ret = ob.getClean();
+
+        self.assertTrue("    {0}".format(command) in ret);
 
     def _assertUpdate(self):
         """Asserts that the local setup.ini has been updated.

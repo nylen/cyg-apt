@@ -1083,6 +1083,14 @@ class CygApt:
 
         self._barredWarnIfNeed(barred, "installing");
 
+    def postinstall(self):
+        """Executes all undone postinstall scripts."""
+        self._postInstall();
+
+    def postremove(self):
+        """Executes all undone preremove and postremove scripts."""
+        self._postRemove();
+
     def _integrityControl(self, checklist=[]):
         options = "-c ";
         if self.__verbose:

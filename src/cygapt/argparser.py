@@ -14,6 +14,7 @@
 from __future__ import absolute_import;
 
 import argparse;
+import warnings;
 
 class CygAptArgParser():
     def __init__(self, usage=None, scriptname=None):
@@ -51,6 +52,8 @@ class CygAptArgParser():
             'upgrade',
             'url',
             'version',
+            'postinstall',
+            'postremove',
         ];
 
 
@@ -178,6 +181,20 @@ class CygAptArgParser():
         args = self.__parser.parse_args();
 
         args = self.__castTypes(args);
+
+        if args.nopostinstall :
+            warnings.warn(
+                "The option -y, --nopostinstall is deprecated since version "
+                "1.1 and will be removed in 2.0.",
+                DeprecationWarning
+            );
+
+        if args.nopostremove :
+            warnings.warn(
+                "The option -z, --nopostremove is deprecated since version "
+                "1.1 and will be removed in 2.0.",
+                DeprecationWarning
+            );
 
         return args;
 

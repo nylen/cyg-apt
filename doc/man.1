@@ -7,7 +7,7 @@ cyg-apt \- A Cygwin Package Manager
 .SH SYNOPSIS
 .B cyg-apt [OPTION] [COMMAND] [PACKAGE]
 
-cyg-apt [-dhmtxsfyzq] {[install | remove | purge | source | ball | download | requires | missing  | url | requires | show | filelist | search | md5 | version ] pkg } | setup | update | upgrade | list | new | help | {find file}
+cyg-apt [-dhmtxsfyzq] {[install | remove | purge | source | ball | download | requires | missing  | url | requires | show | filelist | search | md5 | version ] pkg } | setup | update | upgrade | list | new | help | postinstall | postremove | {find file}
 
 .SH DESCRIPTION
 \fBcyg\-apt\fR is a Cygwin package manager.
@@ -134,6 +134,16 @@ md5
 checks the md5 checksum of a package in the cache against the expected md5 given in the setup.ini database.
 .RE
 .PP
+postinstall
+.RS 4
+Executes all undone postinstall scripts.
+.RE
+.PP
+postremove
+.RS 4
+Executes all undone preremove and postremove scripts.
+.RE
+.PP
 
 .SH OPTIONS
 
@@ -189,12 +199,16 @@ add/remove packages cyg-apt itself depends on.\&.
 \fB\-y\fR, \fB\-\-nopostinstall\fR
 .RS 4
 do not run postinstall scripts when installing.\&.
+.PP
+Deprecated since version 1.1 and will be removed in 2.0.
 .RE
 .PP
 
 \fB\-y\fR, \fB\-\-nopostremove\fR
 .RS 4
 do not run preremove or postremove scripts when removing.\&.
+.PP
+Deprecated since version 1.1 and will be removed in 2.0.
 .RE
 .PP
 
