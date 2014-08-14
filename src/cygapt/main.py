@@ -166,7 +166,8 @@ class CygAptMain():
                 main_dists,
                 main_installed,
                 self.getAppName(),
-                main_verbose
+                main_verbose,
+                main_arch,
             );
 
             getattr(cyg_apt, main_command)();

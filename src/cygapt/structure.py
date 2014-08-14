@@ -16,7 +16,10 @@ class ConfigStructure():
         self.ROOT = "";
         self.mirror = "";
         self.cache = "";
+
+        # BC layer for `setup_ini` configuration field
         self.setup_ini = "";
+
         self.distname = "";
         self.barred = "";
         self.always_update = False;

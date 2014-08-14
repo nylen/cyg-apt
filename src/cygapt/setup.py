@@ -41,7 +41,10 @@ class CygAptSetup:
         'ROOT',
         'mirror',
         'cache',
+
+        # BC layer for `setup_ini` configuration field
         'setup_ini',
+
         'distname',
         'barred',
         'always_update'
@@ -56,6 +59,8 @@ class CygAptSetup:
             "# Your package cache as a POSIX path: example "
             "/e/home/cygwin_package_cache\n"
         ),
+
+        # BC layer for `setup_ini` configuration field
         "setup_ini" : (
             "# setup.ini lists available packages and is "
             "downloaded from the top level\n"
@@ -63,6 +68,7 @@ class CygAptSetup:
             "/etc/setup/setup.ini,\n"
             "# seutp-2.ini for Cygwin 1.7 Beta\n"
         ),
+
         "distname" : (
             "# The distribution, current previous or test "
             "[curr, prev, test].\n"
@@ -218,6 +224,8 @@ class CygAptSetup:
                 last_mirror  = missing_mirror_marker;
         self.__rc.mirror = last_mirror;
         self.__rc.cache = last_cache;
+
+        # BC layer for `setup_ini` configuration field
         self.__rc.setup_ini = "{0}/setup.ini".format(self.__setupDir);
 
         contents = "";
@@ -238,6 +246,8 @@ class CygAptSetup:
             os.makedirs(self.__setupDir);
         if not os.path.isfile(installed_db):
             self._writeInstalled(installed_db);
+
+        # BC layer for `setup_ini` configuration field
         if not os.path.isfile(self.__rc.setup_ini):
             sys.stderr.write('getting {0}\n'.format(self.__rc.setup_ini));
             self.update(rc_file, True);
@@ -293,7 +303,10 @@ class CygAptSetup:
         if(not self.__cygwinPlatform):
             self.__pm = PathMapper(self.__rc.ROOT[:-1], False);
 
+        # BC layer for `setup_ini` configuration field
+        # to be replaced by setup_ini = "setup.ini";
         setup_ini = self.__pm.mapPath(self.__rc.setup_ini);
+
         if (main_mirror):
             mirror = main_mirror;
         else:
@@ -409,12 +422,15 @@ class CygAptSetup:
             os.path.join(self.__tmpDir, setup_ini_name),
             os.path.join(downloads, setup_ini_name)
         );
+
+        # BC layer for `setup_ini` configuration field
         if os.path.exists(setup_ini):
             shutil.copy(setup_ini, "{0}.bak".format(setup_ini));
         shutil.copy(
             os.path.join(downloads, setup_ini_name),
             setup_ini
         );
+
         if os.path.exists(os.path.join(self.__tmpDir, setup_ini_name)):
             os.remove(os.path.join(self.__tmpDir, setup_ini_name));
         if sig_name:

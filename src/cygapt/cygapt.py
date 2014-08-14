@@ -60,6 +60,7 @@ class CygApt:
         main_installed,
         main_scriptname,
         main_verbose,
+        arch,
         setupDir="/etc/setup",
     ):
 
@@ -78,6 +79,8 @@ class CygApt:
         self.__verbose = main_verbose;
         self.__setupDir = setupDir;
         self.__rc = ConfigStructure();
+        self.__setupIniPath = None;
+        self.__arch = arch;
 
         # Init
         self.setPkgName(main_packagename);
@@ -111,7 +114,7 @@ class CygApt:
             self.__rc.distname = main_distname;
 
         if not (os.path.isfile(self.__installedDbFile) \
-                or os.path.isfile(self.__rc.setup_ini)):
+                or os.path.isfile(self.__setupIniPath)):
             msg = "{0} no such file, run {1} setup?".format(
                 self.__installedDbFile,
                 self.__appName
@@ -251,7 +254,7 @@ class CygApt:
         if self.__dists:
             return;
         self.__dists = {'test': {}, 'curr': {}, 'prev' : {}};
-        f = open(self.__rc.setup_ini);
+        f = open(self.__setupIniPath);
         contents = f.read();
         f.close();
         chunks = contents.split("\n\n@ ");
@@ -303,7 +306,7 @@ class CygApt:
             if not install:
                 raise PackageException("{0} is not in {1}".format(
                     self.__pkgName,
-                    self.__rc.setup_ini
+                    self.__setupIniPath
                 ));
         else:
             install = self.__dists[self.__rc.distname][self.__pkgName][self.__ballTarget];
@@ -830,7 +833,7 @@ class CygApt:
         lst_gz.close();
         lst_io.close();
 
-        stat_struct = os.stat(self.__rc.setup_ini);
+        stat_struct = os.stat(self.__setupIniPath);
         atime = stat_struct[7];
         mtime = stat_struct[8];
         self._touch(gz_filename, (atime, mtime));
@@ -1244,7 +1247,11 @@ class CygApt:
         );
         self.__installedDbFile = os.path.join(self.__setupDir, "installed.db");
 
-        self.__rc.setup_ini = self.__pm.mapPath(self.__rc.setup_ini);
+        self.__setupIniPath = os.path.join(
+            self.__downloadDir,
+            self.__arch,
+            "setup.ini",
+        );
         self.__dosBash = "{0}bin/bash".format(self.__pm.getMountRoot());
         self.__dosLn = "{0}bin/ln".format(self.__pm.getMountRoot());
         return 0;
