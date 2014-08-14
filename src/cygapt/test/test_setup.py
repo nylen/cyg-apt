@@ -24,10 +24,12 @@ import subprocess;
 
 from cygapt.setup import CygAptSetup;
 from cygapt.test.utils import TestCase;
+from cygapt.test.utils import SetupIniProvider;
 from cygapt.setup import PlatformException;
 from cygapt.setup import EnvironementException;
 from cygapt.exception import PathExistsException;
 from cygapt.exception import UnexpectedValueException;
+from cygapt.setup import SignatureException;
 
 
 class TestSetup(TestCase):
@@ -57,7 +59,7 @@ class TestSetup(TestCase):
 
         last_cache, last_mirror = self.obj.getSetupRc(self._dir_confsetup);
         self.assertEqual(last_cache, self._dir_execache);
-        self.assertEqual(last_mirror, self._var_mirror_http);
+        self.assertEqual(last_mirror, self._var_mirror);
 
     def testGetPre17Last(self):
         if not self._var_cygwin_p:
@@ -80,26 +82,69 @@ class TestSetup(TestCase):
         self.assertEqual(last_cache, rlast_cache);
         self.assertEqual(last_mirror, rlast_mirror);
 
-    def testUpdate(self):
+    def testUpdateWithGoodMirrorSignature(self):
         if not self._var_cygwin_p:
             self.skipTest("requires cygwin");
 
-        self.obj._gpgImport(self.obj.GPG_CYG_PUBLIC_RING_URI);
-        self.obj.setup();
+        self._writeUserConfig(self._file_user_config);
 
-        self.obj.update(self._file_user_config, True);
+        self.obj._gpgImport(self.obj.GPG_CYG_PUBLIC_RING_URI);
+        self.obj.update(self._file_user_config, True, self._var_mirror_http);
+
+    def testUpdateWithBadMirrorSignature(self):
+        if not self._var_cygwin_p:
+            self.skipTest("requires cygwin");
+
+        self._writeUserConfig(self._file_user_config);
+        self.obj._gpgImport(self.obj.GPG_CYG_PUBLIC_RING_URI);
+
+        try:
+            self.obj.update(self._file_user_config, True);
+        except Exception as e:
+            self.assertTrue(isinstance(e, SignatureException));
+            self.assertEqual(e.getMessage(), " ".join([
+                "{0}/{1}/setup.bz2 not signed by Cygwin's public key.",
+                "Use -X to ignore signatures.",
+            ]).format(self._var_mirror, self._var_setupIni.getArchitecture()));
+        else:
+            self.fail(" ".join([
+                ".update() raises an SignatureException when the mirror have",
+                "not the Cygwin signature.",
+            ]));
+
+    def testUpdateWithoutVerifySignature(self):
+        if not self._var_cygwin_p:
+            self.skipTest("requires cygwin");
+
+        self._writeUserConfig(self._file_user_config);
+
+        self.obj.update(self._file_user_config, False);
+
+        self._assertUpdate();
+
+    def testUpdateWithoutVerifySignatureOn64Bit(self):
+        if not self._var_cygwin_p:
+            self.skipTest("requires cygwin");
+
+        self._var_arch = "x86_64";
+        self._var_setupIni = SetupIniProvider(self, self._var_arch);
+        self.obj.setArchitecture(self._var_arch);
+
+        self._writeUserConfig(self._file_user_config);
+
+        self.obj.update(self._file_user_config, False);
+
+        self._assertUpdate();
 
     def testUpdateWithoutMirror(self):
         if not self._var_cygwin_p:
             self.skipTest("requires cygwin");
 
-        self.obj._gpgImport(self.obj.GPG_CYG_PUBLIC_RING_URI);
-        self._var_mirror_http = "";
-        self._writeSetupRc();
+        self._var_mirror = "";
+        self._writeUserConfig(self._file_user_config);
 
         try:
-            self.obj.setup();
-            self.obj.update(self._file_user_config, True);
+            self.obj.update(self._file_user_config, False);
         except Exception as e:
             self.assertTrue(isinstance(e, UnexpectedValueException));
             self.assertEqual(e.getMessage(), (
@@ -133,6 +178,8 @@ class TestSetup(TestCase):
         os.remove(self._file_user_config);
 
         # next
+        self._var_mirror = self._var_mirror_http;
+        self._writeSetupRc(self._file_setup_rc);
         self.obj._gpgImport(self.obj.GPG_CYG_PUBLIC_RING_URI);
         self.obj.setup();
 
@@ -183,6 +230,31 @@ class TestSetup(TestCase):
 
     def testUsage(self):
         self.obj.usage();
+
+    def _assertUpdate(self):
+        """Asserts that the local setup.ini has been updated.
+
+        @raise AssertionError: When the assertion is not verify.
+        """
+        onCache = os.path.join(
+            self._dir_downloads,
+            self._var_setupIni.getArchitecture(),
+            "setup.ini"
+        );
+        onEtc = self._file_setup_ini;
+
+        self.assertTrue(os.path.isfile(onCache), onCache+" not exists.");
+        self.assertTrue(os.path.isfile(onEtc), onEtc+" not exists.");
+
+        expected = self._var_setupIni.contents;
+
+        with open(onCache, 'r') as f :
+            actual = f.read();
+        self.assertEqual(expected, actual);
+
+        with open(onEtc, 'r') as f :
+            actual = f.read();
+        self.assertEqual(expected, actual);
 
 if __name__ == "__main__":
     unittest.main()
