@@ -95,37 +95,41 @@ def rename(src, dest):
 def rmtree(path):
     """Removes the given path without following symlinks.
 
-    It can remove directory content also if it does not reading permission.
+    It can remove directory content also if it does not have permissions.
 
     @param path: str A link, file or directory path.
 
     @raise OSError: When the path cannot be removed.
     """
+    rmtree_helper(path);
+
     if os.path.islink(path) or os.path.isfile(path) :
         os.remove(path);
 
         return;
 
     if os.path.isdir(path) :
-        rmtree_helper(path);
         shutil.rmtree(path);
 
 def rmtree_helper(path):
-    """Adds a reading permission for owner for each directories recursively.
+    """Adds reading and writing permissions for owner for each path recursively.
 
-    @param path: str The directory path.
+    @param path: str The path to adding permissions.
 
-    @raise OSError: When the reading permission cannot be set.
+    @raise OSError: When permissions cannot be set.
     """
-    if os.path.isdir(path):
-        # Adds read permission for owner.
-        os.chmod(path, stat.S_IRUSR | os.stat(path)[stat.ST_MODE]);
+    if os.path.islink(path) :
+        return;
 
+    if os.path.exists(path) :
+        # Adds reading and writing permissions for owner.
+        os.chmod(path, stat.S_IWUSR | stat.S_IRUSR | os.stat(path)[stat.ST_MODE]);
+
+    if os.path.isdir(path) :
         files = os.listdir(path);
         for x in files:
             fullpath = os.path.join(path, x);
-            if os.path.isdir(fullpath):
-                rmtree_helper(fullpath);
+            rmtree_helper(fullpath);
 
 def uri_get(directory, uri, verbose=False):
     up = urlparse.urlparse(uri);
