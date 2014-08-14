@@ -98,10 +98,13 @@ class TestCase(BaseTestCase):
             self._dir_confsetup,
             "installed.db"
         );
+
+        # BC layer for `setup_ini` configuration field
         self._file_setup_ini = os.path.join(
             self._dir_confsetup,
             "setup.ini"
         );
+
         self._file_setup_rc = os.path.join(
             self._dir_confsetup,
             "setup.rc"
@@ -170,13 +173,34 @@ class TestCase(BaseTestCase):
             "ROOT={self[_dir_mtroot]!r}",
             "mirror={self[_var_mirror]!r}",
             "cache={self[_dir_execache]!r}",
+
+            # BC layer for `setup_ini` configuration field
             "setup_ini={self[_file_setup_ini]!r}",
+
             "distname='curr'",
             "barred=''",
             "always_update='False'",
             "",
         ]).format(self=vars(self)));
         f.close();
+
+    def _writeSetupIni(self):
+        """Updates the `setup.ini` file for the current configuration.
+
+        It makes the same result that the `update` command.
+        """
+        setupIniDir = os.path.join(self._dir_downloads, self._var_arch);
+        setupIni = os.path.join(setupIniDir, "setup.ini");
+
+        if not os.path.isdir(setupIniDir) :
+            os.makedirs(setupIniDir);
+
+        with open(setupIni, 'w') as f :
+            f.write(self._var_setupIni.contents);
+
+        # BC layer for `setup_ini` configuration field
+        with open(self._file_setup_ini, 'w') as f :
+            f.write(self._var_setupIni.contents);
 
     @classmethod
     def __getMirrorDir(cls):

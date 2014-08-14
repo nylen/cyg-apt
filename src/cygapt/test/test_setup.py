@@ -39,7 +39,11 @@ class TestSetup(TestCase):
         TestCase.setUp(self);
         self._var_verbose = False;
         self._var_cygwin_p = sys.platform.startswith("cygwin");
-        self.obj = CygAptSetup(self._var_cygwin_p, self._var_verbose);
+        self.obj = CygAptSetup(
+            self._var_cygwin_p,
+            self._var_verbose,
+            self._var_arch,
+        );
         self.obj.setTmpDir(self._dir_tmp);
         self.obj.setAppName(self._var_exename);
         self.obj.setSetupDir(self._dir_confsetup);
@@ -302,9 +306,13 @@ class TestSetup(TestCase):
             self._var_setupIni.getArchitecture(),
             "setup.ini"
         );
+
+        # BC layer for `setup_ini` configuration field
         onEtc = self._file_setup_ini;
 
         self.assertTrue(os.path.isfile(onCache), onCache+" not exists.");
+
+        # BC layer for `setup_ini` configuration field
         self.assertTrue(os.path.isfile(onEtc), onEtc+" not exists.");
 
         expected = self._var_setupIni.contents;
@@ -313,6 +321,7 @@ class TestSetup(TestCase):
             actual = f.read();
         self.assertEqual(expected, actual);
 
+        # BC layer for `setup_ini` configuration field
         with open(onEtc, 'r') as f :
             actual = f.read();
         self.assertEqual(expected, actual);

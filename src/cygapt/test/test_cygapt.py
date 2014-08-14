@@ -22,6 +22,7 @@ import gzip;
 from cygapt.cygapt import CygApt;
 from cygapt.ob import CygAptOb;
 from cygapt.test.utils import TestCase;
+from cygapt.test.utils import SetupIniProvider;
 from cygapt.path_mapper import PathMapper;
 from cygapt.structure import ConfigStructure;
 
@@ -37,9 +38,7 @@ class TestCygApt(TestCase):
 
         self._writeUserConfig();
 
-        f = open(self._file_setup_ini, 'w');
-        f.write(self._var_setupIni.contents);
-        f.close();
+        self._writeSetupIni();
 
         f = open(self._file_installed_db, 'w');
         f.write(CygApt.INSTALLED_DB_MAGIC);
@@ -83,6 +82,7 @@ class TestCygApt(TestCase):
             self._var_installed,
             self._var_exename,
             self._var_verbose,
+            self._var_arch,
             self._dir_confsetup,
         );
 
@@ -90,7 +90,10 @@ class TestCygApt(TestCase):
         rc = ConfigStructure();
         rc.cache = self._dir_execache;
         rc.distname = 'curr';
+
+        # BC layer for `setup_ini` configuration field
         rc.setup_ini = self._file_setup_ini;
+
         rc.ROOT = self._dir_mtroot;
         rc.always_update = False;
         rc.mirror = self._var_mirror;
@@ -191,6 +194,22 @@ class TestCygApt(TestCase):
             self.obj.getDists(),
             self._var_setupIni.dists.__dict__
         );
+
+    def testUseDifferentMirrorThanTheLastUpdate(self):
+        # backup
+        backupMirror = self._var_setupIni;
+        backupArch = self._var_arch;
+
+        # make an update to another mirror
+        self._var_arch = 'x86_64';
+        self._var_setupIni = SetupIniProvider(self, self._var_arch);
+        self._writeSetupIni();
+
+        # restore
+        self._var_arch = backupArch;
+        self._var_setupIni = backupMirror;
+
+        self.testGetSetupIni();
 
     def testGetUrl(self):
         ret = self.obj._getUrl();
