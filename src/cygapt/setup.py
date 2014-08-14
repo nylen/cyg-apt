@@ -86,7 +86,7 @@ class CygAptSetup:
     GPG_CYG_PUBLIC_RING_URI = "http://cygwin.com/key/pubring.asc";
     VERSION = version.__version__;
 
-    def __init__(self, cygwin_p, verbose):
+    def __init__(self, cygwin_p, verbose, arch="x86"):
         self.__cygwinPlatform = cygwin_p;
         self.__verbose = verbose;
         self.__appName = os.path.basename(sys.argv[0]);
@@ -94,6 +94,7 @@ class CygAptSetup:
         self.setPathMapper();
         self.__setupDir = "/etc/setup";
         self.__rc = ConfigStructure();
+        self.__arch = arch;
         
         self.__rc.ROOT = self.__pm.getMountRoot();
 
@@ -148,6 +149,9 @@ class CygAptSetup:
 
     def setSetupDir(self, setup_dir):
         self.__setupDir = str(setup_dir);
+
+    def setArchitecture(self, architecture):
+        self.__arch = architecture;
 
     def _cygwinVersion(self):
         return float(platform.release()[:3]);
@@ -303,10 +307,6 @@ class CygAptSetup:
                 "".format(cyg_apt_rc)
             );
 
-        downloads = os.path.join(
-            self.__pm.mapPath(self.__rc.cache),
-            urllib.quote(mirror, '').lower()
-        );
         if not mirror[-1] == "/":
             sep = "/";
         else:
@@ -318,10 +318,7 @@ class CygAptSetup:
         ];
 
         bag = zip(setup_ini_names, list(range(len(setup_ini_names))));
-        if platform.machine() == 'x86_64':
-            platform_dir = 'x86_64/';
-        else:
-            platform_dir = 'x86/';
+        platform_dir = self.__arch+"/";
 
         for (setup_ini_name, index) in bag:
             setup_ini_url = '{0}{1}{2}{3}'.format(mirror, sep, platform_dir, setup_ini_name);
@@ -398,6 +395,12 @@ class CygAptSetup:
                     "Use -X to ignore signatures.".format(setup_ini_url)
                 );
                 raise SignatureException(msg);
+
+        downloads = os.path.join(
+            self.__pm.mapPath(self.__rc.cache),
+            urllib.quote(mirror, '').lower(),
+            platform_dir,
+        );
 
         if not os.path.exists(downloads):
             os.makedirs(downloads);

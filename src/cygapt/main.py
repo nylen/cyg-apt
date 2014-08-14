@@ -17,6 +17,7 @@ from __future__ import absolute_import;
 
 import sys;
 import os;
+import platform;
 
 import cygapt.utils as cautils;
 from cygapt.setup import CygAptSetup;
@@ -53,9 +54,13 @@ class CygAptMain():
         main_cyg_apt_rc = None;
         home_cyg_apt_rc = None;
         main_verbose = False;
+        main_arch = "x86";
+
+        if "x86_64" == platform.machine() :
+            main_arch = "x86_64";
 
         main_cygwin_p = (sys.platform == "cygwin");
-        cas = CygAptSetup(main_cygwin_p, main_verbose);
+        cas = CygAptSetup(main_cygwin_p, main_verbose, main_arch);
         update_not_needed = [
             "ball", "find", "help", "purge", "remove", "version", 
             "filelist", "update", "setup", "md5",
