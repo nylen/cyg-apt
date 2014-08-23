@@ -21,7 +21,6 @@ import platform;
 
 import cygapt.utils as cautils;
 from cygapt.setup import CygAptSetup;
-from cygapt.ob import CygAptOb;
 from cygapt.argparser import CygAptArgParser;
 from cygapt.cygapt import CygApt;
 from cygapt.exception import ApplicationException;
@@ -66,11 +65,7 @@ class CygAptMain():
             "filelist", "update", "setup", "md5",
         ];
 
-        ob = CygAptOb(True);
-        cas.usage();
-        usage = ob.getFlush();
-
-        cap = CygAptArgParser(usage=usage, scriptname=self.getAppName());
+        cap = CygAptArgParser(scriptname=self.getAppName());
         args = cap.parse();
 
         main_command = args.command;
