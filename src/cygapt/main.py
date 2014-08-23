@@ -46,37 +46,17 @@ class CygAptMain():
         return self.__appName;
 
     def main(self):
-        main_downloads = None;
-        main_dists = 0;
-        main_installed = 0;
-        main_packagename = None;
-        main_cyg_apt_rc = None;
-        home_cyg_apt_rc = None;
-        main_verbose = False;
-        main_arch = "x86";
-
-        if "x86_64" == platform.machine() :
-            main_arch = "x86_64";
-
-        main_cygwin_p = (sys.platform == "cygwin");
-        cas = CygAptSetup(main_cygwin_p, main_verbose, main_arch);
-        update_not_needed = [
-            "ball", "find", "help", "purge", "remove", "version", 
-            "filelist", "update", "setup", "md5",
-        ];
-
+        # parse command line arguments
         cap = CygAptArgParser(scriptname=self.getAppName());
         args = cap.parse();
 
+        # initialize main variables with command line arguments and options
         main_command = args.command;
-
         main_files = args.package[:];
         main_files.insert(0, main_command);
+        main_packagename = None;
         if len(args.package) > 0:
             main_packagename = args.package[0];
-        else:
-            main_packagename = None;
-
         main_verbose = args.verbose;
         main_download_p = args.download_p;
         main_mirror = args.mirror;
@@ -88,39 +68,15 @@ class CygAptMain():
         main_verify = args.verify;
         main_nopostinstall = args.nopostinstall;
         main_nopostremove = args.nopostremove;
+        main_downloads = None;
+        main_dists = 0;
+        main_installed = 0;
 
-
-        cas.setVerbose(main_verbose);
-
-        # Take most of our configuration from .cyg-apt
-        # preferring .cyg-apt in current directory over $(HOME)/.cyg-apt
-        cwd_cyg_apt_rc = os.path.join(
-            os.getcwd(),
-            ".{0}".format(self.getAppName())
-        );
-        if os.path.exists(cwd_cyg_apt_rc):
-            main_cyg_apt_rc = cwd_cyg_apt_rc;
-        elif "HOME" in os.environ:
-            home_cyg_apt_rc = os.path.join(
-                os.environ['HOME'],
-                ".{0}".format(self.getAppName())
-            );
-            if os.path.exists(home_cyg_apt_rc):
-                main_cyg_apt_rc = home_cyg_apt_rc;
-        elif "USERPROFILE" in os.environ :
-            home_cyg_apt_rc = os.path.join(
-                os.environ['USERPROFILE'],
-                ".{0}".format(self.getAppName())
-            );
-            if os.path.exists(home_cyg_apt_rc) :
-                main_cyg_apt_rc = home_cyg_apt_rc;
-
+        # locate and parse the configuration file
+        main_cyg_apt_rc = self.getConfigPath();
 
         config = None;
         if main_cyg_apt_rc:
-            # Take our configuration from .cyg-apt
-            # Command line options can override, but only for this run.
-            main_cyg_apt_rc = main_cyg_apt_rc.replace("\\","/");
             config = cautils.parse_rc(main_cyg_apt_rc);
         elif (main_command != "setup"):
             print(
@@ -129,6 +85,16 @@ class CygAptMain():
             );
             return 1;
 
+        # create a CygAptSetup instance and its dependencies
+        main_arch = "x86";
+        if "x86_64" == platform.machine() :
+            main_arch = "x86_64";
+
+        main_cygwin_p = (sys.platform == "cygwin");
+
+        cas = CygAptSetup(main_cygwin_p, main_verbose, main_arch);
+
+        # run command
         if (main_command == "setup"):
             cas.setup(args.force);
             return 0;
@@ -138,6 +104,12 @@ class CygAptMain():
         elif (main_command == "update"):
             cas.update(main_cyg_apt_rc, main_verify, main_mirror=main_mirror);
             return 0;
+
+        # make an update if needed
+        update_not_needed = [
+            "ball", "find", "help", "purge", "remove", "version",
+            "filelist", "update", "setup", "md5",
+        ];
         always_update = config.always_update;
         always_update = always_update and\
             main_command not in update_not_needed and\
@@ -172,6 +144,39 @@ class CygAptMain():
             cas.usage(main_cyg_apt_rc);
 
         return 0;
+
+    def getConfigPath(self):
+        main_cyg_apt_rc = None;
+
+        # Take most of our configuration from .cyg-apt
+        # preferring .cyg-apt in current directory over $(HOME)/.cyg-apt
+        cwd_cyg_apt_rc = os.path.join(
+            os.getcwd(),
+            ".{0}".format(self.getAppName())
+        );
+        if os.path.exists(cwd_cyg_apt_rc):
+            main_cyg_apt_rc = cwd_cyg_apt_rc;
+        elif "HOME" in os.environ:
+            home_cyg_apt_rc = os.path.join(
+                os.environ['HOME'],
+                ".{0}".format(self.getAppName())
+            );
+            if os.path.exists(home_cyg_apt_rc):
+                main_cyg_apt_rc = home_cyg_apt_rc;
+        elif "USERPROFILE" in os.environ :
+            home_cyg_apt_rc = os.path.join(
+                os.environ['USERPROFILE'],
+                ".{0}".format(self.getAppName())
+            );
+            if os.path.exists(home_cyg_apt_rc) :
+                main_cyg_apt_rc = home_cyg_apt_rc;
+
+        if main_cyg_apt_rc:
+            # Take our configuration from .cyg-apt
+            # Command line options can override, but only for this run.
+            main_cyg_apt_rc = main_cyg_apt_rc.replace("\\","/");
+
+        return main_cyg_apt_rc;
 
 if __name__ == '__main__':
     CygAptMain();
