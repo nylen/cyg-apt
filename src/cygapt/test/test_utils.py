@@ -22,6 +22,7 @@ import stat;
 import cygapt.utils as utils;
 from cygapt.exception import ApplicationException;
 from cygapt.test.utils import TestCase;
+from cygapt.structure import ConfigStructure;
 
 class TestUtils(TestCase):
     def _getTmpDir(self):
@@ -45,26 +46,34 @@ class TestUtils(TestCase):
         f = open(self._getTmpFileName(), 'w');
         f.write("always_update = \"True\"");
         f.close();
-
         ret = utils.parse_rc(self._getTmpFileName());
-        self.assertTrue(ret);
+        self.assertTrue(isinstance(ret, ConfigStructure));
+        self.assertTrue(ret.always_update);
 
         f = open(self._getTmpFileName(), 'w');
         f.write("always_update = \"False\"");
         f.close();
-
         ret = utils.parse_rc(self._getTmpFileName());
-        self.assertFalse(ret);
+        self.assertTrue(isinstance(ret, ConfigStructure));
+        self.assertFalse(ret.always_update);
 
+        # malicious code
         f = open(self._getTmpFileName(), 'w');
-        f.write("always_update = bad_value");
+        f.write("always_update = parse_rc(cyg_apt_rc)");
         f.close();
+        ret = utils.parse_rc(self._getTmpFileName());
+        self.assertTrue(isinstance(ret, ConfigStructure));
+        self.assertFalse(ret.always_update);
 
-        self.assertRaises(
-            NameError,
-            utils.parse_rc,
-            self._getTmpFileName()
-        );
+        self._writeUserConfig(self._getTmpFileName());
+        ret = utils.parse_rc(self._getTmpFileName());
+        self.assertTrue(isinstance(ret, ConfigStructure));
+        self.assertFalse(ret.always_update);
+        self.assertEqual(ret.ROOT, self._dir_mtroot);
+        self.assertEqual(ret.mirror, self._var_mirror);
+        self.assertEqual(ret.cache, self._dir_execache);
+        self.assertEqual(ret.distname, 'curr');
+        self.assertEqual(ret.barred, '');
 
     def testPrsort(self):
         in_lst = ["B", "A", "a", "1", "b", "/", "", "2"];

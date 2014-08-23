@@ -116,10 +116,12 @@ class CygAptMain():
                 main_cyg_apt_rc = home_cyg_apt_rc;
 
 
+        config = None;
         if main_cyg_apt_rc:
             # Take our configuration from .cyg-apt
             # Command line options can override, but only for this run.
             main_cyg_apt_rc = main_cyg_apt_rc.replace("\\","/");
+            config = cautils.parse_rc(main_cyg_apt_rc);
         elif (main_command != "setup"):
             print(
                 "{0}: no .{0}: run \"{0} setup\"".format(self.getAppName()),
@@ -136,7 +138,7 @@ class CygAptMain():
         elif (main_command == "update"):
             cas.update(main_cyg_apt_rc, main_verify, main_mirror=main_mirror);
             return 0;
-        always_update = cautils.parse_rc(main_cyg_apt_rc);
+        always_update = config.always_update;
         always_update = always_update and\
             main_command not in update_not_needed and\
             not main_noupdate;

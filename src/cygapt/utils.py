@@ -22,10 +22,12 @@ import sys;
 import tarfile;
 import urlparse;
 import stat;
+import warnings;
 
 from cygapt.exception import ApplicationException;
 from cygapt.exception import InvalidArgumentException;
 from cygapt.url_opener import CygAptURLopener;
+from cygapt.structure import ConfigStructure;
 
 def cygpath(path):
     p = os.popen("cygpath \"{0}\"".format(path));
@@ -34,28 +36,40 @@ def cygpath(path):
     return dospath;
 
 def parse_rc(cyg_apt_rc):
-    """Currently main only needs to know if we alway call the update command
-    before other commands
+    """Parse the user configuration file.
+
+    @param cyg_apt_rc: str The path to the user configuration.
+
+    @return: ConfigStructure The configuration.
     """
     f = open(cyg_apt_rc);
     lines = f.readlines();
     f.close();
     rc_regex = re.compile(r"^\s*(\w+)\s*=\s*(.*)\s*$");
     always_update = False;
+    config = ConfigStructure();
     for i in lines:
         result = rc_regex.search(i);
         if result:
             k = result.group(1);
             v = result.group(2);
-            if k == "always_update":
-                always_update = eval(v);
+            if k in config.__dict__ :
+                config.__dict__[k] = str(v).strip('\'"');
+            if 'setup_ini' == k :
+                warnings.warn(
+                    "The configuration field `setup_ini` is deprecated"
+                    " since version 1.1 and will be removed in 2.0.",
+                    DeprecationWarning,
+                );
 
-    if always_update in [True, 'True', 'true', 'Yes', 'yes']:
+    if config.always_update in [True, 'True', 'true', 'Yes', 'yes']:
         always_update = True;
     else:
         always_update = False;
 
-    return always_update;
+    config.always_update = always_update;
+
+    return config;
 
 def remove_if_exists(fn):
     try:

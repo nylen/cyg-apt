@@ -170,12 +170,12 @@ class TestCase(BaseTestCase):
 
         f = open(path, 'w');
         f.write("\n".join([
-            "ROOT={self[_dir_mtroot]!r}",
-            "mirror={self[_var_mirror]!r}",
-            "cache={self[_dir_execache]!r}",
+            "ROOT='{self[_dir_mtroot]}'",
+            "mirror='{self[_var_mirror]}'",
+            "cache='{self[_dir_execache]}'",
 
             # BC layer for `setup_ini` configuration field
-            "setup_ini={self[_file_setup_ini]!r}" if keepBC else "",
+            "setup_ini='{self[_file_setup_ini]}'" if keepBC else "",
 
             "distname='curr'",
             "barred=''",

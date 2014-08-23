@@ -17,13 +17,11 @@ from __future__ import absolute_import;
 import bz2;
 import inspect;
 import os;
-import re;
 import shutil;
 import subprocess;
 import sys;
 import urllib;
 import platform;
-import warnings;
 
 from cygapt.cygapt import CygApt;
 from cygapt.exception import ApplicationException;
@@ -90,7 +88,6 @@ class CygAptSetup:
             "False but you will have to run the update\n# command manually.\n"
         ),
     };
-    RC_REGEX = re.compile(r"^\s*(\w+)\s*=\s*(.*)\s*$");
     GPG_GOOD_FINGER = "1169 DF9F 2273 4F74 3AA5  9232 A9A2 62FF 6760 41BA";
     GPG_CYG_PUBLIC_RING_URI = "http://cygwin.com/key/pubring.asc";
     VERSION = version.__version__;
@@ -297,23 +294,7 @@ class CygAptSetup:
     def update(self, cyg_apt_rc, verify, main_mirror=None):
         """fetch current package database from mirror"""
         sig_name = None;
-        self.__rc = ConfigStructure();
-        f = open(cyg_apt_rc);
-        lines = f.readlines();
-        f.close();
-        for i in lines:
-            result = self.RC_REGEX.search(i);
-            if result:
-                k = result.group(1);
-                v = result.group(2);
-                if k in self.__rc.__dict__:
-                    self.__rc.__dict__[k] = eval(v);
-                if 'setup_ini' == k :
-                    warnings.warn(
-                        "The configuration field `setup_ini` is deprecated"
-                        " since version 1.1 and will be removed in 2.0.",
-                        DeprecationWarning,
-                    );
+        self.__rc = cautils.parse_rc(cyg_apt_rc);
 
         if(not self.__cygwinPlatform):
             self.__pm = PathMapper(self.__rc.ROOT[:-1], False);
