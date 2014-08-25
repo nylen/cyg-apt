@@ -59,7 +59,9 @@ class CygApt:
         main_dists,
         main_installed,
         main_scriptname,
-        main_verbose):
+        main_verbose,
+        setupDir="/etc/setup",
+    ):
 
         # Define private properties
         self.__ballTarget = 'install';
@@ -74,7 +76,7 @@ class CygApt:
         self.__noDeps = main_nodeps_p;
         self.__rcFile = main_cyg_apt_rc;
         self.__verbose = main_verbose;
-        self.__setupDir = "/etc/setup";
+        self.__setupDir = setupDir;
         self.__rc = ConfigStructure();
 
         # Init
@@ -1234,7 +1236,7 @@ class CygApt:
             self.setRoot(self.__rc.ROOT);
         self.__rc.ROOT = None;
         self.__pm = PathMapper(self.__prefixRoot, self.__cygwinPlatform);
-        self.__setupDir = self.__pm.mapPath("/etc/setup");
+        self.__setupDir = self.__pm.mapPath(self.__setupDir);
         self.__rc.cache = self.__pm.mapPath(self.__rc.cache);
         self.__downloadDir = os.path.join(
             self.__rc.cache,

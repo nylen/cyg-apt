@@ -82,7 +82,8 @@ class TestCygApt(TestCase):
             self._var_dists,
             self._var_installed,
             self._var_exename,
-            self._var_verbose
+            self._var_verbose,
+            self._dir_confsetup,
         );
 
         # set attributes
@@ -97,7 +98,7 @@ class TestCygApt(TestCase):
 
         cygapt.setDownlaodDir(self._dir_downloads);
         cygapt.setInstalledDbFile(self._file_installed_db);
-        cygapt.setSetupDir(self._dir_confsetup);
+        self.assertEqual(self._dir_confsetup, cygapt.getSetupDir());
 
         pm = PathMapper("", False);
         pm.setRoot(self._dir_mtroot[:-1]);
