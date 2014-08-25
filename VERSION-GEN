@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # (c) GIT-VERSION-GEN - github.com/git/git
 
 if [ -z "$VERSION_FILE" ];
