@@ -38,7 +38,10 @@ class TestSetup(TestCase):
     def setUp(self):
         TestCase.setUp(self);
         self._var_verbose = False;
-        self._var_cygwin_p = sys.platform.startswith("cygwin");
+        self._var_cygwin_p = (
+            sys.platform.startswith("cygwin")
+            or sys.platform.startswith("linux")
+        );
         self.obj = CygAptSetup(
             self._var_cygwin_p,
             self._var_verbose,
@@ -55,7 +58,7 @@ class TestSetup(TestCase):
         self.assertEqual(self.obj.getVerbose(), self._var_verbose);
 
     def testGetSetupRc(self):
-        if not self._var_cygwin_p:
+        if not sys.platform.startswith("cygwin"):
             self.skipTest("requires cygwin");
 
         badlocation = os.path.join(self._var_tmpdir, "not_exist_file");
@@ -68,7 +71,7 @@ class TestSetup(TestCase):
         self.assertEqual(last_mirror, self._var_mirror);
 
     def testGetPre17Last(self):
-        if not self._var_cygwin_p:
+        if not sys.platform.startswith("cygwin"):
             self.skipTest("requires cygwin");
 
         location = self._var_tmpdir;
@@ -90,7 +93,7 @@ class TestSetup(TestCase):
 
     def testUpdateWithGoodMirrorSignature(self):
         if not self._var_cygwin_p:
-            self.skipTest("requires cygwin");
+            self.skipTest("requires cygwin or linux");
 
         self._writeUserConfig(self._file_user_config);
 
@@ -99,7 +102,7 @@ class TestSetup(TestCase):
 
     def testUpdateWithBadMirrorSignature(self):
         if not self._var_cygwin_p:
-            self.skipTest("requires cygwin");
+            self.skipTest("requires cygwin or linux");
 
         self._writeUserConfig(self._file_user_config);
         self.obj._gpgImport(self.obj.GPG_CYG_PUBLIC_RING_URI);
@@ -120,7 +123,7 @@ class TestSetup(TestCase):
 
     def testUpdateWithoutVerifySignature(self):
         if not self._var_cygwin_p:
-            self.skipTest("requires cygwin");
+            self.skipTest("requires cygwin or linux");
 
         self._writeUserConfig(self._file_user_config);
 
@@ -130,7 +133,7 @@ class TestSetup(TestCase):
 
     def testUpdateWithoutVerifySignatureOn64Bit(self):
         if not self._var_cygwin_p:
-            self.skipTest("requires cygwin");
+            self.skipTest("requires cygwin or linux");
 
         self._var_arch = "x86_64";
         self._var_setupIni = SetupIniProvider(self, self._var_arch);
@@ -144,7 +147,7 @@ class TestSetup(TestCase):
 
     def testUpdateWithoutMirror(self):
         if not self._var_cygwin_p:
-            self.skipTest("requires cygwin");
+            self.skipTest("requires cygwin or linux");
 
         self._var_mirror = "";
         self._writeUserConfig(self._file_user_config);
@@ -281,7 +284,7 @@ class TestSetup(TestCase):
         );
 
     def testWriteInstalled(self):
-        if not self._var_cygwin_p:
+        if not sys.platform.startswith("cygwin"):
             self.skipTest("requires cygwin");
 
         real_installed_db = self._file_installed_db.replace(self._var_tmpdir, "");
@@ -297,7 +300,7 @@ class TestSetup(TestCase):
 
     def testGpgImport(self):
         if not self._var_cygwin_p:
-            self.skipTest("requires cygwin");
+            self.skipTest("requires cygwin or linux");
 
         self.obj._gpgImport(self.obj.GPG_CYG_PUBLIC_RING_URI);
 
