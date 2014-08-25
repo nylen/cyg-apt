@@ -205,7 +205,7 @@ class TestCase(unittest.TestCase):
         for filename in files:
             subpath = os.path.join(path, filename);
             if not os.path.islink(subpath) :
-                os.chmod(subpath, 0o600);
+                os.chmod(subpath, 0o700);
             if os.path.isdir(subpath):
                 cls.__rmtree(subpath);
             else:
