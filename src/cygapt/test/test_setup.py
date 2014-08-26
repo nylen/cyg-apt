@@ -58,9 +58,6 @@ class TestSetup(TestCase):
         self.assertEqual(self.obj.getVerbose(), self._var_verbose);
 
     def testGetSetupRc(self):
-        if not sys.platform.startswith("cygwin"):
-            self.skipTest("requires cygwin");
-
         badlocation = os.path.join(self._var_tmpdir, "not_exist_file");
         last_cache, last_mirror = self.obj.getSetupRc(badlocation);
         self.assertEqual(last_cache, None);
@@ -71,9 +68,6 @@ class TestSetup(TestCase):
         self.assertEqual(last_mirror, self._var_mirror);
 
     def testGetPre17Last(self):
-        if not sys.platform.startswith("cygwin"):
-            self.skipTest("requires cygwin");
-
         location = self._var_tmpdir;
         last_mirror = "http://cygwin.uib.no/";
         last_cache = os.path.join(self._var_tmpdir, "last_cache");
