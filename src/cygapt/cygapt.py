@@ -657,7 +657,7 @@ class CygApt:
             sys.stderr.write("running: {0}\n".format(file_name));
             if self.__cygwinPlatform:
                 cmd = " ".join([
-                    "sh",
+                    "bash",
                     self.SH_OPTIONS,
                     mapped_file
                 ]);
