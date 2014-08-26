@@ -120,8 +120,8 @@ class TestCygApt(TestCase):
         cygapt.CYG_PREREMOVE_DIR = self._dir_preremove;
         cygapt.CYG_POSTREMOVE_DIR = self._dir_postremove;
 
-        cygapt.setDosBash("/usr/bin/bash");
-        cygapt.setDosLn("/usr/bin/ln");
+        cygapt.setDosBash("/bin/bash");
+        cygapt.setDosLn("/bin/ln");
 
         cygapt.setPrefixRoot(self._dir_mtroot[:-1]);
         cygapt.setAbsRoot(self._dir_mtroot);
