@@ -112,6 +112,13 @@ class CygAptMain():
             );
             if os.path.exists(home_cyg_apt_rc):
                 main_cyg_apt_rc = home_cyg_apt_rc;
+        elif "USERPROFILE" in os.environ :
+            home_cyg_apt_rc = os.path.join(
+                os.environ['USERPROFILE'],
+                ".{0}".format(self.getAppName())
+            );
+            if os.path.exists(home_cyg_apt_rc) :
+                main_cyg_apt_rc = home_cyg_apt_rc;
 
 
         if main_cyg_apt_rc:
