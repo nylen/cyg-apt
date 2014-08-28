@@ -1,0 +1,103 @@
+platform:
+    - x64
+    - x86
+
+environment:
+    global:
+        CYG_ROOT: C:/cygwin
+        CYG_MIRROR: http://cygwin.uib.no
+        CYG_CACHE: C:/cygwin/var/cache/setup
+
+    matrix:
+        -
+            CYG_ARCH: x86
+            PYTHON: C:/cygwin/bin/python2.7.exe
+            PYTHON_PLATFORM: cygwin
+
+        -
+            CYG_ARCH: x86_64
+            PYTHON: C:/cygwin/bin/python2.7.exe
+            PYTHON_PLATFORM: cygwin
+
+        -
+            CYG_ARCH: x86
+            PYTHON: C:/python27/python.exe
+            PYTHON_DIR: 'C:\\python27'
+            PYTHON_VERSION: '2.7'
+
+        -
+            CYG_ARCH: x86
+            PYTHON: C:/python27/python.exe
+            PYTHON_DIR: 'C:\\python27'
+            PYTHON_VERSION: '2.7'
+            PYTHON_ARCH: '32'
+
+        -
+            CYG_ARCH: x86_64
+            PYTHON: C:/python27/python.exe
+            PYTHON_DIR: 'C:\\python27'
+            PYTHON_VERSION: '2.7'
+
+        -
+            CYG_ARCH: x86_64
+            PYTHON: C:/python27/python.exe
+            PYTHON_DIR: 'C:\\python27'
+            PYTHON_VERSION: '2.7'
+            PYTHON_ARCH: '32'
+
+        -
+            CYG_ARCH: x86
+            PYTHON: C:/python26/python.exe
+            PYTHON_DIR: 'C:\\python26'
+            PYTHON_VERSION: '2.6'
+
+        -
+            CYG_ARCH: x86
+            PYTHON: C:/python26/python.exe
+            PYTHON_DIR: 'C:\\python26'
+            PYTHON_VERSION: '2.6'
+            PYTHON_ARCH: '32'
+
+        -
+            CYG_ARCH: x86_64
+            PYTHON: C:/python26/python.exe
+            PYTHON_DIR: 'C:\\python26'
+            PYTHON_VERSION: '2.6'
+
+        -
+            CYG_ARCH: x86_64
+            PYTHON: C:/python26/python.exe
+            PYTHON_DIR: 'C:\\python26'
+            PYTHON_VERSION: '2.6'
+            PYTHON_ARCH: '32'
+
+init:
+    - 'echo System architecture: %PLATFORM%'
+
+install:
+    - 'if not "%PYTHON_PLATFORM%" == "cygwin" dir "C:/python*"'
+    - 'if not "%PYTHON_PLATFORM%" == "cygwin" if exist "%PYTHON_DIR%" rmdir /s /q "%PYTHON_DIR%"'
+    - 'if not "%PYTHON_PLATFORM%" == "cygwin" dir "C:/python*"'
+    - 'if not "%PYTHON_PLATFORM%" == "cygwin" if "%PYTHON_ARCH%" == "" if "%PLATFORM%" == "x64" set PYTHON_ARCH=64 else set PYTHON_ARCH=32'
+    - 'if not "%PYTHON_PLATFORM%" == "cygwin" powershell ./.appveyor/install.ps1'
+    - 'if not "%PYTHON_PLATFORM%" == "cygwin" dir "C:/python*"'
+    - 'appveyor DownloadFile http://cygwin.com/setup-%CYG_ARCH%.exe -FileName setup.exe'
+    - 'setup.exe -qnNdO -R "%CYG_ROOT%" -s "%CYG_MIRROR%" -l "%CYG_CACHE%" -P make -P git -P python -P gnupg > NUL'
+    - '%CYG_ROOT%/bin/bash -lc "cygcheck -dc cygwin"'
+    - '%PYTHON% --version'
+    - '%PYTHON% -c "import sys; print(''Python architecture: {0}''.format(''x64'' if sys.maxsize > 2**32 else ''x86''))"'
+    - '%PYTHON% -c "import sys; print(''Python platform: {0}''.format(sys.platform));"'
+
+build_script:
+    - '%CYG_ROOT%/bin/bash -lc "cd \"$OLDPWD\"; make PYTHON=\"$PYTHON\""'
+
+test_script:
+    - '%CYG_ROOT%/bin/bash -lc "cd \"$OLDPWD\"; make test PYTHON=\"$PYTHON\""'
+    - '%CYG_ROOT%/bin/bash -lc "cd \"$OLDPWD\"; make install"'
+    - '%CYG_ROOT%/bin/bash -lc "cd \"$OLDPWD\"; make install PYTHON=\"$PYTHON\""'
+    - ps: 'cp $env:CYG_ROOT/home/$env:USERNAME/.cyg-apt -destination $env:HOMEPATH'
+    - '%PYTHON% %CYG_ROOT%/bin/cyg-apt ball cygwin> ball~'
+    - ps: 'Get-Content ball~ | set path; cmd /c $env:CYG_ROOT/bin/cygpath -w $path> ball~'
+    - ps: 'Get-Content ball~'
+    - ps: 'if (-not(Get-Content ball~ | Test-Path)) { Exit 1 }'
+    - 'del ball~'
