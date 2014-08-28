@@ -5,8 +5,7 @@ ARGUMENTS =
 ARGUMENTS += -v
 
 sourcetest: FORCE
-	@export PYTHONPATH="$(subst \,,$(SD_SRC)):$(PYTHONPATH)";\
-$(PYTHON) $(TEST_SCRIPT) $(ARGUMENTS)
+	cd $(SD_SRC); $(PYTHON) $(TEST_SCRIPT) $(ARGUMENTS)
 
 installtest: FORCE
 	@$(PYTHON) $(TEST_SCRIPT) $(ARGUMENTS)
