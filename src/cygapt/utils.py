@@ -74,8 +74,9 @@ def open_tarfile(ball):
     if ball_orig != ball:
         tf_close_orig = tf.close;
         def tf_close():
+            retValue = tf_close_orig();
             remove_if_exists(ball);
-            return tf_close_orig();
+            return retValue;
         tf.close = tf_close;
     return tf;
 
