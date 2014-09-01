@@ -31,8 +31,10 @@ class TestArgParser(unittest.TestCase):
         self.__originArgv = sys.argv[:];
         sys.argv = sys.argv[:1];
 
-        def tearDown(self):
-            sys.argv = self.__originArgv;
+    def tearDown(self):
+        sys.argv = self.__originArgv;
+
+        unittest.TestCase.tearDown(self);
 
     def test___init__(self):
         self.assertTrue(isinstance(self.obj, CygAptArgParser));
