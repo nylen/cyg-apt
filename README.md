@@ -50,6 +50,20 @@ Usage
 Type `cyg-apt --help` or `man cyg-apt` for see all commands and options.
 
 
+Contributing
+------------
+
+Cyg-apt is an open source, community-driven project. All code contributions -
+including those of people having commit access - must go through a pull request
+and be approved by a core developer before being merged. This is to ensure
+proper review of all the code.
+
+If you would like to help, take a look at the
+[list of issues](https://github.com/nylen/cyg-apt/issues).
+
+See the [`CONTRIBUTING.md`](CONTRIBUTING.md) file for more detailed instructions.
+
+
 Acknowledgments
 ---------------
 
