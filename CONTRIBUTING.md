@@ -43,7 +43,7 @@ Please follow these guidelines for any contributions:
     | Deprecations?   | [yes|no]
     | Tests pass?     | [yes|no]
     | Related tickets | [comma separated list of tickets related by the PR]
-    | License         | GNU GPL v3
+    | License         | GNU GPLv3
 
     ```
 
