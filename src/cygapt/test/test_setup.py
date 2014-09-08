@@ -21,6 +21,7 @@ import unittest;
 import sys;
 import os;
 import subprocess;
+import urllib;
 
 from cygapt.setup import CygAptSetup;
 from cygapt.test.utils import TestCase;
@@ -183,6 +184,52 @@ class TestSetup(TestCase):
         self._writeSetupRc(self._file_setup_rc);
         self.obj._gpgImport(self.obj.GPG_CYG_PUBLIC_RING_URI);
         self.obj.setup();
+
+        # create a default user configuration file
+        self.assertTrue(os.path.isfile(self._file_user_config));
+        with open(self._file_user_config, 'r') as f :
+            self.assertEqual("\n".join([
+                "# The distribution, current previous or test [curr, prev, test].",
+                '# Usually you want the "curr" version of a package.',
+                'distname="curr"',
+                "",
+                "# Your package cache as a POSIX path: example /e/home/cygwin_package_cache",
+                'cache="{self[_dir_execache]}"',
+                "",
+                "# Packages which cyg-apt can't change under Cygwin since it depends on them.",
+                "# Run cyg-apt under DOS with -f (force) option to change these packages.",
+                "# Treat Cygwin core packages with CAUTION.",
+                'barred=""',
+                "",
+                "# URL of your Cygwin mirror: example http://mirror.internode.on.net/pub/cygwin/",
+                'mirror="{self[_var_mirror]}"',
+                "",
+                "# Always update setup.ini before any command that uses it. cyg-apt will be",
+                "# faster and use less bandwidth if False but you will have to run the update",
+                "# command manually.",
+                'always_update="False"',
+                "",
+                "# setup.ini lists available packages and is downloaded from the top level",
+                "# of the downloaded mirror. Standard location is /etc/setup/setup.ini,",
+                "# seutp-2.ini for Cygwin 1.7 Beta",
+                'setup_ini="{self[_file_setup_ini]}"',
+                "",
+                "# The root of your Cygwin installation as a windows path",
+                'ROOT="{self[_dir_mtroot]}"',
+                "",
+                "",
+            ]).format(self=vars(self)), f.read());
+
+        # create setup.ini on `/etc/setup/`
+        self.assertTrue(os.path.isfile(self._file_setup_ini));
+
+        # create setup.ini on `<cachedir>/<mirror>/<arch>/`
+        self.assertTrue(os.path.isfile(os.path.join(
+            self._dir_execache,
+            urllib.quote(self._var_mirror, '').lower(),
+            self._var_arch,
+            "setup.ini",
+        )));
 
     def testWriteInstalled(self):
         if not self._var_cygwin_p:
