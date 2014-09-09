@@ -22,6 +22,7 @@ import sys;
 import os;
 import subprocess;
 import urllib;
+import warnings;
 
 from cygapt.setup import CygAptSetup;
 from cygapt.test.utils import TestCase;
@@ -165,6 +166,36 @@ class TestSetup(TestCase):
                 "was not defined."
             );
 
+    def testUpdateWithSetupIniFieldWarnDeprecationWarning(self):
+        if not self._var_cygwin_p:
+            self.skipTest("requires cygwin");
+
+        self._writeUserConfig(self._file_user_config, keepBC=True);
+
+        self._assertDeprecatedWarning(
+            "The configuration field `setup_ini` is deprecated since version"
+            " 1.1 and will be removed in 2.0.",
+            self.obj.update,
+            self._file_user_config,
+            False,
+        );
+
+        self._assertUpdate(keepBC=True);
+
+    def testUpdateWithoutSetupIniFieldNotWarnDeprecationWarning(self):
+        if not self._var_cygwin_p:
+            self.skipTest("requires cygwin");
+
+        self._writeUserConfig(self._file_user_config);
+
+        self._assertNotDeprecatedWarning(
+            "The configuration field `setup_ini` is deprecated since version"
+            " 1.1 and will be removed in 2.0.",
+            self.obj.update,
+            self._file_user_config,
+            False,
+        );
+
     def testSetup(self):
         if not self._var_cygwin_p:
             self.assertRaises(PlatformException, self.obj.setup);
@@ -216,7 +247,8 @@ class TestSetup(TestCase):
                 "# setup.ini lists available packages and is downloaded from the top level",
                 "# of the downloaded mirror. Standard location is /etc/setup/setup.ini,",
                 "# seutp-2.ini for Cygwin 1.7 Beta",
-                'setup_ini="{self[_file_setup_ini]}"',
+                "# Deprecated since version 1.1 and will be removed in 2.0.",
+                '# setup_ini="{self[_file_setup_ini]}"',
                 "",
                 "# The root of your Cygwin installation as a windows path",
                 'ROOT="{self[_dir_mtroot]}"',
@@ -234,6 +266,20 @@ class TestSetup(TestCase):
             self._var_arch,
             "setup.ini",
         )));
+
+    def testSetupNotWarnDeprecationWarning(self):
+        if not self._var_cygwin_p:
+            self.skipTest("requires cygwin");
+
+        self._var_mirror = self._var_mirror_http;
+        self._writeSetupRc(self._file_setup_rc);
+        self.obj._gpgImport(self.obj.GPG_CYG_PUBLIC_RING_URI);
+
+        self._assertNotDeprecatedWarning(
+            "The configuration field `setup_ini` is deprecated since version"
+            " 1.1 and will be removed in 2.0.",
+            self.obj.setup,
+        );
 
     def testWriteInstalled(self):
         if not self._var_cygwin_p:
@@ -296,7 +342,7 @@ class TestSetup(TestCase):
 
         self.assertTrue("    {0}".format(command) in ret);
 
-    def _assertUpdate(self):
+    def _assertUpdate(self, keepBC=False):
         """Asserts that the local setup.ini has been updated.
 
         @raise AssertionError: When the assertion is not verify.
@@ -307,13 +353,7 @@ class TestSetup(TestCase):
             "setup.ini"
         );
 
-        # BC layer for `setup_ini` configuration field
-        onEtc = self._file_setup_ini;
-
         self.assertTrue(os.path.isfile(onCache), onCache+" not exists.");
-
-        # BC layer for `setup_ini` configuration field
-        self.assertTrue(os.path.isfile(onEtc), onEtc+" not exists.");
 
         expected = self._var_setupIni.contents;
 
@@ -321,10 +361,43 @@ class TestSetup(TestCase):
             actual = f.read();
         self.assertEqual(expected, actual);
 
+        if not keepBC :
+            return;
+
         # BC layer for `setup_ini` configuration field
+        onEtc = self._file_setup_ini;
+        self.assertTrue(os.path.isfile(onEtc), onEtc+" not exists.");
         with open(onEtc, 'r') as f :
             actual = f.read();
         self.assertEqual(expected, actual);
+
+    def _assertDeprecatedWarning(self, message, callback, *args, **kwargs):
+        with warnings.catch_warnings(record=True) as warnList :
+            # Cause all DeprecationWarning with the specified message
+            # to always be triggered.
+            warnings.filterwarnings(
+                "always",
+                message=message,
+                category=DeprecationWarning,
+            );
+
+            # Trigger a warning.
+            ret = callback(*args, **kwargs);
+
+            # Verify some things
+            self.assertTrue(warnList, "At least one warning.");
+            warn = warnList[-1];
+            self.assertEqual(message, str(warn.message));
+
+        return ret;
+
+    def _assertNotDeprecatedWarning(self, message, callback, *args, **kwargs):
+        try:
+            self._assertDeprecatedWarning(message, callback, *args, **kwargs);
+        except self.failureException :
+            pass;
+        else:
+            self.fail("Failed asserting that not raise a DeprecationWarning");
 
 if __name__ == "__main__":
     unittest.main()

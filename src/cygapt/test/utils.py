@@ -164,7 +164,7 @@ class TestCase(BaseTestCase):
         ));
         f.close();
 
-    def _writeUserConfig(self, path=None):
+    def _writeUserConfig(self, path=None, keepBC=False):
         if None is path :
             path = self._file_user_config;
 
@@ -175,7 +175,7 @@ class TestCase(BaseTestCase):
             "cache={self[_dir_execache]!r}",
 
             # BC layer for `setup_ini` configuration field
-            "setup_ini={self[_file_setup_ini]!r}",
+            "setup_ini={self[_file_setup_ini]!r}" if keepBC else "",
 
             "distname='curr'",
             "barred=''",
@@ -184,7 +184,7 @@ class TestCase(BaseTestCase):
         ]).format(self=vars(self)));
         f.close();
 
-    def _writeSetupIni(self):
+    def _writeSetupIni(self, keepBC=False):
         """Updates the `setup.ini` file for the current configuration.
 
         It makes the same result that the `update` command.
@@ -197,6 +197,9 @@ class TestCase(BaseTestCase):
 
         with open(setupIni, 'w') as f :
             f.write(self._var_setupIni.contents);
+
+        if not keepBC :
+            return;
 
         # BC layer for `setup_ini` configuration field
         with open(self._file_setup_ini, 'w') as f :

@@ -4,6 +4,10 @@ TEST_SCRIPT = -m cygapt.test.__main__
 ARGUMENTS =
 ARGUMENTS += -v
 
+# Print a warning each time it occurs, used for deprecation tests
+# see https://docs.python.org/2/using/cmdline.html#cmdoption-W
+PYTHON += -Wall
+
 sourcetest: FORCE
 	cd $(SD_SRC); $(PYTHON) $(TEST_SCRIPT) $(ARGUMENTS)
 

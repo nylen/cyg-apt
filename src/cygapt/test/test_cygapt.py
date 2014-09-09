@@ -18,6 +18,7 @@ import unittest;
 import sys;
 import os;
 import gzip;
+import warnings;
 
 from cygapt.cygapt import CygApt;
 from cygapt.ob import CygAptOb;
@@ -92,7 +93,7 @@ class TestCygApt(TestCase):
         rc.distname = 'curr';
 
         # BC layer for `setup_ini` configuration field
-        rc.setup_ini = self._file_setup_ini;
+        del rc.__dict__['setup_ini'];
 
         rc.ROOT = self._dir_mtroot;
         rc.always_update = False;
@@ -504,6 +505,24 @@ class TestCygApt(TestCase):
             message = "The package `{0}` is barred.".format(package);
             self.assertTrue(result, message);
 
+    def testGetRessourceWithSetupIniFieldWarnDeprecationWarning(self):
+        self._writeUserConfig(self._file_user_config, keepBC=True);
+
+        self._assertDeprecatedWarning(
+            "The configuration field `setup_ini` is deprecated since version"
+            " 1.1 and will be removed in 2.0.",
+            self.obj.getRessource,
+            self._file_user_config,
+        );
+
+    def testGetRessourceWithoutSetupIniFieldNotWarnDeprecationWarning(self):
+        self._assertNotDeprecatedWarning(
+            "The configuration field `setup_ini` is deprecated since version"
+            " 1.1 and will be removed in 2.0.",
+            self.obj.getRessource,
+            self._file_user_config,
+        );
+
     def assertInstall(self, pkgname_list):
         pkg_ini_list = [];
         for pkg in pkgname_list:
@@ -599,6 +618,34 @@ class TestCygApt(TestCase):
                 "exit {0:d};",
                 "",
             ]).format(exitCode));
+
+    def _assertDeprecatedWarning(self, message, callback, *args, **kwargs):
+        with warnings.catch_warnings(record=True) as warnList :
+            # Cause all DeprecationWarning with the specified message
+            # to always be triggered.
+            warnings.filterwarnings(
+                "always",
+                message=message,
+                category=DeprecationWarning,
+            );
+
+            # Trigger a warning.
+            ret = callback(*args, **kwargs);
+
+            # Verify some things
+            self.assertTrue(warnList, "At least one warning.");
+            warn = warnList[-1];
+            self.assertEqual(message, str(warn.message));
+
+        return ret;
+
+    def _assertNotDeprecatedWarning(self, message, callback, *args, **kwargs):
+        try:
+            self._assertDeprecatedWarning(message, callback, *args, **kwargs);
+        except self.failureException :
+            pass;
+        else:
+            self.fail("Failed asserting that not raise a DeprecationWarning");
 
 if __name__ == "__main__":
     unittest.main();
