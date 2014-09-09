@@ -22,6 +22,7 @@ import re;
 import shutil;
 import sys;
 import urllib;
+import warnings;
 
 import cygapt.utils as cautils;
 from cygapt.exception import ApplicationException;
@@ -1223,6 +1224,12 @@ class CygApt:
                 v = result.group(2);
                 if k in self.__rc.__dict__:
                     self.__rc.__dict__[k] = eval(v);
+                if 'setup_ini' == k :
+                    warnings.warn(
+                        "The configuration field `setup_ini` is deprecated"
+                        " since version 1.1 and will be removed in 2.0.",
+                        DeprecationWarning,
+                    );
 
         if not self.__rc.cache:
             msg = "{0} doesn't define cache.".format(self.__rcFile);
