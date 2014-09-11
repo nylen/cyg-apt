@@ -13,7 +13,6 @@
 
 from __future__ import absolute_import;
 
-import unittest;
 import os;
 import tempfile;
 import urllib;
@@ -24,11 +23,14 @@ import subprocess;
 import atexit;
 import time;
 
-class TestCase(unittest.TestCase):
+from cygapt.test.case import TestCase as BaseTestCase;
+
+class TestCase(BaseTestCase):
     __mirrorDir = None;
 
     def setUp(self):
-        unittest.TestCase.setUp(self);
+        BaseTestCase.setUp(self);
+
         self._var_tmpdir = tempfile.mkdtemp();
         self._var_old_cwd = os.getcwd();
         os.chdir(self._var_tmpdir);
@@ -120,7 +122,7 @@ class TestCase(unittest.TestCase):
         self._var_setupIni = SetupIniProvider(self, self._var_arch);
 
     def tearDown(self):
-        unittest.TestCase.tearDown(self);
+        BaseTestCase.tearDown(self);
 
         os.environ = self._var_old_env;
         os.chdir(self._var_old_cwd);

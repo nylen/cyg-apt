@@ -18,11 +18,12 @@ import unittest;
 import sys;
 from tempfile import TemporaryFile;
 
+from cygapt.test.case import TestCase;
 from cygapt.path_mapper import PathMapper;
 
-class TestPathMapper(unittest.TestCase):
+class TestPathMapper(TestCase):
     def setUp(self):
-        unittest.TestCase.setUp(self);
+        TestCase.setUp(self);
         self._var_root = "";
         self._var_cygwin_p = sys.platform.startswith("cygwin");
         self.obj = PathMapper(self._var_root, self._var_cygwin_p);
