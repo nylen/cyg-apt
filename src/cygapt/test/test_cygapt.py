@@ -18,7 +18,6 @@ import unittest;
 import sys;
 import os;
 import gzip;
-import warnings;
 
 from cygapt.cygapt import CygApt;
 from cygapt.ob import CygAptOb;
@@ -618,34 +617,6 @@ class TestCygApt(TestCase):
                 "exit {0:d};",
                 "",
             ]).format(exitCode));
-
-    def _assertDeprecatedWarning(self, message, callback, *args, **kwargs):
-        with warnings.catch_warnings(record=True) as warnList :
-            # Cause all DeprecationWarning with the specified message
-            # to always be triggered.
-            warnings.filterwarnings(
-                "always",
-                message=message,
-                category=DeprecationWarning,
-            );
-
-            # Trigger a warning.
-            ret = callback(*args, **kwargs);
-
-            # Verify some things
-            self.assertTrue(warnList, "At least one warning.");
-            warn = warnList[-1];
-            self.assertEqual(message, str(warn.message));
-
-        return ret;
-
-    def _assertNotDeprecatedWarning(self, message, callback, *args, **kwargs):
-        try:
-            self._assertDeprecatedWarning(message, callback, *args, **kwargs);
-        except self.failureException :
-            pass;
-        else:
-            self.fail("Failed asserting that not raise a DeprecationWarning");
 
 if __name__ == "__main__":
     unittest.main();

@@ -22,7 +22,6 @@ import sys;
 import os;
 import subprocess;
 import urllib;
-import warnings;
 
 from cygapt.setup import CygAptSetup;
 from cygapt.test.utils import TestCase;
@@ -370,34 +369,6 @@ class TestSetup(TestCase):
         with open(onEtc, 'r') as f :
             actual = f.read();
         self.assertEqual(expected, actual);
-
-    def _assertDeprecatedWarning(self, message, callback, *args, **kwargs):
-        with warnings.catch_warnings(record=True) as warnList :
-            # Cause all DeprecationWarning with the specified message
-            # to always be triggered.
-            warnings.filterwarnings(
-                "always",
-                message=message,
-                category=DeprecationWarning,
-            );
-
-            # Trigger a warning.
-            ret = callback(*args, **kwargs);
-
-            # Verify some things
-            self.assertTrue(warnList, "At least one warning.");
-            warn = warnList[-1];
-            self.assertEqual(message, str(warn.message));
-
-        return ret;
-
-    def _assertNotDeprecatedWarning(self, message, callback, *args, **kwargs):
-        try:
-            self._assertDeprecatedWarning(message, callback, *args, **kwargs);
-        except self.failureException :
-            pass;
-        else:
-            self.fail("Failed asserting that not raise a DeprecationWarning");
 
 if __name__ == "__main__":
     unittest.main()
