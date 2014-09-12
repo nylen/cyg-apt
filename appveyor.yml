@@ -87,6 +87,7 @@ install:
     - '%PYTHON% --version'
     - '%PYTHON% -c "import sys; print(''Python architecture: {0}''.format(''x64'' if sys.maxsize > 2**32 else ''x86''))"'
     - '%PYTHON% -c "import sys; print(''Python platform: {0}''.format(sys.platform));"'
+    - 'if "2.6" == "%PYTHON_VERSION%" appveyor DownloadFile https://raw.githubusercontent.com/bewest/argparse/master/argparse.py -FileName %PYTHON_DIR%/Lib/site-packages/argparse.py'
 
 build_script:
     - '%CYG_ROOT%/bin/bash -lc "cd \"$OLDPWD\"; make PYTHON=\"$PYTHON\""'
