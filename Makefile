@@ -5,7 +5,7 @@ all:: build tools doc
 UTIL_SPACE := $() #
 
 # Programs
-SHELL_PATH = /bin/sh
+SHELL_PATH = /bin/bash
 CP = /bin/cp -f
 RM = /bin/rm -f --preserve-root
 MV = /bin/mv

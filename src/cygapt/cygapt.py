@@ -202,7 +202,7 @@ class CygApt:
     def _checkForSetupExe(self):
         # It's far from bulletproof, but it's surprisingly hard to detect
         # setup.exe running since it doesn't lock any files.
-        p = os.popen(self.__pm.mapPath("/usr/bin/ps -W"));
+        p = os.popen(self.__pm.mapPath("/bin/ps -W"));
         psout = p.readlines();
         p.close();
         setup_re = re.compile(r"(?<![a-z0-9_ -])setup(|-1\.7|-x86|-x86_64)\.exe", re.IGNORECASE);
@@ -661,7 +661,7 @@ class CygApt:
             sys.stderr.write("running: {0}\n".format(file_name));
             if self.__cygwinPlatform:
                 cmd = " ".join([
-                    "sh",
+                    "bash",
                     self.SH_OPTIONS,
                     mapped_file
                 ]);
