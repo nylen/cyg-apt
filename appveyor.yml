@@ -97,7 +97,7 @@ test_script:
     - '%CYG_ROOT%/bin/bash -lc "cd \"$OLDPWD\"; make install"'
     - '%CYG_ROOT%/bin/bash -lc "cd \"$OLDPWD\"; make installtest PYTHON=\"$PYTHON\""'
     - ps: 'cp $env:CYG_ROOT/home/$env:USERNAME/.cyg-apt -destination $env:HOMEPATH'
-    - '%PYTHON% %CYG_ROOT%/bin/cyg-apt update'
+    - '%PYTHON% %CYG_ROOT%/bin/cyg-apt update -qX'
     - '%PYTHON% %CYG_ROOT%/bin/cyg-apt ball cygwin> ball~'
     - ps: 'Get-Content ball~ | set path; cmd /c $env:CYG_ROOT/bin/cygpath -w $path> ball~'
     - ps: 'Get-Content ball~'
