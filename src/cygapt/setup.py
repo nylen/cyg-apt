@@ -179,7 +179,7 @@ class CygAptSetup:
                 last_cache = setup_rc[i+1].strip();
             if 'last-mirror' in setup_rc[i]:
                 last_mirror = setup_rc[i+1].strip();
-        last_cache = cautils.cygpath(last_cache);
+        last_cache = self.__pm.mapPath(last_cache);
         return (last_cache, last_mirror);
 
     def setup(self, force=False):
@@ -452,7 +452,7 @@ class CygAptSetup:
             f = open(os.path.join(location, "last-cache"));
             last_cache = f.read().strip();
             f.close();
-            last_cache = cautils.cygpath(last_cache);
+            last_cache = self.__pm.mapPath(last_cache);
             f = open(os.path.join(location, "last-mirror"));
             last_mirror = f.read().strip();
             f.close();

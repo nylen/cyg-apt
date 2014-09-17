@@ -31,10 +31,13 @@ class TestCygApt(TestCase):
         TestCase.setUp(self);
 
         self._var_verbose = False;
-        self._var_cygwin_p = sys.platform.startswith("cygwin");
+        self._var_cygwin_p = (
+            sys.platform.startswith("cygwin")
+            or sys.platform.startswith("linux")
+        );
 
         if not self._var_cygwin_p:
-            self.skipTest("requires cygwin");
+            self.skipTest("requires cygwin or linux");
 
         self._writeUserConfig();
 
