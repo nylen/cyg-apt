@@ -228,6 +228,14 @@ mirror
 URL of your Cygwin mirror:
 cache
 The path to your package cache.
+.RS
+.TP
+setup_ini
+Define the \fIsetup.ini\fR location, standard is
+.IR /etc/setup/setup.ini .
+.IP
+Deprecated since version 1.1 and will be removed in 2.0.
+.RE
 
 .SH SPEED
 cyg-apt runs much faster if it does not download setup.ini each time. You can turn this off by setting always_update=False in ~/.cyg-apt The downside is that you will need to run cyg-apt update yourself to stay in sync with the latest packages your mirror is offering.

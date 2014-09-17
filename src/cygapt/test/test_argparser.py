@@ -19,7 +19,6 @@ from __future__ import absolute_import;
 
 import unittest;
 import sys;
-import warnings;
 
 from cygapt.test.case import TestCase;
 from cygapt.argparser import CygAptArgParser;
@@ -113,22 +112,6 @@ class TestArgParser(TestCase):
 
         self.assertEqual(ret.command, command);
         self.assertEqual(ret.package, args);
-
-    def _assertDeprecatedWarning(self, message, callback, *args, **kwargs):
-        with warnings.catch_warnings(record=True) as warnList:
-            # Cause all warnings to always be triggered.
-            warnings.simplefilter("always");
-
-            # Trigger a warning.
-            ret = callback(*args, **kwargs);
-
-            # Verify some things
-            self.assertTrue(warnList, "At least one warning.");
-            warn = warnList[-1];
-            self.assertTrue(issubclass(warn.category, DeprecationWarning));
-            self.assertEqual(message, str(warn.message));
-
-        return ret;
 
 if __name__ == "__main__":
     unittest.main();
