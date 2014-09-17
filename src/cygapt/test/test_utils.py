@@ -25,6 +25,8 @@ from cygapt.exception import UnexpectedValueException;
 from cygapt.test.utils import TestCase;
 from cygapt.structure import ConfigStructure;
 
+__DIR__ = os.path.dirname(os.path.realpath(os.path.abspath(__file__)));
+
 class TestUtils(TestCase):
     def _getTmpDir(self):
         return self._dir_tmp;
@@ -414,8 +416,7 @@ class TestUtils(TestCase):
         self.assertEqual(sorted(filelist), sorted(self._var_setupIni.__dict__[pkgname].filelist));
 
     def testPEArchitecture(self):
-        p = os.path.dirname(__file__); # ./src/cygapt/test
-        p = os.path.join(p, 'fixtures', 'utils');
+        p = os.path.join(__DIR__, 'fixtures', 'utils');
 
         fn = os.path.join(p, 'cyglsa.dll');
         self.assertFalse(utils.pe_is_64_bit(fn));
