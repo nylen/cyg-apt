@@ -182,7 +182,7 @@ Sets the distribution name and overwrite the \fIdistname\fR configuration.
 ignore dependencies.
 .TP
 .BR \-s ", " \-\-regexp
-It treats the \fISTRING\fR operand such as a POSIX regex pattern.
+Treats the \fISTRING\fR operand as a POSIX regex pattern.
 .RS
 .PP
 Example:
@@ -227,7 +227,7 @@ This environment variable is used to find the configuration file \fI~/.cyg\-apt\
 .TP
 .I USERPROFILE
 This environment variable is used to find the configuration file \fI~/.cyg\-apt\fR
-if \fIHOME\fR does not exists such as on Windows.
+if \fIHOME\fR does not exist, such as on Windows.
 .SH FILES
 .TP
 .I ~/.cyg\-apt
@@ -270,8 +270,8 @@ Deprecated since version 1.1 and will be removed in 2.0.
 .RE
 .TP
 .I /etc/setup/setup.rc
-Uses to read from the official Cygwin setup program configuration.
-The \fBsetup\fR command use it for fetch the lastest mirror and cache.
+The official Cygwin setup program configuration.
+The \fBsetup\fR command reads this file to fetch the lastest mirror and cache.
 .TP
 .I /etc/setup/installed.db
 Fetch and push from the installed packages database.
@@ -297,7 +297,7 @@ this protection.
 .SH BUGS
 .PP
 \fBcyg\-apt\fR, running within Cygwin, cannot alter packages it itself depends on.
-It is possible to run cyg\-apt in and Windows command shell, but a more convenient
+It is possible to run cyg\-apt in a Windows command shell, but a more convenient
 workaround is to use the standard setup.exe installer to update these packages.
 .PP
 Report bugs to the \fBcyg\-apt issue page\fR[1] where the development and maintenance
