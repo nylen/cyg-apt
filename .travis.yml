@@ -1,0 +1,14 @@
+language: python
+
+python:
+    - "2.6"
+    - "2.7"
+
+install:
+    - make PYTHON=python
+
+script:
+    - make test PYTHON=python
+
+notifications:
+    email: false
