@@ -39,7 +39,13 @@ f.close();
 
 setup(
     name=pkgname,
-    packages=[pkgname, pkgname + ".test"],
+    packages=[
+        'cygapt',
+        'cygapt.test',
+        'cygapt.test.case',
+        'cygapt.test.case.py2',
+        'cygapt.test.case.py2.minor6',
+    ],
     package_data={pkgname: ['LICENSE']},
     version=version,
     description="A Cygwin command line package management tool.",
