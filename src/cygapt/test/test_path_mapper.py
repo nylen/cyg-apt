@@ -24,7 +24,7 @@ from cygapt.path_mapper import PathMapper;
 class TestPathMapper(TestCase):
     def setUp(self):
         TestCase.setUp(self);
-        self._var_root = "";
+        self._var_root = "C:/cygwin";
         self._var_cygwin_p = sys.platform.startswith("cygwin");
         self.obj = PathMapper(self._var_root, self._var_cygwin_p);
 
@@ -70,6 +70,9 @@ class TestPathMapper(TestCase):
 
         for cyg in list(mapping.keys()):
             self.assertEqual(self.obj.mapPath(cyg), mapping[cyg]);
+
+        # Does not map path that has been already mapped
+        self.assertEqual(self.obj.mapPath('C:/'), 'C:/');
 
 if __name__ == "__main__":
     unittest.main();
