@@ -250,9 +250,14 @@ class CygAptSetup:
         if not os.path.isfile(installed_db):
             self._writeInstalled(installed_db);
 
-        # BC layer for `setup_ini` configuration field
-        if not os.path.isfile(self.__rc.setup_ini):
-            sys.stderr.write('getting {0}\n'.format(self.__rc.setup_ini));
+        setupIniPath = os.path.join(
+            self.__pm.mapPath(self.__rc.cache),
+            urllib.quote(self.__rc.mirror, '').lower(),
+            self.__arch,
+            'setup.ini',
+        );
+        if not os.path.isfile(setupIniPath):
+            sys.stderr.write('getting {0}\n'.format(setupIniPath));
             self.update(rc_file, True);
 
     def usage(self, cyg_apt_rc=None):
@@ -292,6 +297,7 @@ class CygAptSetup:
     def update(self, cyg_apt_rc, verify, main_mirror=None):
         """fetch current package database from mirror"""
         sig_name = None;
+        self.__rc = ConfigStructure();
         f = open(cyg_apt_rc);
         lines = f.readlines();
         f.close();

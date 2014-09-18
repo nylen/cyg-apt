@@ -253,7 +253,7 @@ class TestSetup(TestCase):
             ]).format(self=vars(self)), f.read());
 
         # create setup.ini on `/etc/setup/`
-        self.assertTrue(os.path.isfile(self._file_setup_ini));
+        self.assertFalse(os.path.isfile(self._file_setup_ini));
 
         # create setup.ini on `<cachedir>/<mirror>/<arch>/`
         self.assertTrue(os.path.isfile(os.path.join(
