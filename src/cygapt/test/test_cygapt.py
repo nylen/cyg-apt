@@ -128,6 +128,7 @@ class TestCygApt(TestCase):
 
         cygapt.setDosBash("/bin/bash");
         cygapt.setDosLn("/bin/ln");
+        cygapt.setDosXz("/usr/bin/xz");
 
         cygapt.setPrefixRoot(self._dir_mtroot[:-1]);
         cygapt.setAbsRoot(self._dir_mtroot);

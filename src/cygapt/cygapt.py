@@ -173,6 +173,12 @@ class CygApt:
     def setDosLn(self, dos_ln):
         self.__dosLn = str(dos_ln);
 
+    def getDosXz(self):
+        return self.__dosXz;
+
+    def setDosXz(self, dos_xz):
+        self.__dosXz = str(dos_xz);
+
     def getPrefixRoot(self):
         return self.__prefixRoot;
 
@@ -694,7 +700,7 @@ class CygApt:
         # Currently we use a temporary directory and extractall() then copy:
         # this is very slow. The Python documentation warns more sophisticated
         # approaches have pitfalls without specifying what they are.
-        tf = cautils.open_tarfile(ball);
+        tf = cautils.open_tarfile(ball, self.__dosXz);
         members = tf.getmembers();
         tempdir = "{0}-tmp".format(os.path.basename(tf.name));
         tempdir = tempdir.replace(".tar.bz2", "");
@@ -760,7 +766,7 @@ class CygApt:
         if cautils.is_tarfile(ball):
             if not self.__cygwinPlatform:
                 self._doInstallExternal(ball);
-            tf = cautils.open_tarfile(ball);
+            tf = cautils.open_tarfile(ball, self.__dosXz);
             if self.__cygwinPlatform:
                 tf.extractall(self.__absRoot);
             # Force slash to the end of each directories
@@ -1168,7 +1174,7 @@ class CygApt:
             return 1;
         os.mkdir(self.__pkgName);
         if cautils.is_tarfile(ball):
-            tf = cautils.open_tarfile(ball);
+            tf = cautils.open_tarfile(ball, self.__dosXz);
             tf.extractall(self.__pkgName);
             tf.close();
         else:
@@ -1261,6 +1267,7 @@ class CygApt:
         );
         self.__dosBash = "{0}bin/bash".format(self.__pm.getMountRoot());
         self.__dosLn = "{0}bin/ln".format(self.__pm.getMountRoot());
+        self.__dosXz = "{0}usr/bin/xz".format(self.__pm.getMountRoot());
         return 0;
 
     def _isBarredPackage(self, package):
