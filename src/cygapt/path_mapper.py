@@ -59,6 +59,11 @@ class PathMapper:
     def mapPath(self, path):
         if self.__cygwinPlatform:
             return path;
+
+        # does map a path that has been already mapped
+        if ':' in path :
+            return path;
+
         # sort to map to /e/bar/foo in pefrence /e/bar
         l = cautils.prsort(list(self.__map.keys()));
         for cygpath in l:
