@@ -1,255 +1,314 @@
-.\"     Title: cyg-apt
-.\"    Author: Christopher Cormie
-.\"      Date: 27 October 2009
-.TH CYG-APT 1
+.\" Process this file with
+.\" groff -man -Tascii man.1
+.\"
+.TH CYG\-APT 1 "2014-08-31"
 .SH NAME
-cyg-apt \- A Cygwin Package Manager
+cyg\-apt \- a Cygwin package manager utility \-\- command-line interface
 .SH SYNOPSIS
-.B cyg-apt [OPTION] [COMMAND] [PACKAGE]
-
-cyg-apt [-dhmtxsfyzq] {[install | remove | purge | source | ball | download | requires | missing  | url | requires | show | filelist | search | md5 | version ] pkg } | setup | update | upgrade | list | new | help | postinstall | postremove | {find file}
-
+.nf
+.PP
+.BR "cyg\-apt setup    " [ \-fXq ] " " [ \-m " " \fIMIRROR_URL ]
+.PP
+.BR "cyg\-apt update   " [ \-Xq ] " " [ \-m " " \fIMIRROR_URL ]
+.PP
+.BR "cyg\-apt upgrade  " [ \-dxfyzq ] " " [ \-m " " \fIMIRROR_URL ] " " [ \-t " (" prev | curr | test )]
+.PP
+.BR "cyg\-apt install  " [ \-dxfyq ] " " [ \-m " " \fIMIRROR_URL ] " " [ \-t " (" prev | curr | test )] " " \fIPACKAGE...
+.PP
+.BR "cyg\-apt remove   " [ \-fz ] " " \fIPACKAGE...
+.PP
+.BR "cyg\-apt purge    " [ \-fz ] " " [ \-m " " \fIMIRROR_URL ] " " [ \-t " (" prev | curr | test )] " " \fIPACKAGE...
+.PP
+.BR "cyg\-apt source   " [ \-q ] " " [ \-m " " \fIMIRROR_URL ] " " [ \-t " (" prev | curr | test )] " " \fIPACKAGE
+.PP
+.BR "cyg\-apt show     " [ \-q ] " " [ \-m " " \fIMIRROR_URL ] " " \fIPACKAGE
+.PP
+.BR "cyg\-apt search   " [ \-sq ] " " [ \-m " " \fIMIRROR_URL ] " " \fISTRING
+.PP
+.BR "cyg\-apt requires " [ \-xq ] " " [ \-m " " \fIMIRROR_URL ] " " [ \-t " (" prev | curr | test )] " " \fIPACKAGE
+.PP
+.BR "cyg\-apt list     " [ \-q ] " " [ \-m " " \fIMIRROR_URL ] " " [ \-t " (" prev | curr | test )]
+.PP
+.BR "cyg\-apt version  " [ \fIPACKAGE ]
+.PP
+.BR "cyg\-apt find     " \fIFILE
+.PP
+.BR "cyg\-apt ball     " [ \-mq " " \fIMIRROR_URL ] " " [ \-t " (" prev | curr | test )] " " \fIPACKAGE
+.PP
+.BR "cyg\-apt download " [ \-q ] " " [ \-m " " \fIMIRROR_URL ] " " [ \-t " (" prev | curr | test )] " " \fIPACKAGE
+.PP
+.BR "cyg\-apt filelist " \fIPACKAGE
+.PP
+.BR "cyg\-apt md5      " [ \-q ] " " [ \-m " " \fIMIRROR_URL ] " "  [ \-t " (" prev | curr | test )] " " \fIPACKAGE
+.PP
+.BR "cyg\-apt missing  " [ \-xq ] " " [ \-m " " \fIMIRROR_URL ] " " [ \-t " (" prev | curr | test )] " " \fIPACKAGE
+.PP
+.BR "cyg\-apt new      " [ \-q ] " " [ \-m " " \fIMIRROR_URL ] " " [ \-t " (" prev | curr | test )]
+.PP
+.BR "cyg\-apt url      " [ \-q ] " " [ \-m " " \fIMIRROR_URL ] " " [ \-t " (" prev | curr | test )] " " \fIPACKAGE
+.PP
+.BR "cyg\-apt " [ help ] " " [ \-h ]
+.fi
 .SH DESCRIPTION
-\fBcyg\-apt\fR is a Cygwin package manager.
-
-\fBcyg\-apt\fR allows you to install and remove packages on the command line, and conduct other package management operations.
-
-.SH USAGE
 .PP
-Examples:
+\fBcyg\-apt\fR is a command\-line tool for handling packages.
+Like \fBapt\-get\fR, \fBcyg\-apt\fR allows you to install and remove packages
+on the Cygwin command line, and provides other package management operations.
 .PP
-\fB$ cyg\-apt\fR install gdb
-.PP
-\fB$ cyg\-apt\fR remove gdb
-.PP
-\fB$ cyg\-apt\fR list
-
-.SH COMMANDS
-.PP
-setup
-.RS 4
-setup
-is run automatically when \fBcyg\-apt\fR is installed. If for any reason you wish to reset your ~/.cyg-apt configuration file, you can run \fBsetup\fR with \fB\-f\fR option. The configuration information therein is taken from your last Cygwin setup.exe run.
-.RE
-.PP
-install
-.RS 4
-install
-is followed by one or more packages to install or upgrade. If the package is not present, it is downloaded and installed. If there is a newer version of an existing package, it will be upgraded. If there are required packages that are not installed, these packages will be installed in a fully recursive manner.
-.RE
-.PP
-remove
-.RS 4
-remove
-is followed by one or more packages to remove. The given packages are uninstalled from the system, but remain in the package cache. If you reinstall a removed package it will be taken from the cache unless a newer version exists on the server. To completely remove a package use the purge command. Packages that the given package depend on are not removed.
-.RE
-.PP
-purge
-.RS 4
-purge
-is followed by one or more packages to uninstall and completely clear from the system. Given packages are uninstalled and removed from the package cache.
-.RE
-.PP
-upgrade
-.RS 4
-upgrade
-all the installed packages. Use with caution. There are small number of packages \fBcyg\-apt\fR will not upgrade, see LIMITATIONS.
-.RE
-.PP
-list
-.RS 4
-list
-the installed packages, their versions and newer versions if available.
-.RE
-.PP
-new
-.RS 4
-new
-shows upgradable packages available on the Cygwin mirror.
-.RE
-.PP
-filelist
-.RS 4
-filelist
-is followed by a package to investigate: the files the package installs are listed.
-.RE
-.PP
-find
-.RS 4
-find
-is followed by a file to locate the package for: the package the file belongs to will be printed, if it can be found. This works for files installed directly from a tarball, but not for files created after the package is installed or by a postinstall script.
-.RE
-.PP
-search
-.RS 4
-search
-is followed by string to find in the package descriptions. All packages are searched, including packages that are available but not installed. Use the --regexp flag for a regular expression search.
-.RE
-.PP
-source
-.RS 4
-source
-downloads the source release of a package, if available. The source is downloaded to the current directory in a directory named by concatenating the package name and its version.
-.RE
-.PP
-requires
-.RS 4
-requires
-lists the packages a given package requires.
-.RE
-.PP
-download
-.RS 4
-download
-a given package to the package cache but do not install it.
-.RE
-.PP
-show
-.RS 4
-show
-the package description, as found in the setup.ini database.
-.RE
-.PP
-ball
-.RS 4
-ball
-shows the path to the tarball for the given package.
-.RE
-.PP
-url
-.RS 4
-url
-shows the URL for a given package's tarball.
-.RE
-.PP
-version
-.RS 4
-version
-shows the installed version of a given package. If no packages is given, the versions of all packages are displayed.
-.RE
-.PP
-md5
-.RS 4
-md5
-checks the md5 checksum of a package in the cache against the expected md5 given in the setup.ini database.
-.RE
-.PP
-postinstall
-.RS 4
+Unless the \fB\-h\fR, or \fB\-\-help\fR option is given, one of the commands
+below must be present.
+.SS Commands
+.TP
+.B setup
+setup is run automatically when \fBcyg\-apt\fR is installed.
+If for any reason you wish to reset your configuration file \fI~/.cyg\-apt\fR,
+you can add the \fB\-f\fR option.
+The configuration information therein is taken from your last Cygwin setup.exe run.
+.TP
+.B update
+update is used to resynchronize the package index files from their sources.
+The indexes of available packages are fetched from the location specified by
+the \fImirror\fR configuration.
+For example, this command retrieves setup.ini file, so that information about
+new and updated packages is available.
+An update should always be performed before an upgrade.
+.TP
+.B upgrade
+upgrade is used to install the newest versions of all packages currently
+installed on the system from the mirror specified by the configuration.
+Packages currently installed with new versions available are retrieved and
+upgraded.
+An update must be performed first so that \fBcyg\-apt\fR knows that new versions
+of packages are available.
+Use with caution, there are small number of packages \fBcyg\-apt\fR will not
+upgrade, see \fBLIMITATIONS\fR.
+.TP
+.B install
+install is followed by one or more packages desired for installation or upgrading.
+All packages required by the package(s) specified for installation will also
+be retrieved and installed.
+The \fImirror\fR configuration is used to locate the desired packages.
+A specific distribution can be selected with the \fB\-t\fR option or the \fIdistname\fR configuration.
+.TP
+.B remove
+remove is identical to install except that packages are removed instead of
+installed (any configuration files are deleted too).
+It remove all files that are listed into the \fI/etc/setup/<PACKAGE>.lst.gz\fR
+file.
+Packages that the given \fIPACKAGE\fR depend on are not removed.
+Use with caution, there are small number of packages \fBcyg\-apt\fR will not
+remove, see \fBLIMITATIONS\fR.
+.TP
+.B purge
+purge is identical to remove except that packages are uninstalled and removed
+from the package cache.
+.TP
+.B source
+source causes \fBcyg\-apt\fR to fetch source packages.
+It will then find and download into the current directory the newest available
+version of that source package.
+While respect the distribution, set with the \fB\-t\fR option or the \fIdistname\fR configuration, if possible.
+.TP
+.B show
+show the \fIPACKAGE\fR description, as found in the setup.ini database.
+.TP
+.B search
+search performs a full text search on all available package lists for the
+\fISTRING\fR given.
+It searches the package names and the descriptions for an occurrence of the
+\fISTRING\fR and prints out the package name and the short description.
+Use the \fB\-s\fR option to treat \fISTRING\fR such as an POSIX regex pattern.
+.TP
+.B requires
+requires shows a listing of each dependency a \fIPACKAGE\fR has.
+.TP
+.B list
+list the installed packages, their versions and newer versions if available.
+.TP
+.B version
+version shows the installed version of a given package. If no packages is given,
+the versions of all packages are displayed.
+.TP
+.B new
+Show upgraded packages; print out a list of all packages that are to be upgraded.
+.TP
+.B filelist
+filelist is followed by a package to investigate: the files the package installs
+are listed.
+.TP
+.B find
+find is followed by a file to locate the package for: the package the file
+belongs to will be printed, if it can be found.
+This works for files installed directly from a tarball, but not for files created
+after the package is installed or by a postinstall script.
+.TP
+.B download
+download a given package to the package cache but do not install it.
+.TP
+.B ball
+ball shows the path to the tarball for the given package.
+.TP
+.B url
+url shows the URL for a given package's tarball.
+.TP
+.B md5
+md5 checks the md5 checksum of a package in the cache against the expected md5
+given in the setup.ini database.
+.TP
+.B postinstall
 Executes all undone postinstall scripts.
-.RE
-.PP
-postremove
-.RS 4
+.TP
+.B postremove
 Executes all undone preremove and postremove scripts.
-.RE
-.PP
-
 .SH OPTIONS
-
+.PP
 These options may be given on the command line. Most options are command specific.
-
-\fB\-d\fR, \fB\-\-download\-only\fR
-.RS 4
-Download the package only, do not install.
+.TP
+.BR \-d ", " \-\-download\-only
+Download only; package files are only retrieved, not unpacked or installed.
+.TP
+.BR \-h ", " \-\-help
+Show a short usage summary.
+.TP
+.BR \-m ", " \-\-mirror = \fIURL
+Use the given download mirror.
+Be sure to give the complete URL.
+The correct \fIURL\fR will be a directory containing the server's \fIsetup.ini\fR.
+.TP
+.BR \-t ", " \-\-dist "=(" curr | test | prev )
+Sets the distribution name and overwrite the \fIdistname\fR configuration.
+.TP
+.BR \-x ", " \-\-no\-deps
+ignore dependencies.
+.TP
+.BR \-s ", " \-\-regexp
+Treats the \fISTRING\fR operand as a POSIX regex pattern.
+.RS
+.PP
+Example:
+.RS
+.PP
+.nf
+$ cyg\-apt \-\-regexp search "p.thon"
+.fi
 .RE
-.PP
-
-\fB\-h\fR, \fB\-\-help\fR
-.RS 4
-Show a short usage summary\&.
 .RE
-.PP
-
-\fB\-m\fR, \fB\-\-mirror=URL\fR
-.RS 4
-Use the given download mirror\&. Be sure to give the complete URL: the correct URL will be a directory containing the server's setup.ini
-.RE
-.PP
-
-\fB\-t\fR, \fB\-\-dist=NAME\fR
-.RS 4
-set dist name (curr, test, prev)\&.
-.RE
-.PP
-
-\fB\-x\fR, \fB\-\-no-deps\fR
-.RS 4
-ignore dependencies on install\&.
-.RE
-.PP
-
-\fB\-s\fR, \fB\-\-regexp\fR
-.RS 4
-search, using the search string as regular expression.\&. Example:
-.PP
-$ \fBcyg\-apt\fR --regexp search "p.thon"
-
-.RE
-.PP
-
-\fB\-f\fR, \fB\-\-force\fR, \fB\-\-nobarred\fR
-.RS 4
-add/remove packages cyg-apt itself depends on.\&.
-.PP
-\fBsetup\fR; overwriting ~/.cyg-apt configuration file.
-.RE
-.PP
-
-\fB\-y\fR, \fB\-\-nopostinstall\fR
-.RS 4
-do not run postinstall scripts when installing.\&.
-.PP
+.TP
+.BR \-f ", " \-\-force ", " \-\-nobarred
+add/remove packages cyg\-apt itself depends on.
+.IP
+\fBsetup\fR; overwriting ~/.cyg\-apt configuration file.
+.TP
+.BR \-y ", " \-\-nopostinstall
+do not run postinstall scripts when installing.
+.IP
 Deprecated since version 1.1 and will be removed in 2.0.
-.RE
-.PP
-
-\fB\-y\fR, \fB\-\-nopostremove\fR
-.RS 4
-do not run preremove or postremove scripts when removing.\&.
-.PP
+.TP
+.BR \-y ", "\-\-nopostremove
+do not run preremove or postremove scripts when removing.
+.IP
 Deprecated since version 1.1 and will be removed in 2.0.
-.RE
+.TP
+.BR \-q ", "\-\-quiet
+Quiet; Produces output suitable for logging, omitting progress indicators.
+.SH EXIT STATUS
 .PP
-
-\fB\-q\fR, \fB\-\-quiet\fR
-.RS 4
-Quiet; Produces output suitable for logging, omitting progress indicators.\&.
-.RE
-.PP
-
-.SH CONFIGURATION: .cyg-apt
-cyg-apt is designed to be configured by this file alone. The syntax of the file is straightforward and there are additional comments to help you edit the file. The file lives in your home directory. For additional configurations, copy the file and place it in the current directory, then edit it: ./.cyg-apt is used over ~/.cyg-apt.
-
-The key fields of .cyg-apt are:
-ROOT
-The path to your Cygwin installation.
-mirror
-URL of your Cygwin mirror:
-cache
-The path to your package cache.
+The following exit values shall be returned:
+.TP
+0
+All input files were output successfully.
+.TP
+>0
+An error occurred.
+.SH ENVIRONMENT
+.TP
+.I HOME
+This environment variable is used to find the configuration file \fI~/.cyg\-apt\fR.
+.TP
+.I USERPROFILE
+This environment variable is used to find the configuration file \fI~/.cyg\-apt\fR
+if \fIHOME\fR does not exist, such as on Windows.
+.SH FILES
+.TP
+.I ~/.cyg\-apt
+cyg\-apt is designed to be configured by this file alone.
+The syntax of the file is straightforward and there are additional comments to
+help you edit the file.
+The file lives in your home directory.
+For additional configurations, copy the file and place it in the current
+directory, then edit it: \fI./.cyg\-apt\fR is used over \fI~/.cyg\-apt\fR.
+.IP
+The key fields are:
+.RS
 .RS
 .TP
-setup_ini
+.B ROOT
+The root of your Cygwin installation as a windows path ending with a slash.
+.TP
+.B mirror
+The url of your Cygwin mirror.
+.TP
+.B cache
+The path to your package cache.
+.TP
+.B always_update
+Always updates the package index files from the mirror.
+cyg\-apt will be faster and use less bandwidth if \fIFalse\fR but you will have
+to run the \fBupdate\fR command manually.
+.TP
+.B distname
+The target distribution name takes the following specific values;
+.RB ( prev | curr | test ).
+Usually you want the \fBcurr\fRent version of a package.
+.TP
+.B setup_ini
 Define the \fIsetup.ini\fR location, standard is
 .IR /etc/setup/setup.ini .
 .IP
 Deprecated since version 1.1 and will be removed in 2.0.
 .RE
-
-.SH SPEED
-cyg-apt runs much faster if it does not download setup.ini each time. You can turn this off by setting always_update=False in ~/.cyg-apt The downside is that you will need to run cyg-apt update yourself to stay in sync with the latest packages your mirror is offering.
-
-.SH LIMITATIONS
-.PP
-\fBcyg\-apt\fR, running within Cygwin, cannot alter packages it itself depends on: python cygwin base-cygwin coreutils bash zlib libreadline gpg. It is possible to run cyg-apt in and Windows command shell, but a more convenient workaround is to use the standard setup.exe installer to update these packages.
-
+.RE
+.TP
+.I /etc/setup/setup.rc
+The official Cygwin setup program configuration.
+The \fBsetup\fR command reads this file to fetch the lastest mirror and cache.
+.TP
+.I /etc/setup/installed.db
+Fetch and push from the installed packages database.
+.TP
+.I /etc/postinstall/
+Executes post install scripts
+.TP
+.I /etc/preremove/
+Executes pre remove scripts
+.TP
+.I /etc/postremove/
+Executes post remove scripts
 .SH SECURITY
-\fBcyg\-apt\fR follows setup.exe in verifying downloaded setup.ini files using Cygwin's public key. This verification is performing using the Cygwin port of gpg package. This provides some assurance that the mirror is not providing malware versions of Cygwin packages, since any changes to setup.ini such as changes to package md5sum values will cause the signature not to match the file. An attacker able to edit cyg-apt or replace gpg with their own package can subvert this protection.
-
-.SH MORE INFORMATION:
 .PP
-http://code.google.com/p/cyg-apt/
-
-.SH ACKNOWLEDGMENTS
-The original cyg-apt was written by Jan Nieuwenhuizen. Additional development by Christopher Cormie. Questions and feedback to cjcormie@gmail.com.
+\fBcyg\-apt\fR follows setup.exe in verifying downloaded setup.ini files using
+Cygwin's public key.
+This verification is performing using the Cygwin port of gpg package.
+This provides some assurance that the mirror is not providing malware versions
+of Cygwin packages, since any changes to setup.ini such as changes to package
+md5sum values will cause the signature not to match the file.
+An attacker able to edit cyg\-apt or replace gpg with their own package can subvert
+this protection.
+.SH BUGS
+.PP
+\fBcyg\-apt\fR, running within Cygwin, cannot alter packages it itself depends on.
+It is possible to run cyg\-apt in a Windows command shell, but a more convenient
+workaround is to use the standard setup.exe installer to update these packages.
+.PP
+Report bugs to the \fBcyg\-apt issue page\fR[1] where the development and maintenance
+is primarily done.
+.SH AUTHOR
+The original cyg\-apt was written by Jan Nieuwenhuizen.
+For a list of all authors, please see the \fBAUTHORS\fR[2] file.
+.SH NOTES
+.TP
+1. cyg\-apt issue page
+https://github.com/nylen/cyg\-apt/issues
+.TP
+2. AUTHORS
+/usr/share/doc/cyg\-apt/AUTHORS
