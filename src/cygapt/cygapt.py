@@ -22,7 +22,6 @@ import re;
 import shutil;
 import sys;
 import urllib;
-import warnings;
 
 import cygapt.utils as cautils;
 from cygapt.exception import ApplicationException;
@@ -36,7 +35,6 @@ from cygapt.structure import ConfigStructure;
 class CygApt:
     INSTALLED_DB_MAGIC = "INSTALLED.DB 2\n";
     DIST_NAMES = ('curr', 'test', 'prev');
-    RC_REGEX = re.compile(r"^\s*(\w+)\s*=\s*(.*)\s*$");
     FORCE_BARRED = ["python", "python-argparse", "gnupg", "xz"];
     SH_OPTIONS = " --norc --noprofile ";
     CYG_POSTINSTALL_DIR = "/etc/postinstall";
@@ -1220,22 +1218,7 @@ class CygApt:
         self.__absRoot = root;
 
     def getRessource(self, filename):
-        f = open(filename);
-        lines = f.readlines();
-        f.close();
-        for i in lines:
-            result = self.RC_REGEX.search(i);
-            if result:
-                k = result.group(1);
-                v = result.group(2);
-                if k in self.__rc.__dict__:
-                    self.__rc.__dict__[k] = eval(v);
-                if 'setup_ini' == k :
-                    warnings.warn(
-                        "The configuration field `setup_ini` is deprecated"
-                        " since version 1.1 and will be removed in 2.0.",
-                        DeprecationWarning,
-                    );
+        self.__rc = cautils.parse_rc(filename);
 
         if not self.__rc.cache:
             msg = "{0} doesn't define cache.".format(self.__rcFile);

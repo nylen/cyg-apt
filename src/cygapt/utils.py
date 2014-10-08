@@ -17,15 +17,19 @@ from __future__ import absolute_import;
 import os;
 import re;
 import shutil;
+import struct;
 import subprocess;
 import sys;
 import tarfile;
 import urlparse;
 import stat;
+import warnings;
 
 from cygapt.exception import ApplicationException;
 from cygapt.exception import InvalidArgumentException;
+from cygapt.exception import UnexpectedValueException;
 from cygapt.url_opener import CygAptURLopener;
+from cygapt.structure import ConfigStructure;
 
 def cygpath(path):
     p = os.popen("cygpath \"{0}\"".format(path));
@@ -34,28 +38,40 @@ def cygpath(path):
     return dospath;
 
 def parse_rc(cyg_apt_rc):
-    """Currently main only needs to know if we alway call the update command
-    before other commands
+    """Parse the user configuration file.
+
+    @param cyg_apt_rc: str The path to the user configuration.
+
+    @return: ConfigStructure The configuration.
     """
     f = open(cyg_apt_rc);
     lines = f.readlines();
     f.close();
     rc_regex = re.compile(r"^\s*(\w+)\s*=\s*(.*)\s*$");
     always_update = False;
+    config = ConfigStructure();
     for i in lines:
         result = rc_regex.search(i);
         if result:
             k = result.group(1);
             v = result.group(2);
-            if k == "always_update":
-                always_update = eval(v);
+            if k in config.__dict__ :
+                config.__dict__[k] = str(v).strip('\'"');
+            if 'setup_ini' == k :
+                warnings.warn(
+                    "The configuration field `setup_ini` is deprecated"
+                    " since version 1.1 and will be removed in 2.0.",
+                    DeprecationWarning,
+                );
 
-    if always_update in [True, 'True', 'true', 'Yes', 'yes']:
+    if config.always_update in [True, 'True', 'true', 'Yes', 'yes']:
         always_update = True;
     else:
         always_update = False;
 
-    return always_update;
+    config.always_update = always_update;
+
+    return config;
 
 def remove_if_exists(fn):
     try:
@@ -182,6 +198,43 @@ def uri_get(directory, uri, verbose=False):
         os.chdir(old_cwd);
     else:
         raise InvalidArgumentException("bad URL {0}".format(uri));
+
+def pe_is_64_bit(fn):
+    """Reads the header of a PE (.exe or .dll) file to determine its
+    architecture.
+
+    @param fn: str The PE filename to read.
+
+    @return: bool Whether the PE file is 64-bit.
+
+    @raise UnexpectedValueException: If an invalid value is found.
+    @raise IOError: If a read error occurs.
+    """
+    with open(fn, "rb") as f:
+        if "MZ" != f.read(2) :
+            raise UnexpectedValueException(
+                "File '{0}' is not a DOS executable."
+                "".format(fn)
+            );
+        f.seek(0x3c); # Offset of PE header (e_lfanew in DOS header)
+        pe_header = struct.unpack('<L', f.read(4))[0];
+        f.seek(pe_header);
+        if "PE\0\0" != f.read(4) :
+            raise UnexpectedValueException(
+                "Could not find PE header in file '{0}'."
+                "".format(fn)
+            );
+        f.seek(pe_header + 0x4); # Machine field of COFF header
+        machine = struct.unpack('<H', f.read(2))[0];
+        if 0x014c == machine :
+            return False;
+        elif 0x8664 == machine :
+            return True;
+        else:
+            raise UnexpectedValueException(
+                "Bad machine value 0x{0:X} in file '{1}'."
+                "".format(machine, fn)
+            );
 
 class RequestException(ApplicationException):
     pass;

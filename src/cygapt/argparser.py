@@ -17,17 +17,15 @@ import argparse;
 import warnings;
 
 class CygAptArgParser():
-    def __init__(self, usage=None, scriptname=None):
+    def __init__(self, scriptname=None):
         self.__parser = None;
         self.__isCompiled = False;
 
-        self.setUsage(usage);
         self.setAppName(scriptname);
 
         self.__parser = argparse.ArgumentParser(
             prog=self._appName,
             add_help=False,
-            usage=self._usage,
         );
 
         self.__commands = [
@@ -55,13 +53,6 @@ class CygAptArgParser():
             'postinstall',
             'postremove',
         ];
-
-
-    def getUsage(self):
-        return self._usage;
-
-    def setUsage(self, usage):
-        self._usage = str(usage);
 
     def getAppName(self):
         return self._appName;

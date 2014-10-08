@@ -26,7 +26,7 @@ from cygapt.argparser import CygAptArgParser;
 class TestArgParser(TestCase):
     def setUp(self):
         TestCase.setUp(self);
-        self.obj = CygAptArgParser("usage", "scriptname");
+        self.obj = CygAptArgParser("scriptname");
 
         self.__originArgv = sys.argv[:];
         sys.argv = sys.argv[:1];
@@ -38,7 +38,6 @@ class TestArgParser(TestCase):
 
     def test___init__(self):
         self.assertTrue(isinstance(self.obj, CygAptArgParser));
-        self.assertEqual(self.obj.getUsage(), "usage");
         self.assertEqual(self.obj.getAppName(), "scriptname");
 
     def testParse(self):

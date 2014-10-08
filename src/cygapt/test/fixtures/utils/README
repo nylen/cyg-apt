@@ -1,0 +1,11 @@
+Files in this directory:
+
+cyglsa.dll      : from 32-bit Cygwin
+cyglsa64.dll    : from 64-bit Cygwin
+
+cyglsa-bad*.dll : (copies of cyglsa.dll with changes)
+
+cyglsa-bad1.dll : MZ header changed to ZM
+cyglsa-bad2.dll : PE\0\0 header changed to EP\0\0
+cyglsa-bad3.dll : machine value changed from 0x014C to 0xDEAD
+cyglsa-bad4.dll : truncated before PE header
