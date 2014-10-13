@@ -1250,7 +1250,7 @@ class CygApt:
         );
         self.__dosBash = "{0}bin/bash".format(self.__pm.getMountRoot());
         self.__dosLn = "{0}bin/ln".format(self.__pm.getMountRoot());
-        self.__dosXz = "{0}usr/bin/xz".format(self.__pm.getMountRoot());
+        self.__dosXz = self.__pm.mapPath("/usr/bin/xz");
         return 0;
 
     def _isBarredPackage(self, package):
