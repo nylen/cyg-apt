@@ -56,7 +56,7 @@ def parse_rc(cyg_apt_rc):
             k = result.group(1);
             v = result.group(2);
             if k in config.__dict__ :
-                config.__dict__[k] = str(v).strip('\'"');
+                config.__dict__[k] = str(v).rstrip().strip('\'"');
             if 'setup_ini' == k :
                 warnings.warn(
                     "The configuration field `setup_ini` is deprecated"
