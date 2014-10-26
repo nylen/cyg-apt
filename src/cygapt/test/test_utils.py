@@ -78,6 +78,18 @@ class TestUtils(TestCase):
         self.assertEqual(ret.distname, 'curr');
         self.assertEqual(ret.barred, '');
 
+    def testParseRcWithTrailingSpace(self):
+        self._assertParseRcWithTrailingWhitespace(' ');
+
+    def testParseRcWithTrailingCarriageReturn(self):
+        self._assertParseRcWithTrailingWhitespace('\r');
+
+    def testParseRcWithTrailingHorizontalTab(self):
+        self._assertParseRcWithTrailingWhitespace('\t');
+
+    def testParseRcWithTrailingWhitespaces(self):
+        self._assertParseRcWithTrailingWhitespace(' \r\t\r\n');
+
     def testPrsort(self):
         in_lst = ["B", "A", "a", "1", "b", "/", "", "2"];
 
@@ -483,6 +495,14 @@ class TestUtils(TestCase):
                 "Expected UnexpectedValueException"
                 " (truncated before PE header)."
             );
+
+    def _assertParseRcWithTrailingWhitespace(self, whitespace):
+        f = open(self._getTmpFileName(), 'w');
+        f.write("mirror = \"http://foo\""+whitespace);
+        f.close();
+        ret = utils.parse_rc(self._getTmpFileName());
+        self.assertTrue(isinstance(ret, ConfigStructure));
+        self.assertEqual("http://foo", ret.mirror);
 
 if __name__ == "__main__":
     unittest.main();
