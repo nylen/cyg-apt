@@ -249,7 +249,7 @@ class CygAptSetup:
 
         setupIniPath = os.path.join(
             self.__pm.mapPath(self.__rc.cache),
-            urllib.quote(self.__rc.mirror, '').lower(),
+            urllib.quote(self.__rc.mirror+('' if self.__rc.mirror.endswith('/') else '/'), '').lower(),
             self.__arch,
             'setup.ini',
         );
@@ -403,7 +403,7 @@ class CygAptSetup:
 
         downloads = os.path.join(
             self.__pm.mapPath(self.__rc.cache),
-            urllib.quote(mirror, '').lower(),
+            urllib.quote(mirror+('' if mirror.endswith('/') else '/'), '').lower(),
             platform_dir,
         );
 

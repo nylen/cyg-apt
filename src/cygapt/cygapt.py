@@ -106,7 +106,7 @@ class CygApt:
             self.__rc.mirror = main_mirror;
             self.__downloadDir = os.path.join(
                 self.__rc.cache,
-                urllib.quote(self.__rc.mirror, '').lower()
+                urllib.quote(self.__rc.mirror+('' if self.__rc.mirror.endswith('/') else '/'), '').lower()
             );
 
         if (main_distname):
@@ -1239,7 +1239,7 @@ class CygApt:
         self.__rc.cache = self.__pm.mapPath(self.__rc.cache);
         self.__downloadDir = os.path.join(
             self.__rc.cache,
-            urllib.quote(self.__rc.mirror, '').lower()
+            urllib.quote(self.__rc.mirror+('' if self.__rc.mirror.endswith('/') else '/'), '').lower()
         );
         self.__installedDbFile = os.path.join(self.__setupDir, "installed.db");
 
