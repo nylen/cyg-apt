@@ -79,10 +79,6 @@ class TestCase(BaseTestCase):
             self._var_exename
         );
         self._dir_exedata = os.path.join(self._dir_data, self._var_exename);
-        self._dir_downloads = os.path.join(
-            self._dir_execache,
-            urllib.quote(self._var_mirror, '').lower()
-        );
 
         # build exe tree
         os.mkdir(self._dir_confsetup);
@@ -189,7 +185,7 @@ class TestCase(BaseTestCase):
 
         It makes the same result that the `update` command.
         """
-        setupIniDir = os.path.join(self._dir_downloads, self._var_arch);
+        setupIniDir = os.path.join(self._getDownloadDir(), self._var_arch);
         setupIni = os.path.join(setupIniDir, "setup.ini");
 
         if not os.path.isdir(setupIniDir) :
@@ -204,6 +200,18 @@ class TestCase(BaseTestCase):
         # BC layer for `setup_ini` configuration field
         with open(self._file_setup_ini, 'w') as f :
             f.write(self._var_setupIni.contents);
+
+    def _getDownloadDir(self):
+        """Gets the download directory from the mirror
+
+        @return: str
+        """
+        sep = '' if self._var_mirror.endswith('/') else '/';
+
+        return os.path.join(
+            self._dir_execache,
+            urllib.quote(self._var_mirror+sep, '').lower(),
+        );
 
     @classmethod
     def __getMirrorDir(cls):

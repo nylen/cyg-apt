@@ -106,9 +106,12 @@ class TestSetup(TestCase):
         except Exception as e:
             self.assertTrue(isinstance(e, SignatureException));
             self.assertEqual(e.getMessage(), " ".join([
-                "{0}/{1}/setup.bz2 not signed by Cygwin's public key.",
+                "{0}{1}/setup.bz2 not signed by Cygwin's public key.",
                 "Use -X to ignore signatures.",
-            ]).format(self._var_mirror, self._var_setupIni.getArchitecture()));
+            ]).format(
+                self._var_mirror+('' if self._var_mirror.endswith('/') else '/'),
+                self._var_setupIni.getArchitecture(),
+            ));
         else:
             self.fail(" ".join([
                 ".update() raises an SignatureException when the mirror have",
@@ -119,6 +122,28 @@ class TestSetup(TestCase):
         if not self._var_cygwin_p:
             self.skipTest("requires cygwin or linux");
 
+        self._writeUserConfig(self._file_user_config);
+
+        self.obj.update(self._file_user_config, False);
+
+        self._assertUpdate();
+
+    def testUpdateWithoutVerifySignatureAndWithoutMirrorEndSlash(self):
+        if not self._var_cygwin_p:
+            self.skipTest("requires cygwin or linux");
+
+        self._var_mirror = self._var_mirror.rstrip('/');
+        self._writeUserConfig(self._file_user_config);
+
+        self.obj.update(self._file_user_config, False);
+
+        self._assertUpdate();
+
+    def testUpdateWithoutVerifySignatureAndWithMirrorEndSlash(self):
+        if not self._var_cygwin_p:
+            self.skipTest("requires cygwin or linux");
+
+        self._var_mirror = self._var_mirror.rstrip('/')+'/';
         self._writeUserConfig(self._file_user_config);
 
         self.obj.update(self._file_user_config, False);
@@ -211,7 +236,8 @@ class TestSetup(TestCase):
         os.remove(self._file_user_config);
 
         # next
-        self._var_mirror = self._var_mirror_http;
+        # mirror end with one slash
+        self._var_mirror = self._var_mirror_http.rstrip('/')+'/';
         self._writeSetupRc(self._file_setup_rc);
         self.obj._gpgImport(self.obj.GPG_CYG_PUBLIC_RING_URI);
         self.obj.setup();
@@ -256,12 +282,19 @@ class TestSetup(TestCase):
         self.assertFalse(os.path.isfile(self._file_setup_ini));
 
         # create setup.ini on `<cachedir>/<mirror>/<arch>/`
-        self.assertTrue(os.path.isfile(os.path.join(
-            self._dir_execache,
-            urllib.quote(self._var_mirror, '').lower(),
+        setupIniPath = os.path.join(
+            self._getDownloadDir(),
             self._var_arch,
             "setup.ini",
-        )));
+        );
+        self.assertTrue(os.path.isfile(setupIniPath));
+
+        # mirror end without slash
+        self._var_mirror = self._var_mirror_http.rstrip('/');
+        self._writeSetupRc(self._file_setup_rc);
+        # fail if setupIniPath will be rewrite
+        os.chmod(setupIniPath, 0o000);
+        self.obj.setup(True);
 
     def testSetupNotWarnDeprecationWarning(self):
         if not self._var_cygwin_p:
@@ -344,7 +377,7 @@ class TestSetup(TestCase):
         @raise AssertionError: When the assertion is not verify.
         """
         onCache = os.path.join(
-            self._dir_downloads,
+            self._getDownloadDir(),
             self._var_setupIni.getArchitecture(),
             "setup.ini"
         );

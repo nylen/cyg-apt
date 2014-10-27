@@ -102,7 +102,6 @@ class TestCygApt(TestCase):
         rc.mirror = self._var_mirror;
         cygapt.setRC(rc);
 
-        cygapt.setDownlaodDir(self._dir_downloads);
         cygapt.setInstalledDbFile(self._file_installed_db);
         self.assertEqual(self._dir_confsetup, cygapt.getSetupDir());
 
@@ -141,6 +140,21 @@ class TestCygApt(TestCase):
 
     def test___init__(self):
         self.assertTrue(isinstance(self.obj, CygApt));
+
+    def testGetDownloadDirWithoutEndSlashOnMirror(self):
+        self._var_mirror = 'http://foo.bar';
+        cygapt = self._createCygApt();
+        self.assertEqual(self._getDownloadDir(), cygapt.getDownloadDir());
+
+    def testGetDownloadDirWithOneSlashOnMirror(self):
+        self._var_mirror = 'http://foo.bar/';
+        cygapt = self._createCygApt();
+        self.assertEqual(self._getDownloadDir(), cygapt.getDownloadDir());
+
+    def testGetDownloadDirWithTwoSlashOnMirror(self):
+        self._var_mirror = 'http://foo.bar//';
+        cygapt = self._createCygApt();
+        self.assertEqual(self._getDownloadDir(), cygapt.getDownloadDir());
 
     def testWriteFileList(self):
         lst = ["file1", "file2/", "file3/dfd"];
@@ -225,7 +239,7 @@ class TestCygApt(TestCase):
     def testDownload(self):
         self.obj.download();
         filename = os.path.join(
-            self._dir_downloads,
+            self._getDownloadDir(),
             self._var_setupIni.__dict__[self.obj.getPkgName()].install.curr.url
         );
         self.assertTrue(os.path.exists(filename));
