@@ -364,6 +364,17 @@ class TestSetup(TestCase):
     def testUsageContainPostRemoveCommand(self):
         self._assertUsageContainCommand("postremove");
 
+    def testUsageContainChecksumCommand(self):
+        self._assertUsageContainCommand("checksum");
+
+    def testUsageNotContainMd5Command(self):
+        try:
+            self._assertUsageContainCommand("md5");
+        except self.failureException :
+            pass;
+        else:
+            self.fail("Failed asserting that usage does not contain md5 command.");
+
     def _assertUsageContainCommand(self, command):
         ob = CygAptOb(True);
         self.obj.usage();

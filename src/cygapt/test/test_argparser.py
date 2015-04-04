@@ -56,6 +56,9 @@ class TestArgParser(TestCase):
     def testParsePostRemove(self):
         self._assertParseCommand("postremove", ["pkg"]);
 
+    def testParseChecksum(self):
+        self._assertParseCommand("checksum", ["pkg"]);
+
     def testArgumentType(self):
         sys.argv.append("--mirror=http://a.mirror.str");
         sys.argv.append("update");
@@ -94,6 +97,17 @@ class TestArgParser(TestCase):
         );
 
         self.assertTrue(ret.nopostremove);
+
+    def testMd5CommandIsDeprecated(self):
+        sys.argv.append("md5");
+
+        ret = self._assertDeprecatedWarning(
+            "The command md5 is deprecated since version 1.2 and will be "
+            "removed in 2.0, use checksum instead.",
+            self.obj.parse
+        );
+
+        self.assertEqual(ret.command, "checksum");
 
     def _assertParseCommand(self, command, args=None):
         """
