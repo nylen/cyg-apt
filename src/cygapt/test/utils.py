@@ -267,6 +267,8 @@ class SetupIniProvider():
             PackageIni(app, self._architecture, name="libbarredpkg"),
             PackageIni(app, self._architecture, name="barredpkg", requires="libbarredpkg"),
             PackageIni(app, self._architecture, name="pkgxz", compression="xz"),
+            PackageIni(app, self._architecture, name="sha256pkg", hashAlgo="sha256"),
+            PackageIni(app, self._architecture, name="sha512pkg", hashAlgo="sha512"),
         ];
 
         for package in packages :
@@ -342,12 +344,13 @@ class SetupIniProvider():
         f.close();
 
 class PackageIni():
-    def __init__(self, app, arch, name="testpkg", category="test", requires="", compression="bz2"):
+    def __init__(self, app, arch, name="testpkg", category="test", requires="", compression="bz2", hashAlgo="md5"):
         assert isinstance(app, TestCase);
 
         self._localMirror = app._dir_mirror;
         self._tmpdir = app._dir_tmp;
         self._compression = compression;
+        self._hashAlgo = hashAlgo;
         self._generated = False;
 
         self.name = name;
@@ -462,13 +465,13 @@ class PackageIni():
         tar_name = os.path.join(self._localMirror, self.install.__dict__[distname].url);
         tar_src_name = os.path.join(self._localMirror, self.source.__dict__[distname].url);
 
-        md5sum = self._md5Sum(tar_name);
-        md5sum_src = self._md5Sum(tar_src_name);
+        digest = self._hashFile(tar_name, self._hashAlgo);
+        digest_src = self._hashFile(tar_src_name, self._hashAlgo);
 
         self.install.__dict__[distname].size = self._fileSize(tar_name);
         self.source.__dict__[distname].size = self._fileSize(tar_src_name);
-        self.install.__dict__[distname].md5 = md5sum;
-        self.source.__dict__[distname].md5 = md5sum_src;
+        self.install.__dict__[distname].digest = digest;
+        self.source.__dict__[distname].digest = digest_src;
 
         self.filelist = self._getFileList(distname);
 
@@ -614,11 +617,33 @@ class PackageIni():
 
         @return: str The resulted md5sum.
         """
+        return self._hashFile(path, 'md5');
+
+    def _hashFile(self, path, algorithm):
+        """Generate a hash value using the contents of a given file.
+
+        Supported algorithm:
+            * md5
+            * sha256
+            * sha512
+
+        @param path: str The path to a file for used to generate the digest.
+        @param algorithm: str The name of selected hashing algorithm.
+
+        @return: str The resulted digest.
+        """
         f = open(path, 'rb');
         content = f.read();
         f.close();
 
-        return hashlib.md5(content).hexdigest();
+        algorithms = [
+            'md5',
+            'sha256',
+            'sha512',
+        ];
+
+        if algorithm in algorithms :
+            return getattr(hashlib, algorithm)(content).hexdigest();
 
     def _fileSize(self, path):
         """Determine the file size for the specified path.
@@ -675,7 +700,7 @@ class FileStruct():
     def __init__(self):
         self.url = "";
         self.size = "1024";
-        self.md5 = "md5";
+        self.digest = "md5";
 
     def __str__(self):
         return self.toString();
@@ -687,6 +712,6 @@ class FileStruct():
         ball = "{0} {1} {2}".format(
             self.url,
             self.size,
-            self.md5
+            self.digest
         );
         return ball;
