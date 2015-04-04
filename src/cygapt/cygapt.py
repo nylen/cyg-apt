@@ -356,7 +356,7 @@ class CygApt:
         """download package (only, do not install)"""
         self._doDownload();
         self.ball();
-        self.md5();
+        self.checksum();
 
     def _noPackage(self):
         return "{0} is not on mirror {1} in [{2}].".format(
@@ -559,8 +559,8 @@ class CygApt:
     def _checkMd5(self):
         return self._getUrl()[1] == self.getMd5();
 
-    def md5(self):
-        """check md5 sum of cached package against database"""
+    def checksum(self):
+        """check digest of cached package against database"""
         if not os.path.exists(self.getBall()):
             msg = "{0} not downloaded.".format(self.__pkgName);
             raise PackageCacheException(msg);
@@ -571,7 +571,7 @@ class CygApt:
         print("{0}  {1}".format(actual_md5, ball));
         if actual_md5 != md5:
             raise HashException(
-                "md5sum of cached package doesn't match md5 "
+                "digest of cached package doesn't match digest "
                 "in setup.ini from mirror"
             );
 

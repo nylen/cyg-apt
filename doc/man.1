@@ -41,6 +41,8 @@ cyg\-apt \- a Cygwin package manager utility \-\- command-line interface
 .PP
 .BR "cyg\-apt md5      " [ \-q ] " " [ \-m " " \fIMIRROR_URL ] " "  [ \-t " (" prev | curr | test )] " " \fIPACKAGE
 .PP
+.BR "cyg\-apt checksum " [ \-q ] " " [ \-m " " \fIMIRROR_URL ] " "  [ \-t " (" prev | curr | test )] " " \fIPACKAGE
+.PP
 .BR "cyg\-apt missing  " [ \-xq ] " " [ \-m " " \fIMIRROR_URL ] " " [ \-t " (" prev | curr | test )] " " \fIPACKAGE
 .PP
 .BR "cyg\-apt new      " [ \-q ] " " [ \-m " " \fIMIRROR_URL ] " " [ \-t " (" prev | curr | test )]
@@ -153,6 +155,12 @@ url shows the URL for a given package's tarball.
 .TP
 .B md5
 md5 checks the md5 checksum of a package in the cache against the expected md5
+given in the setup.ini database.
+.IP
+Deprecated since version 1.2 and will be removed in 2.0, use checksum instead.
+.TP
+.B checksum
+Checks the digest of a package in the cache against the expected digest
 given in the setup.ini database.
 .TP
 .B postinstall

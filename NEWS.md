@@ -20,3 +20,8 @@ News
 
       - `<cachedir>/<mirror>/<arch>/setup.ini`
 
+  * Removed the `md5` command, use `checksum` instead.
+
+* 1.2.0 ()
+
+  * Added `checksum` command.

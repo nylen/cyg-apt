@@ -62,7 +62,7 @@ Usage: cyg-apt [OPTION]... COMMAND [PACKAGE]...
     help     : this help message
     install  : download and install packages with dependencies
     list     : list installed packages
-    md5      : check md5 sum of cached package against database
+    checksum : check digest of cached package against database
     missing  : print missing dependencies for package
     new      : list new (upgradable) packages in distribution
     purge    : uninstall packages and delete from cache
