@@ -42,7 +42,7 @@ find
 help
 install
 list
-md5
+checksum
 missing
 new
 purge
@@ -113,7 +113,7 @@ ftp://lug.mtu.edu/cygwin/
             fi
 
             case "${COMP_WORDS[1]}" in
-                ball|requires|show|download|md5|purge|search|source|url|filelist|install|missing|remove|version )
+                ball|requires|show|download|checksum|purge|search|source|url|filelist|install|missing|remove|version )
                     _cyg_apt_set_all_packages;
                     COMPREPLY=( $(compgen -W "${_cyg_apt_all_packages}" -- "${cur}") );
                     return 0;

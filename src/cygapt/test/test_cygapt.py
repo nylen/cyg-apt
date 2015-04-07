@@ -20,6 +20,8 @@ import os;
 import gzip;
 
 from cygapt.cygapt import CygApt;
+from cygapt.cygapt import PackageCacheException;
+from cygapt.cygapt import HashException;
 from cygapt.ob import CygAptOb;
 from cygapt.test.utils import TestCase;
 from cygapt.test.utils import SetupIniProvider;
@@ -257,6 +259,42 @@ class TestCygApt(TestCase):
         self.obj = self._createCygApt();
 
         self.testDownload();
+
+    def testChecksum(self):
+        self.obj.download();
+        ob = CygAptOb(True);
+        try:
+            self.obj.checksum();
+        finally:
+            ret = ob.getClean();
+        lines = ret.splitlines();
+        self.assertEqual(2, len(lines));
+        self.assertEqual(lines[0], lines[1]);
+
+    def testChecksumRaisesPackageCacheExceptionWhenPkgIsNotOnCache(self):
+        self.assertRaises(PackageCacheException, self.obj.checksum);
+
+    def testChecksumRaisesHashExceptionWhenPkgIsCorrupted(self):
+        filename = os.path.join(
+            self._getDownloadDir(),
+            self._var_setupIni.__dict__[self.obj.getPkgName()].install.curr.url
+        );
+        os.makedirs(os.path.dirname(filename));
+        open(filename, 'w').close();
+
+        try:
+            self.obj.checksum();
+        except Exception as e:
+            self.assertTrue(isinstance(e, HashException));
+            self.assertEqual(e.getMessage(), (
+                "digest of cached package doesn't match digest "
+                "in setup.ini from mirror"
+            ));
+        else:
+            self.fail(
+                ".checksum() raises HashException if the package is "
+                "corrupted."
+            );
 
     def testGetRequires(self):
         expected = self._var_setupIni.pkg.requires.split(" ");

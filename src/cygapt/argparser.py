@@ -39,6 +39,7 @@ class CygAptArgParser():
             'install',
             'list',
             'md5',
+            'checksum',
             'missing',
             'new',
             'purge',
@@ -184,6 +185,14 @@ class CygAptArgParser():
             warnings.warn(
                 "The option -z, --nopostremove is deprecated since version "
                 "1.1 and will be removed in 2.0.",
+                DeprecationWarning
+            );
+
+        if 'md5' == args.command :
+            args.command = 'checksum';
+            warnings.warn(
+                "The command md5 is deprecated since version 1.2 and will be "
+                "removed in 2.0, use checksum instead.",
                 DeprecationWarning
             );
 
