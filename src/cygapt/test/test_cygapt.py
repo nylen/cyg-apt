@@ -244,6 +244,20 @@ class TestCygApt(TestCase):
         );
         self.assertTrue(os.path.exists(filename));
 
+    def testDownloadWithSha256HashingAlgorithm(self):
+        self._var_packagename = self._var_setupIni.sha256pkg.name;
+        self._var_files = ["", self._var_packagename];
+        self.obj = self._createCygApt();
+
+        self.testDownload();
+
+    def testDownloadWithSha512HashingAlgorithm(self):
+        self._var_packagename = self._var_setupIni.sha512pkg.name;
+        self._var_files = ["", self._var_packagename];
+        self.obj = self._createCygApt();
+
+        self.testDownload();
+
     def testGetRequires(self):
         expected = self._var_setupIni.pkg.requires.split(" ");
         ret = self.obj.getRequires();

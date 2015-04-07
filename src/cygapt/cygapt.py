@@ -548,6 +548,10 @@ class CygApt:
         data = f.read();
         f.close();
         m = hashlib.md5();
+        if 64 == len(md5) :
+            m = hashlib.sha256();
+        if 128 == len(md5) :
+            m = hashlib.sha512();
         m.update(data);
         digest = m.hexdigest();
         return digest;
