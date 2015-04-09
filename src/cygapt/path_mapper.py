@@ -67,7 +67,9 @@ class PathMapper:
         # sort to map to /e/bar/foo in pefrence /e/bar
         l = cautils.prsort(list(self.__map.keys()));
         for cygpath in l:
-            if path.find(cygpath) == 0:
-                path = path.replace(cygpath, self.__map[cygpath]);
-                return path;
+            index = path.find(cygpath);
+            if index == 0:
+                return self.__map[cygpath]+path[len(cygpath):];
+            if cygpath.rstrip('/') == path :
+                return self.__map[cygpath].rstrip('/');
         return self.__root + path;
