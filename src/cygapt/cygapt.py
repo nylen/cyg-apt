@@ -22,10 +22,10 @@ import re;
 import shutil;
 import sys;
 import urllib;
+import tempfile;
 
 import cygapt.utils as cautils;
 from cygapt.exception import ApplicationException;
-from cygapt.exception import PathExistsException;
 from cygapt.exception import InvalidFileException;
 from cygapt.exception import InvalidArgumentException;
 from cygapt.exception import UnexpectedValueException;
@@ -704,13 +704,7 @@ class CygApt:
         # approaches have pitfalls without specifying what they are.
         tf = cautils.open_tarfile(ball, self.__dosXz);
         members = tf.getmembers();
-        tempdir = "{0}-tmp".format(os.path.basename(tf.name));
-        tempdir = tempdir.replace(".tar.bz2", "");
-        if os.path.exists(tempdir):
-            raise PathExistsException(
-                "TMP Directory {0} exists, won't overwrite.\nInstall "
-                "of {1} failed.".format(tempdir, self.__pkgName)
-            );
+        tempdir = tempfile.mkdtemp();
         try:
             tf.extractall(tempdir);
             for m in members:
