@@ -94,3 +94,8 @@ test_script:
     - ps: 'Get-Content ball~'
     - ps: 'if (-not(Get-Content ball~ | Test-Path)) { Exit 1 }'
     - 'del ball~'
+    # test install on long cwd
+    - 'for /L %%X in (0, 1, 45) do (mkdir %%X_d) & (cd %%X_d)'
+    - 'cd'
+    - '%PYTHON% %CYG_ROOT%/bin/cyg-apt -q install ping'
+    - 'cd "%APPVEYOR_BUILD_FOLDER%"'
