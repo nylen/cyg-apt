@@ -238,6 +238,11 @@ class TestCase(BaseTestCase):
         if not os.path.isdir(path) :
             return;
 
+        if os.path.islink(path) :
+            os.remove(path);
+
+            return;
+
         files = os.listdir(path);
         for filename in files:
             subpath = os.path.join(path, filename);
@@ -482,6 +487,8 @@ class PackageIni():
         etc_d = os.path.join(dirname, "etc");
         var_d = os.path.join(dirname, "var");
         bin_d = os.path.join(dirname, "usr", "bin");
+        share_d = os.path.join(dirname, "usr", "share", self.name);
+        version_d = os.path.join(share_d, self.version.__dict__[distname]);
         postinstall_d = os.path.join(dirname, "etc", "postinstall");
         postremove_d = os.path.join(dirname, "etc", "postremove");
         preremove_d = os.path.join(dirname, "etc", "preremove");
@@ -491,8 +498,11 @@ class PackageIni():
         os.makedirs(postremove_d);
         os.makedirs(preremove_d);
         os.makedirs(marker_d);
+        os.makedirs(share_d);
+        os.makedirs(version_d);
         bin_f = os.path.join(bin_d, self.name);
         link_bin_f = os.path.join(bin_d, self.name + "-link");
+        link_version_d = os.path.join(share_d, "current");
         hardlink_bin_f = os.path.join(bin_d, self.name + "-hardlink");
         postinstall_f = os.path.join(postinstall_d, self.name + ".sh");
         postremove_f = os.path.join(postremove_d, self.name + ".sh");
@@ -508,6 +518,10 @@ class PackageIni():
         ret = 0;
         ret += os.system('ln -s "' + self.name + '" "' + link_bin_f + '"');
         ret += os.system('ln "' + bin_f + '" "' + hardlink_bin_f + '"');
+        ret += os.system('ln -s "{0}" "{1}"'.format(
+            os.path.relpath(version_d, os.path.dirname(link_version_d)),
+            link_version_d,
+        ));
         if ret > 0:
             raise OSError("fail to create links");
 
