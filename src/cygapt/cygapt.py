@@ -918,6 +918,9 @@ class CygApt:
         # remove files
         for i in lst:
             filename = self.__pm.mapPath("/" + i);
+            if os.path.islink(filename):
+                os.remove(filename);
+                continue;
             if os.path.isdir(filename):
                 continue;
             if (self._uninstallWantFileRemoved(filename, noremoves, nowarns)):
