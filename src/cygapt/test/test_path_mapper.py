@@ -26,13 +26,16 @@ class TestPathMapper(TestCase):
         TestCase.setUp(self);
         self._var_root = "C:/cygwin";
         self._var_cygwin_p = sys.platform.startswith("cygwin");
-        self.obj = PathMapper(self._var_root, self._var_cygwin_p);
 
     def test__init__(self):
-        self.assertTrue(isinstance(self.obj, PathMapper));
-        self.assertEqual(self._var_root, self.obj.getRoot());
+        pm = self._createPathMapper(self._var_root, self._var_cygwin_p);
+
+        self.assertTrue(isinstance(pm, PathMapper));
+        self.assertEqual(self._var_root, pm.getRoot());
 
     def testAddMapping(self):
+        pm = self._createPathMapper(self._var_root, self._var_cygwin_p);
+
         mount = (
         "C:/cygwin/bin on /usr/bin type ntfs (binary,auto){LF}"
         "C:/cygwin/lib on /usr/lib type ntfs (binary,auto){LF}"
@@ -51,14 +54,17 @@ class TestPathMapper(TestCase):
             '/usr/lib/': "C:/cygwin/lib/",
             '/cygdrive/c/': "C:/",
         };
-        self.obj._addMapping(mtab);
-        self.assertEqual(self.obj.getMap(), mapping);
-        self.assertEqual(self.obj.getMountRoot(), "C:/cygwin/");
+        pm._addMapping(mtab);
+        self.assertEqual(pm.getMap(), mapping);
+        self.assertEqual(pm.getMountRoot(), "C:/cygwin/");
 
     def testMapPath(self):
-        if self._var_cygwin_p:
-            self.assertEqual(self.obj.mapPath("/usr/bin/"), "/usr/bin/");
-            return;
+        pm = self._createPathMapper(self._var_root, True);
+
+        self.assertEqual(pm.mapPath("/usr/bin/"), "/usr/bin/");
+
+    def testMapPathOutsideCygwin(self):
+        pm = self._createPathMapper(self._var_root, False);
 
         mapping = {
              '/usr/bin/': 'C:/cygwin/bin/',
@@ -66,13 +72,22 @@ class TestPathMapper(TestCase):
              '/cygdrive/c/': 'C:/',
         };
 
-        self.obj.setMap(mapping);
+        pm.setMap(mapping);
 
-        for cyg in list(mapping.keys()):
-            self.assertEqual(self.obj.mapPath(cyg), mapping[cyg]);
+        for cygpath, winpath in list(mapping.items()):
+            self.assertEqual(pm.mapPath(cygpath), winpath);
 
-        # Does not map path that has been already mapped
-        self.assertEqual(self.obj.mapPath('C:/'), 'C:/');
+            # Does not map path that has been already mapped
+            self.assertEqual(pm.mapPath(pm.mapPath(cygpath)), winpath);
+
+            # also work without ending slash
+            self.assertEqual(pm.mapPath(cygpath.rstrip('/')), winpath.rstrip('/'));
+
+            # Replaced only at the beginning of the path
+            self.assertEqual(pm.mapPath(cygpath+'foo'+cygpath), winpath+'foo'+cygpath);
+
+    def _createPathMapper(self, root='', cygwin_p=False):
+        return PathMapper(root, cygwin_p);
 
 if __name__ == "__main__":
     unittest.main();
