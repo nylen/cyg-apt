@@ -36,9 +36,6 @@ class TestCygApt(TestCase):
             or sys.platform.startswith("linux")
         );
 
-        if not self._var_cygwin_p:
-            self.skipTest("requires cygwin or linux");
-
         self._writeUserConfig();
 
         self._writeSetupIni();
@@ -121,12 +118,15 @@ class TestCygApt(TestCase):
 
         cygapt.setDists(self._var_setupIni.dists.__dict__);
 
-        cygapt.CYG_POSTINSTALL_DIR = self._dir_postinstall;
-        cygapt.CYG_PREREMOVE_DIR = self._dir_preremove;
-        cygapt.CYG_POSTREMOVE_DIR = self._dir_postremove;
+        if self._var_cygwin_p :
+            cygapt.CYG_POSTINSTALL_DIR = self._dir_postinstall;
+            cygapt.CYG_PREREMOVE_DIR = self._dir_preremove;
+            cygapt.CYG_POSTREMOVE_DIR = self._dir_postremove;
 
-        cygapt.setDosBash("/bin/bash");
-        cygapt.setDosLn("/bin/ln");
+        # requires bash, ln and xz on PATH
+        cygapt.setDosBash("bash");
+        cygapt.setDosLn("ln");
+        cygapt.setDosXz('xz');
 
         cygapt.setPrefixRoot(self._dir_mtroot[:-1]);
         cygapt.setAbsRoot(self._dir_mtroot);
@@ -502,7 +502,7 @@ class TestCygApt(TestCase):
         pkgname = self._var_setupIni.pkg.name;
         expected = "{0}: {1}\n".format(
             pkgname,
-            os.path.join("/var", pkgname, "version")
+            "/var/"+pkgname+"/version"
         );
         ob = CygAptOb(True);
         self.obj.find();
@@ -569,7 +569,7 @@ class TestCygApt(TestCase):
             self.assertEqual(pkg.filelist.sort(), lines.sort());
             for filename in pkg.filelist:
                 filename = self._dir_mtroot + filename;
-                if os.path.dirname(filename) != self._dir_postinstall:
+                if os.path.normpath(os.path.dirname(filename)) != os.path.normpath(self._dir_postinstall):
                     self.assertTrue(
                         os.path.exists(filename),
                         "{0} not exists".format(filename)

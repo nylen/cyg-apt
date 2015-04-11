@@ -693,6 +693,8 @@ class CygApt:
                 ));
 
     def _runAll(self, dirname):
+        dirname = self.__pm.mapPath(dirname);
+
         if os.path.isdir(dirname):
             lst = [x for x in os.listdir(dirname) if x[-3:] == ".sh"];
             for i in lst:
