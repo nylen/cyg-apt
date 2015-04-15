@@ -213,6 +213,58 @@ class TestCase(BaseTestCase):
             urllib.quote(self._var_mirror+sep, '').lower(),
         );
 
+    def _writeScript(self, path, exitCode=0):
+        """Writes sh script to path.
+
+        @param path:     str     A file to write the sript.
+        @param exitCode: integer The exit code of the script.
+        """
+        directory = os.path.dirname(path);
+        if not os.path.isdir(directory) :
+            os.makedirs(directory);
+
+        extension = os.path.splitext(path)[1];
+        content = '';
+
+        if '.sh' == extension :
+            content = """\
+#!/bin/sh
+
+# Checks whether this script has been executed by bash
+case $BASH_VERSION in #(
+    "") exit 1;; #(
+    *) :;;
+esac
+
+exit {0:d}
+""";
+
+        if '.dash' == extension :
+            content = """\
+#!/bin/dash
+
+# Checks whether this script has not been executed by bash
+case $BASH_VERSION in #(
+    "") :;; #(
+    *) exit 1;;
+esac
+
+exit {0:d}
+""";
+
+        if extension in ['.cmd', '.bat'] :
+            content = """\
+@echo off
+
+exit {0:d}
+""";
+
+        content = content.format(exitCode);
+
+        # use binary mode to force newlines
+        with open(path, 'wb') as f :
+            f.write(content);
+
     @classmethod
     def __getMirrorDir(cls):
         """Gets the mirror directory.
@@ -274,6 +326,9 @@ class SetupIniProvider():
             PackageIni(app, self._architecture, name="pkgxz", compression="xz"),
             PackageIni(app, self._architecture, name="sha256pkg", hashAlgo="sha256"),
             PackageIni(app, self._architecture, name="sha512pkg", hashAlgo="sha512"),
+            PackageIni(app, self._architecture, name="dashpkg", scriptsExt=".dash"),
+            PackageIni(app, self._architecture, name="batpkg", scriptsExt=".bat"),
+            PackageIni(app, self._architecture, name="cmdpkg", scriptsExt=".cmd"),
         ];
 
         for package in packages :
@@ -349,13 +404,15 @@ class SetupIniProvider():
         f.close();
 
 class PackageIni():
-    def __init__(self, app, arch, name="testpkg", category="test", requires="", compression="bz2", hashAlgo="md5"):
+    def __init__(self, app, arch, name="testpkg", category="test", requires="", compression="bz2", hashAlgo="md5", scriptsExt='.sh'):
         assert isinstance(app, TestCase);
 
         self._localMirror = app._dir_mirror;
         self._tmpdir = app._dir_tmp;
+        self._writeScript = app._writeScript;
         self._compression = compression;
         self._hashAlgo = hashAlgo;
+        self._scriptsExt = scriptsExt;
         self._generated = False;
 
         self.name = name;
@@ -504,9 +561,9 @@ class PackageIni():
         link_bin_f = os.path.join(bin_d, self.name + "-link");
         link_version_d = os.path.join(share_d, "current");
         hardlink_bin_f = os.path.join(bin_d, self.name + "-hardlink");
-        postinstall_f = os.path.join(postinstall_d, self.name + ".sh");
-        postremove_f = os.path.join(postremove_d, self.name + ".sh");
-        preremove_f = os.path.join(preremove_d, self.name + ".sh");
+        postinstall_f = os.path.join(postinstall_d, self.name + self._scriptsExt);
+        postremove_f = os.path.join(postremove_d, self.name + self._scriptsExt);
+        preremove_f = os.path.join(preremove_d, self.name + self._scriptsExt);
         marker_f = os.path.join(marker_d, "version");
 
         # create exec "#!/usr/bin/sh\necho running;" <pkg> > root/usr/bin
@@ -525,30 +582,10 @@ class PackageIni():
         if ret > 0:
             raise OSError("fail to create links");
 
-        # create postinstall > root/etc/postinstall
-        f = open(postinstall_f, 'w');
-        f.write(
-        "#!/bin/sh{LF}"
-        "exit 0;{LF}"
-        "".format(LF="\n")
-        );
-        f.close();
-        # create preremove > root/etc/postremove
-        f = open(preremove_f, 'w');
-        f.write(
-        "#!/bin/sh{LF}"
-        "exit 0;{LF}"
-        "".format(LF="\n")
-        );
-        f.close();
-        # create postremmove > root/etc/preremmove
-        f = open(postremove_f, 'w');
-        f.write(
-        "#!/bin/sh{LF}"
-        "exit 0;{LF}"
-        "".format(LF="\n")
-        );
-        f.close();
+        self._writeScript(postinstall_f, 0);
+        self._writeScript(preremove_f, 0);
+        self._writeScript(postremove_f, 0);
+
         # create version marker > root/var/<pkg>/<version>
         f = open(marker_f, 'w');
         f.write(self.version.__dict__[distname]);

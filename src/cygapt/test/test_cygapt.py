@@ -127,6 +127,7 @@ class TestCygApt(TestCase):
         cygapt.setDosBash("bash");
         cygapt.setDosLn("ln");
         cygapt.setDosXz('xz');
+        cygapt.setDosDash('dash');
 
         cygapt.setPrefixRoot(self._dir_mtroot[:-1]);
         cygapt.setAbsRoot(self._dir_mtroot);
@@ -353,30 +354,37 @@ class TestCygApt(TestCase):
         self.obj._postInstall();
         self.assertPostInstall();
 
-    def testPostInstallWhenScriptSuccess(self):
-        foo = os.path.join(self._dir_postinstall, "foo.sh");
-        bar = os.path.join(self._dir_postinstall, "bar.sh");
-        self._writeScript(foo, 0);
-        self._writeScript(bar, 0);
+    def testPostInstallWhenScriptSuccessWithShExtension(self):
+        self._assertPostInstallWhenScriptSuccess('.sh');
 
-        self.obj.postinstall();
+    def testPostInstallWhenScriptSuccessWithDashExtension(self):
+        self._assertPostInstallWhenScriptSuccess('.dash');
 
-        self.assertPostInstall();
-        self.assertTrue(os.path.isfile(foo+".done"));
-        self.assertTrue(os.path.isfile(bar+".done"));
+    def testPostInstallWhenScriptSuccessWithBatExtension(self):
+        self._skipIfOutsideCygwinAndWindows();
 
-    def testPostInstallWhenScriptFails(self):
-        foo = os.path.join(self._dir_postinstall, "foo.sh");
-        self._writeScript(foo, 1);
-        bar = os.path.join(self._dir_postinstall, "bar.sh");
-        self._writeScript(bar, 2);
+        self._assertPostInstallWhenScriptSuccess('.bat');
 
-        self.obj.postinstall();
+    def testPostInstallWhenScriptSuccessWithCmdExtension(self):
+        self._skipIfOutsideCygwinAndWindows();
 
-        self.assertTrue(os.path.isfile(foo));
-        self.assertFalse(os.path.isfile(foo+".done"));
-        self.assertTrue(os.path.isfile(bar));
-        self.assertFalse(os.path.isfile(bar+".done"));
+        self._assertPostInstallWhenScriptSuccess('.cmd');
+
+    def testPostInstallWhenScriptFailsWithShExtension(self):
+        self._assertPostInstallWhenScriptFails('.sh');
+
+    def testPostInstallWhenScriptFailsWithDashExtension(self):
+        self._assertPostInstallWhenScriptFails('.dash');
+
+    def testPostInstallWhenScriptFailsWithBatExtension(self):
+        self._skipIfOutsideCygwinAndWindows();
+
+        self._assertPostInstallWhenScriptFails('.bat');
+
+    def testPostInstallWhenScriptFailsWithCmdExtension(self):
+        self._skipIfOutsideCygwinAndWindows();
+
+        self._assertPostInstallWhenScriptFails('.cmd');
 
     def testPostRemoveWhenScriptSuccess(self):
         self._var_packagename = "foo";
@@ -436,24 +444,23 @@ class TestCygApt(TestCase):
         self.assertRemove([self.obj.getPkgName()]);
 
     def testInstall(self):
-        # INSTALL
-        self.obj.install();
-
-        expected = self._var_setupIni.pkg.requires.split(" ");
-        expected.append(self.obj.getPkgName());
-        self.assertInstall(expected);
-        self.assertPostInstall();
+        self._assertInstall('pkg');
 
     def testInstallWithLZMACompression(self):
-        self._var_packagename = self._var_setupIni.pkgxz.name;
-        self._var_files = ["", self._var_packagename];
-        self.obj = self._createCygApt();
+        self._assertInstall('pkgxz');
 
-        # INSTALL
-        self.obj.install();
+    def testInstallWithDashScript(self):
+        self._assertInstall('dashpkg');
 
-        self.assertInstall([self._var_packagename]);
-        self.assertPostInstall();
+    def testInstallWithBatScript(self):
+        self._skipIfOutsideCygwinAndWindows();
+
+        self._assertInstall('batpkg');
+
+    def testInstallWithCmdScript(self):
+        self._skipIfOutsideCygwinAndWindows();
+
+        self._assertInstall('cmdpkg');
 
     def testRemove(self):
         self.testInstall();
@@ -590,7 +597,7 @@ class TestCygApt(TestCase):
 
     def assertPostInstall(self):
         for filename in os.listdir(self._dir_postinstall):
-            if filename[-3:] == ".sh":
+            if os.path.splitext(filename)[1] in ['.sh', '.dash', '.cmd', '.bat'] :
                 self.fail("{0} running fail".format(filename));
 
     def assertRemove(self, pkgname_list):
@@ -632,22 +639,53 @@ class TestCygApt(TestCase):
             for line in contents.splitlines() :
                 self.assertNotEqual(line.split()[0], pkg.name, message);
 
-    def _writeScript(self, path, exitCode=0):
-        """Writes sh script to path.
+    def _assertPostInstallWhenScriptSuccess(self, extension):
+        foo = os.path.join(self._dir_postinstall, "foo"+extension);
+        bar = os.path.join(self._dir_postinstall, "bar"+extension);
+        self._writeScript(foo, 0);
+        self._writeScript(bar, 0);
 
-        @param path:     str     A file to write the sript.
-        @param exitCode: integer The exit code of the script.
-        """
-        directory = os.path.dirname(path);
-        if not os.path.isdir(directory) :
-            os.makedirs(directory);
+        self.obj.postinstall();
 
-        with open(path, 'w') as f :
-            f.write("\n".join([
-                "#!/bin/sh",
-                "exit {0:d};",
-                "",
-            ]).format(exitCode));
+        self.assertPostInstall();
+        self.assertTrue(os.path.isfile(foo+".done"));
+        self.assertTrue(os.path.isfile(bar+".done"));
+
+    def _assertPostInstallWhenScriptFails(self, extension):
+        foo = os.path.join(self._dir_postinstall, "foo"+extension);
+        self._writeScript(foo, 1);
+        bar = os.path.join(self._dir_postinstall, "bar"+extension);
+        self._writeScript(bar, 2);
+
+        self.obj.postinstall();
+
+        self.assertTrue(os.path.isfile(foo));
+        self.assertFalse(os.path.isfile(foo+".done"));
+        self.assertTrue(os.path.isfile(bar));
+        self.assertFalse(os.path.isfile(bar+".done"));
+
+    def _assertInstall(self, packageName):
+        self._var_packagename = packageName;
+        self._var_files = ["", self._var_packagename];
+        self.obj = self._createCygApt();
+
+        # INSTALL
+        self.obj.install();
+
+        expected = list();
+        requires = getattr(self._var_setupIni, packageName).requires;
+        if requires :
+            expected += requires.split(" ");
+        expected.append(packageName);
+        self.assertInstall(expected);
+        self.assertPostInstall();
+
+    def _skipIfOutsideCygwinAndWindows(self):
+        if not (
+            sys.platform.startswith("cygwin")
+            or sys.platform.startswith("win")
+        ) :
+            self.skipTest("requires Cygwin or Windows");
 
 if __name__ == "__main__":
     unittest.main();
