@@ -386,6 +386,53 @@ class TestCygApt(TestCase):
 
         self._assertPostInstallWhenScriptFails('.cmd');
 
+    def testPostInstallWithPerpetualScriptsRunningBeforeAllOtherAndSorted(self):
+        supportedExt = ['.sh', '.dash', '.cmd', '.bat'];
+        perpetualPrefixes = ['0p_', 'zp_'];
+        packageNames = ['foo', 'bar'];
+
+        perpetualScripts = list();
+        regularScripts = list();
+        for name in packageNames:
+            for ext in supportedExt:
+                regularScripts.append(name+ext);
+                for prefix in perpetualPrefixes:
+                    perpetualScripts.append(prefix+name+ext);
+
+        allScripts = perpetualScripts + regularScripts;
+
+        for script in allScripts:
+            self._writeScript(os.path.join(self._dir_postinstall, script), 0);
+
+        class RunScriptMock:
+            def __init__(self, testCase, expectedOrder, expectedCalls):
+                assert isinstance(testCase, TestCase);
+                assert isinstance(expectedOrder, list);
+                assert isinstance(expectedCalls, int);
+
+                self.__callCount = 0;
+                self.__case = testCase;
+                self.__scriptOrder = list(expectedOrder);
+                self.__expectedCalls = expectedCalls;
+
+            def __call__(self, file_name, optional=False):
+                if self.__callCount < len(self.__scriptOrder) :
+                    expected = self.__scriptOrder[self.__callCount];
+                    actual = os.path.basename(file_name);
+                    self.__case.assertEqual(actual, expected);
+
+                self.__callCount += 1;
+
+            def verify(self):
+                self.__case.assertEqual(self.__callCount, self.__expectedCalls);
+
+        perpetualScripts.sort();
+        self.obj._runScript = RunScriptMock(self, perpetualScripts, len(allScripts));
+
+        self.obj.postinstall();
+
+        self.obj._runScript.verify();
+
     def testPostRemoveWhenScriptSuccess(self):
         self._var_packagename = "foo";
         self._var_files = ["", "foo", "bar"];
@@ -399,6 +446,10 @@ class TestCygApt(TestCase):
         self._writeScript(foo, 0);
         self._writeScript(bar, 0);
         self._writeScript(baz, 0);
+        op_bar = os.path.join(self._dir_preremove, "0p_bar.sh");
+        self._writeScript(op_bar, 0);
+        zp_bar = os.path.join(self._dir_postremove, "zp_bar.sh");
+        self._writeScript(zp_bar, 0);
 
         self.obj.postremove();
 
@@ -410,6 +461,10 @@ class TestCygApt(TestCase):
         self.assertTrue(os.path.isfile(bar+".done"));
         self.assertTrue(os.path.isfile(baz));
         self.assertFalse(os.path.isfile(baz+".done"));
+        self.assertFalse(os.path.isfile(op_bar+".done"));
+        self.assertTrue(os.path.isfile(op_bar));
+        self.assertFalse(os.path.isfile(zp_bar+".done"));
+        self.assertTrue(os.path.isfile(zp_bar));
 
     def testPostRemoveWhenScriptFails(self):
         self._var_packagename = "foo";
@@ -597,8 +652,15 @@ class TestCygApt(TestCase):
 
     def assertPostInstall(self):
         for filename in os.listdir(self._dir_postinstall):
-            if os.path.splitext(filename)[1] in ['.sh', '.dash', '.cmd', '.bat'] :
-                self.fail("{0} running fail".format(filename));
+            extension = os.path.splitext(filename)[1];
+
+            if extension in ['.sh', '.dash', '.cmd', '.bat'] :
+                if filename[:3] not in ['0p_', 'zp_'] : # not perpetual
+                    self.fail("{0} running fail".format(filename));
+
+            if '.done' == extension :
+                if filename[:3] in ['0p_', 'zp_'] : # perpetual
+                    self.fail("Perpetual script {0} must not been renamed.".format(filename));
 
     def assertRemove(self, pkgname_list):
         pkg_ini_list = [];
@@ -644,6 +706,10 @@ class TestCygApt(TestCase):
         bar = os.path.join(self._dir_postinstall, "bar"+extension);
         self._writeScript(foo, 0);
         self._writeScript(bar, 0);
+        op_bar = os.path.join(self._dir_postinstall, "0p_bar."+extension);
+        self._writeScript(op_bar, 0);
+        zp_bar = os.path.join(self._dir_postinstall, "zp_bar."+extension);
+        self._writeScript(zp_bar, 0);
 
         self.obj.postinstall();
 
