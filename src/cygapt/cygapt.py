@@ -714,7 +714,7 @@ class CygApt:
 
             if os.path.exists(mapped_file_done):
                 os.remove(mapped_file_done);
-            if retval == 0:
+            if retval == 0 and os.path.basename(file_name)[:3] not in ['0p_', 'zp_']:
                 shutil.move(mapped_file, mapped_file_done);
         else:
             if not optional:
@@ -731,6 +731,17 @@ class CygApt:
             for filename in os.listdir(dirname) :
                 if os.path.splitext(filename)[1] in ['.sh', '.dash', '.bat', '.cmd'] :
                     lst.append(filename);
+
+            perpetualScripts = list();
+            regularScripts = list();
+            for filename in lst:
+                if filename[:3] in ['0p_', 'zp_'] :
+                    perpetualScripts.append(filename);
+                else:
+                    regularScripts.append(filename);
+
+            perpetualScripts.sort();
+            lst = perpetualScripts + regularScripts;
 
             for i in lst:
                 self._runScript("{0}/{1}".format(dirname, i));
