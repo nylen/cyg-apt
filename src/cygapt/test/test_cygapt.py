@@ -428,7 +428,9 @@ class TestCygApt(TestCase):
         self.testDoInstall();
         expected = self._var_setupIni.pkg.filelist;
         ret = self.obj.getFileList();
-        self.assertEqual(ret.sort(), expected.sort());
+        ret.sort();
+        expected.sort();
+        self.assertEqual(ret, expected);
 
     def testDoUninstall(self):
         self.testPostInstall();
@@ -566,7 +568,10 @@ class TestCygApt(TestCase):
             f = gzip.open(gz_file);
             lines = f.readlines();
             f.close();
-            self.assertEqual(pkg.filelist.sort(), lines.sort());
+            pkg.filelist.sort();
+            lines.sort();
+            lines = ''.join(lines).splitlines(); # remove ending newline
+            self.assertEqual(pkg.filelist, lines);
             for filename in pkg.filelist:
                 filename = self._dir_mtroot + filename;
                 if os.path.normpath(os.path.dirname(filename)) != os.path.normpath(self._dir_postinstall):
