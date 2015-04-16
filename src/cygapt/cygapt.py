@@ -37,6 +37,8 @@ class CygApt:
     DIST_NAMES = ('curr', 'test', 'prev');
     FORCE_BARRED = ["python", "python-argparse", "gnupg", "xz"];
     SH_OPTIONS = " --norc --noprofile ";
+    DASH_OPTIONS = " ";
+    CMD_OPTIONS = " /V:ON /E:ON /C ";
     CYG_POSTINSTALL_DIR = "/etc/postinstall";
     CYG_PREREMOVE_DIR = "/etc/preremove";
     CYG_POSTREMOVE_DIR = "/etc/postremove";
@@ -176,6 +178,12 @@ class CygApt:
 
     def setDosXz(self, dos_xz):
         self.__dosXz = str(dos_xz);
+
+    def getDosDash(self):
+        return self.__dosDash;
+
+    def setDosDash(self, dosDash):
+        self.__dosDash = str(dosDash);
 
     def getPrefixRoot(self):
         return self.__prefixRoot;
@@ -679,7 +687,30 @@ class CygApt:
                     self.SH_OPTIONS,
                     mapped_file
                 ]);
-            retval = os.system(cmd);
+
+            cwd = None;
+            extension = os.path.splitext(mapped_file)[1];
+
+            if ".dash" == extension :
+                cmd = ["dash", self.DASH_OPTIONS, mapped_file];
+                if not self.__cygwinPlatform:
+                    cmd[0] = self.__dosDash;
+                cmd = " ".join(cmd);
+
+            if extension in [".bat", ".cmd"] :
+                cmd = " ".join(["cmd", self.CMD_OPTIONS, os.path.basename(mapped_file)]);
+                cwd = os.path.dirname(mapped_file);
+
+            backupCwd = None;
+            try:
+                if cwd :
+                    backupCwd = os.getcwd();
+                    os.chdir(cwd);
+
+                retval = os.system(cmd);
+            finally:
+                if backupCwd :
+                    os.chdir(backupCwd);
 
             if os.path.exists(mapped_file_done):
                 os.remove(mapped_file_done);
@@ -696,7 +727,11 @@ class CygApt:
         dirname = self.__pm.mapPath(dirname);
 
         if os.path.isdir(dirname):
-            lst = [x for x in os.listdir(dirname) if x[-3:] == ".sh"];
+            lst = list();
+            for filename in os.listdir(dirname) :
+                if os.path.splitext(filename)[1] in ['.sh', '.dash', '.bat', '.cmd'] :
+                    lst.append(filename);
+
             for i in lst:
                 self._runScript("{0}/{1}".format(dirname, i));
 
@@ -1254,6 +1289,7 @@ class CygApt:
         self.__dosBash = "{0}bin/bash".format(self.__pm.getMountRoot());
         self.__dosLn = "{0}bin/ln".format(self.__pm.getMountRoot());
         self.__dosXz = self.__pm.mapPath("/usr/bin/xz");
+        self.__dosDash = "{0}bin/dash".format(self.__pm.getMountRoot());
         return 0;
 
     def _isBarredPackage(self, package):
