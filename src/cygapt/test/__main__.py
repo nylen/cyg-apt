@@ -23,6 +23,7 @@ from cygapt.test.test_ob import TestOb;
 from cygapt.test.test_path_mapper import TestPathMapper;
 from cygapt.test.test_setup import TestSetup;
 from cygapt.test.test_cygapt import TestCygApt as TestCygAptClass;
+from cygapt.test.test_process import TestProcess;
 
 class TestCygApt(unittest.TestSuite):
     def __init__(self):
@@ -35,6 +36,7 @@ class TestCygApt(unittest.TestSuite):
             loader.loadTestsFromTestCase(TestPathMapper),
             loader.loadTestsFromTestCase(TestSetup),
             loader.loadTestsFromTestCase(TestCygAptClass),
+            loader.loadTestsFromTestCase(TestProcess),
         );
 
 if __name__ == "__main__":
