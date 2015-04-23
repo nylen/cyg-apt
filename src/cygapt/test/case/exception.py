@@ -16,10 +16,6 @@ from __future__ import absolute_import;
 import sys;
 
 if sys.version_info < (3, ):
-    from .py2.exception import SkipTestException as BaseSkipTestException;
+    from .py2.exception import SkipTestException as SkipTestException;
 else:
-    from unittest import SkipTest as BaseSkipTestException;
-
-class SkipTestException(BaseSkipTestException):
-    """Raise this exception in a test to skip it.
-    """
+    from unittest import SkipTest as SkipTestException;

@@ -16,6 +16,7 @@ from __future__ import absolute_import;
 from unittest import TestCase as BaseTestCase;
 from unittest import _TextTestResult;
 from unittest import TestResult;
+import re;
 
 from .exception import SkipTestException;
 
@@ -50,6 +51,56 @@ class TestCase(BaseTestCase):
         assert isinstance(reason, str);
 
         raise SkipTestException(reason);
+
+    def assertRaises(self, excClass, callableObj=None, *args, **kwargs):
+        """Fail unless an exception of class excClass is raised
+           by callableObj when invoked with arguments args and keyword
+           arguments kwargs. If a different type of exception is
+           raised, it will not be caught, and the test case will be
+           deemed to have suffered an error, exactly as for an
+           unexpected exception.
+
+           If called with callableObj omitted or None, will return a
+           context object used like this::
+
+                with self.assertRaises(SomeException):
+                    do_something()
+
+           The context manager keeps a reference to the exception as
+           the 'exception' attribute. This allows you to inspect the
+           exception after the assertion::
+
+               with self.assertRaises(SomeException) as cm:
+                   do_something()
+               the_exception = cm.exception
+               self.assertEqual(the_exception.error_code, 3)
+        """
+        context = _AssertRaisesContext(excClass, self)
+        if callableObj is None:
+            return context
+        with context:
+            callableObj(*args, **kwargs)
+
+    def assertRaisesRegexp(self, expected_exception, expected_regexp,
+                           callable_obj=None, *args, **kwargs):
+        """Asserts that the message in a raised exception matches a regexp.
+
+        Args:
+            expected_exception: Exception class expected to be raised.
+            expected_regexp: Regexp (re pattern object or string) expected
+                    to be found in error message.
+            callable_obj: Function to be called.
+            args: Extra args.
+            kwargs: Extra kwargs.
+        """
+        if expected_regexp is not None:
+            expected_regexp = re.compile(expected_regexp)
+        context = _AssertRaisesContext(expected_exception, self, expected_regexp)
+        if callable_obj is None:
+            return context
+        with context:
+            callable_obj(*args, **kwargs)
+
 
 class _AbstractTestResultWrapper(TestResult):
     """Backports some useful feature from newer unittest version.
@@ -163,3 +214,36 @@ class _TestResultWrapper(_AbstractTestResultWrapper):
         elif self._result.dots :
             self._result.stream.write("s");
             self._result.stream.flush();
+
+
+class _AssertRaisesContext(object):
+    """A context manager used to implement TestCase.assertRaises* methods."""
+
+    def __init__(self, expected, test_case, expected_regexp=None):
+        self.expected = expected
+        self.failureException = test_case.failureException
+        self.expected_regexp = expected_regexp
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, tb):
+        if exc_type is None:
+            try:
+                exc_name = self.expected.__name__
+            except AttributeError:
+                exc_name = str(self.expected)
+            raise self.failureException(
+                "{0} not raised".format(exc_name))
+        if not issubclass(exc_type, self.expected):
+            # let unexpected exceptions pass through
+            return False
+        self.exception = exc_value # store for later retrieval
+        if self.expected_regexp is None:
+            return True
+
+        expected_regexp = self.expected_regexp
+        if not expected_regexp.search(str(exc_value)):
+            raise self.failureException('"%s" does not match "%s"' %
+                     (expected_regexp.pattern, str(exc_value)))
+        return True

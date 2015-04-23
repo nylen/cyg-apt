@@ -19,6 +19,7 @@ import sys;
 from tempfile import TemporaryFile;
 
 from cygapt.test.case import TestCase;
+from cygapt.test.case import dataProvider;
 from cygapt.path_mapper import PathMapper;
 
 class TestPathMapper(TestCase):
@@ -63,28 +64,26 @@ class TestPathMapper(TestCase):
 
         self.assertEqual(pm.mapPath("/usr/bin/"), "/usr/bin/");
 
-    def testMapPathOutsideCygwin(self):
+    @dataProvider('getMapPathOutsideCygwinData')
+    def testMapPathOutsideCygwin(self, path, expected, message=None):
         pm = self._createPathMapper(self._var_root, False);
 
-        mapping = {
-             '/usr/bin/': 'C:/cygwin/bin/',
-             '/usr/lib/': 'C:/cygwin/lib/',
-             '/cygdrive/c/': 'C:/',
-        };
+        pm.setMap({
+            '/usr/bin/': 'C:/cygwin/bin/',
+            '/usr/lib/': 'C:/cygwin/lib/',
+            '/cygdrive/c/': 'C:/',
+        });
 
-        pm.setMap(mapping);
+        self.assertEqual(pm.mapPath(path), expected, message);
 
-        for cygpath, winpath in list(mapping.items()):
-            self.assertEqual(pm.mapPath(cygpath), winpath);
-
-            # Does not map path that has been already mapped
-            self.assertEqual(pm.mapPath(pm.mapPath(cygpath)), winpath);
-
-            # also work without ending slash
-            self.assertEqual(pm.mapPath(cygpath.rstrip('/')), winpath.rstrip('/'));
-
-            # Replaced only at the beginning of the path
-            self.assertEqual(pm.mapPath(cygpath+'foo'+cygpath), winpath+'foo'+cygpath);
+    def getMapPathOutsideCygwinData(self):
+        return [
+            ['/usr/bin/', 'C:/cygwin/bin/'],
+            ['C:/cygwin/lib/', 'C:/cygwin/lib/', 'Does not map path that has been already mapped'],
+            ['/cygdrive/c', 'C:', 'Work without ending slash'],
+            ['/cygdrive/c/foo/cygdrive/c/', 'C:/foo/cygdrive/c/', 'Replaced only at the beginning of the path'],
+            ['/', 'C:/cygwin/'],
+        ];
 
     def _createPathMapper(self, root='', cygwin_p=False):
         return PathMapper(root, cygwin_p);
