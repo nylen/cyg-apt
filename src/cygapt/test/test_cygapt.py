@@ -129,6 +129,7 @@ class TestCygApt(TestCase):
         cygapt.setDosBash("bash");
         cygapt.setDosLn("ln");
         cygapt.setDosXz('xz');
+        cygapt.setDosDash('dash');
 
         cygapt.setPrefixRoot(self._dir_mtroot[:-1]);
         cygapt.setAbsRoot(self._dir_mtroot);
@@ -391,30 +392,84 @@ class TestCygApt(TestCase):
         self.obj._postInstall();
         self.assertPostInstall();
 
-    def testPostInstallWhenScriptSuccess(self):
-        foo = os.path.join(self._dir_postinstall, "foo.sh");
-        bar = os.path.join(self._dir_postinstall, "bar.sh");
-        self._writeScript(foo, 0);
-        self._writeScript(bar, 0);
+    def testPostInstallWhenScriptSuccessWithShExtension(self):
+        self._assertPostInstallWhenScriptSuccess('.sh');
+
+    def testPostInstallWhenScriptSuccessWithDashExtension(self):
+        self._assertPostInstallWhenScriptSuccess('.dash');
+
+    def testPostInstallWhenScriptSuccessWithBatExtension(self):
+        self._skipIfOutsideCygwinAndWindows();
+
+        self._assertPostInstallWhenScriptSuccess('.bat');
+
+    def testPostInstallWhenScriptSuccessWithCmdExtension(self):
+        self._skipIfOutsideCygwinAndWindows();
+
+        self._assertPostInstallWhenScriptSuccess('.cmd');
+
+    def testPostInstallWhenScriptFailsWithShExtension(self):
+        self._assertPostInstallWhenScriptFails('.sh');
+
+    def testPostInstallWhenScriptFailsWithDashExtension(self):
+        self._assertPostInstallWhenScriptFails('.dash');
+
+    def testPostInstallWhenScriptFailsWithBatExtension(self):
+        self._skipIfOutsideCygwinAndWindows();
+
+        self._assertPostInstallWhenScriptFails('.bat');
+
+    def testPostInstallWhenScriptFailsWithCmdExtension(self):
+        self._skipIfOutsideCygwinAndWindows();
+
+        self._assertPostInstallWhenScriptFails('.cmd');
+
+    def testPostInstallWithPerpetualScriptsRunningBeforeAllOtherAndSorted(self):
+        supportedExt = ['.sh', '.dash', '.cmd', '.bat'];
+        perpetualPrefixes = ['0p_', 'zp_'];
+        packageNames = ['foo', 'bar'];
+
+        perpetualScripts = list();
+        regularScripts = list();
+        for name in packageNames:
+            for ext in supportedExt:
+                regularScripts.append(name+ext);
+                for prefix in perpetualPrefixes:
+                    perpetualScripts.append(prefix+name+ext);
+
+        allScripts = perpetualScripts + regularScripts;
+
+        for script in allScripts:
+            self._writeScript(os.path.join(self._dir_postinstall, script), 0);
+
+        class RunScriptMock:
+            def __init__(self, testCase, expectedOrder, expectedCalls):
+                assert isinstance(testCase, TestCase);
+                assert isinstance(expectedOrder, list);
+                assert isinstance(expectedCalls, int);
+
+                self.__callCount = 0;
+                self.__case = testCase;
+                self.__scriptOrder = list(expectedOrder);
+                self.__expectedCalls = expectedCalls;
+
+            def __call__(self, file_name, optional=False):
+                if self.__callCount < len(self.__scriptOrder) :
+                    expected = self.__scriptOrder[self.__callCount];
+                    actual = os.path.basename(file_name);
+                    self.__case.assertEqual(actual, expected);
+
+                self.__callCount += 1;
+
+            def verify(self):
+                self.__case.assertEqual(self.__callCount, self.__expectedCalls);
+
+        perpetualScripts.sort();
+        self.obj._runScript = RunScriptMock(self, perpetualScripts, len(allScripts));
 
         self.obj.postinstall();
 
-        self.assertPostInstall();
-        self.assertTrue(os.path.isfile(foo+".done"));
-        self.assertTrue(os.path.isfile(bar+".done"));
-
-    def testPostInstallWhenScriptFails(self):
-        foo = os.path.join(self._dir_postinstall, "foo.sh");
-        self._writeScript(foo, 1);
-        bar = os.path.join(self._dir_postinstall, "bar.sh");
-        self._writeScript(bar, 2);
-
-        self.obj.postinstall();
-
-        self.assertTrue(os.path.isfile(foo));
-        self.assertFalse(os.path.isfile(foo+".done"));
-        self.assertTrue(os.path.isfile(bar));
-        self.assertFalse(os.path.isfile(bar+".done"));
+        self.obj._runScript.verify();
 
     def testPostRemoveWhenScriptSuccess(self):
         self._var_packagename = "foo";
@@ -429,6 +484,10 @@ class TestCygApt(TestCase):
         self._writeScript(foo, 0);
         self._writeScript(bar, 0);
         self._writeScript(baz, 0);
+        op_bar = os.path.join(self._dir_preremove, "0p_bar.sh");
+        self._writeScript(op_bar, 0);
+        zp_bar = os.path.join(self._dir_postremove, "zp_bar.sh");
+        self._writeScript(zp_bar, 0);
 
         self.obj.postremove();
 
@@ -440,6 +499,10 @@ class TestCygApt(TestCase):
         self.assertTrue(os.path.isfile(bar+".done"));
         self.assertTrue(os.path.isfile(baz));
         self.assertFalse(os.path.isfile(baz+".done"));
+        self.assertFalse(os.path.isfile(op_bar+".done"));
+        self.assertTrue(os.path.isfile(op_bar));
+        self.assertFalse(os.path.isfile(zp_bar+".done"));
+        self.assertTrue(os.path.isfile(zp_bar));
 
     def testPostRemoveWhenScriptFails(self):
         self._var_packagename = "foo";
@@ -466,7 +529,9 @@ class TestCygApt(TestCase):
         self.testDoInstall();
         expected = self._var_setupIni.pkg.filelist;
         ret = self.obj.getFileList();
-        self.assertEqual(ret.sort(), expected.sort());
+        ret.sort();
+        expected.sort();
+        self.assertEqual(ret, expected);
 
     def testDoUninstall(self):
         self.testPostInstall();
@@ -474,24 +539,23 @@ class TestCygApt(TestCase):
         self.assertRemove([self.obj.getPkgName()]);
 
     def testInstall(self):
-        # INSTALL
-        self.obj.install();
-
-        expected = self._var_setupIni.pkg.requires.split(" ");
-        expected.append(self.obj.getPkgName());
-        self.assertInstall(expected);
-        self.assertPostInstall();
+        self._assertInstall('pkg');
 
     def testInstallWithLZMACompression(self):
-        self._var_packagename = self._var_setupIni.pkgxz.name;
-        self._var_files = ["", self._var_packagename];
-        self.obj = self._createCygApt();
+        self._assertInstall('pkgxz');
 
-        # INSTALL
-        self.obj.install();
+    def testInstallWithDashScript(self):
+        self._assertInstall('dashpkg');
 
-        self.assertInstall([self._var_packagename]);
-        self.assertPostInstall();
+    def testInstallWithBatScript(self):
+        self._skipIfOutsideCygwinAndWindows();
+
+        self._assertInstall('batpkg');
+
+    def testInstallWithCmdScript(self):
+        self._skipIfOutsideCygwinAndWindows();
+
+        self._assertInstall('cmdpkg');
 
     def testRemove(self):
         self.testInstall();
@@ -604,7 +668,10 @@ class TestCygApt(TestCase):
             f = gzip.open(gz_file);
             lines = f.readlines();
             f.close();
-            self.assertEqual(pkg.filelist.sort(), lines.sort());
+            pkg.filelist.sort();
+            lines.sort();
+            lines = ''.join(lines).splitlines(); # remove ending newline
+            self.assertEqual(pkg.filelist, lines);
             for filename in pkg.filelist:
                 filename = self._dir_mtroot + filename;
                 if os.path.normpath(os.path.dirname(filename)) != os.path.normpath(self._dir_postinstall):
@@ -628,8 +695,15 @@ class TestCygApt(TestCase):
 
     def assertPostInstall(self):
         for filename in os.listdir(self._dir_postinstall):
-            if filename[-3:] == ".sh":
-                self.fail("{0} running fail".format(filename));
+            extension = os.path.splitext(filename)[1];
+
+            if extension in ['.sh', '.dash', '.cmd', '.bat'] :
+                if filename[:3] not in ['0p_', 'zp_'] : # not perpetual
+                    self.fail("{0} running fail".format(filename));
+
+            if '.done' == extension :
+                if filename[:3] in ['0p_', 'zp_'] : # perpetual
+                    self.fail("Perpetual script {0} must not been renamed.".format(filename));
 
     def assertRemove(self, pkgname_list):
         pkg_ini_list = [];
@@ -670,22 +744,57 @@ class TestCygApt(TestCase):
             for line in contents.splitlines() :
                 self.assertNotEqual(line.split()[0], pkg.name, message);
 
-    def _writeScript(self, path, exitCode=0):
-        """Writes sh script to path.
+    def _assertPostInstallWhenScriptSuccess(self, extension):
+        foo = os.path.join(self._dir_postinstall, "foo"+extension);
+        bar = os.path.join(self._dir_postinstall, "bar"+extension);
+        self._writeScript(foo, 0);
+        self._writeScript(bar, 0);
+        op_bar = os.path.join(self._dir_postinstall, "0p_bar."+extension);
+        self._writeScript(op_bar, 0);
+        zp_bar = os.path.join(self._dir_postinstall, "zp_bar."+extension);
+        self._writeScript(zp_bar, 0);
 
-        @param path:     str     A file to write the sript.
-        @param exitCode: integer The exit code of the script.
-        """
-        directory = os.path.dirname(path);
-        if not os.path.isdir(directory) :
-            os.makedirs(directory);
+        self.obj.postinstall();
 
-        with open(path, 'w') as f :
-            f.write("\n".join([
-                "#!/bin/sh",
-                "exit {0:d};",
-                "",
-            ]).format(exitCode));
+        self.assertPostInstall();
+        self.assertTrue(os.path.isfile(foo+".done"));
+        self.assertTrue(os.path.isfile(bar+".done"));
+
+    def _assertPostInstallWhenScriptFails(self, extension):
+        foo = os.path.join(self._dir_postinstall, "foo"+extension);
+        self._writeScript(foo, 1);
+        bar = os.path.join(self._dir_postinstall, "bar"+extension);
+        self._writeScript(bar, 2);
+
+        self.obj.postinstall();
+
+        self.assertTrue(os.path.isfile(foo));
+        self.assertFalse(os.path.isfile(foo+".done"));
+        self.assertTrue(os.path.isfile(bar));
+        self.assertFalse(os.path.isfile(bar+".done"));
+
+    def _assertInstall(self, packageName):
+        self._var_packagename = packageName;
+        self._var_files = ["", self._var_packagename];
+        self.obj = self._createCygApt();
+
+        # INSTALL
+        self.obj.install();
+
+        expected = list();
+        requires = getattr(self._var_setupIni, packageName).requires;
+        if requires :
+            expected += requires.split(" ");
+        expected.append(packageName);
+        self.assertInstall(expected);
+        self.assertPostInstall();
+
+    def _skipIfOutsideCygwinAndWindows(self):
+        if not (
+            sys.platform.startswith("cygwin")
+            or sys.platform.startswith("win")
+        ) :
+            self.skipTest("requires Cygwin or Windows");
 
 if __name__ == "__main__":
     unittest.main();

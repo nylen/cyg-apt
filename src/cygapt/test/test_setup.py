@@ -318,10 +318,12 @@ class TestSetup(TestCase):
         self.obj._writeInstalled(self._file_installed_db);
         self.assertTrue(os.path.exists(self._file_installed_db));
         f = open(self._file_installed_db);
-        ret = f.readlines().sort();
+        ret = f.readlines();
+        ret.sort();
         f.close();
         f = open(real_installed_db);
-        expected = f.readlines().sort();
+        expected = f.readlines();
+        expected.sort();
         f.close();
         self.assertEqual(ret, expected);
 
