@@ -33,9 +33,6 @@ class ApplicationException(Exception):
     def getPrevious(self):
         return self._previous;
 
-class ProcessException(ApplicationException):
-    pass;
-
 class InvalidArgumentException(ApplicationException):
     pass;
 

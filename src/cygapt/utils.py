@@ -18,7 +18,6 @@ import os;
 import re;
 import shutil;
 import struct;
-import subprocess;
 import sys;
 import tarfile;
 import urlparse;
@@ -30,11 +29,12 @@ from cygapt.exception import InvalidArgumentException;
 from cygapt.exception import UnexpectedValueException;
 from cygapt.url_opener import CygAptURLopener;
 from cygapt.structure import ConfigStructure;
+from cygapt.process import Process;
 
 def cygpath(path):
-    p = os.popen("cygpath \"{0}\"".format(path));
-    dospath = p.read().strip();
-    p.close();
+    p = Process("cygpath \"{0}\"".format(path));
+    p.run();
+    dospath = p.getOutput().strip();
     return dospath;
 
 def parse_rc(cyg_apt_rc):
@@ -96,7 +96,7 @@ def open_tarfile(ball, xzPath='xz'):
         ball_orig = ball;
         ball = ball[:-3]; # remove .xz extension
         remove_if_exists(ball);
-        subprocess.check_call([xzPath, '-k', '-d', ball_orig]);
+        Process([xzPath, '-k', '-d', ball_orig]).mustRun();
     tf = tarfile.open(ball);
     if ball_orig != ball:
         tf_close_orig = tf.close;
