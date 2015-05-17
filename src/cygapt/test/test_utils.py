@@ -18,12 +18,15 @@ import unittest;
 import sys;
 import os;
 import stat;
+import re;
 
 import cygapt.utils as utils;
-from cygapt.exception import ApplicationException;
+from cygapt.exception import InvalidArgumentException;
 from cygapt.exception import UnexpectedValueException;
 from cygapt.test.utils import TestCase;
 from cygapt.structure import ConfigStructure;
+from cygapt.test.case import dataProvider;
+from cygapt.test.case import expectedException;
 
 __DIR__ = os.path.dirname(os.path.realpath(os.path.abspath(__file__)));
 
@@ -46,28 +49,6 @@ class TestUtils(TestCase):
             self.assertEquals(ret, path);
 
     def testParseRc(self):
-        f = open(self._getTmpFileName(), 'w');
-        f.write("always_update = \"True\"");
-        f.close();
-        ret = utils.parse_rc(self._getTmpFileName());
-        self.assertTrue(isinstance(ret, ConfigStructure));
-        self.assertTrue(ret.always_update);
-
-        f = open(self._getTmpFileName(), 'w');
-        f.write("always_update = \"False\"");
-        f.close();
-        ret = utils.parse_rc(self._getTmpFileName());
-        self.assertTrue(isinstance(ret, ConfigStructure));
-        self.assertFalse(ret.always_update);
-
-        # malicious code
-        f = open(self._getTmpFileName(), 'w');
-        f.write("always_update = parse_rc(cyg_apt_rc)");
-        f.close();
-        ret = utils.parse_rc(self._getTmpFileName());
-        self.assertTrue(isinstance(ret, ConfigStructure));
-        self.assertFalse(ret.always_update);
-
         self._writeUserConfig(self._getTmpFileName());
         ret = utils.parse_rc(self._getTmpFileName());
         self.assertTrue(isinstance(ret, ConfigStructure));
@@ -78,17 +59,43 @@ class TestUtils(TestCase):
         self.assertEqual(ret.distname, 'curr');
         self.assertEqual(ret.barred, '');
 
-    def testParseRcWithTrailingSpace(self):
-        self._assertParseRcWithTrailingWhitespace(' ');
+    @dataProvider('getParseRcWithOneLineData')
+    def testParseRcBooleanValue(self, value, expected):
+        with open(self._getTmpFileName(), 'w') as f:
+            f.write("always_update = {0}".format(value));
 
-    def testParseRcWithTrailingCarriageReturn(self):
-        self._assertParseRcWithTrailingWhitespace('\r');
+        ret = utils.parse_rc(self._getTmpFileName());
+        self.assertTrue(isinstance(ret, ConfigStructure));
+        self.assertEqual(ret.always_update, expected);
 
-    def testParseRcWithTrailingHorizontalTab(self):
-        self._assertParseRcWithTrailingWhitespace('\t');
+    def getParseRcWithOneLineData(self):
+        return [
+            ['True', True],
+            ['"True"', True],
+            ['"true"', True],
+            ['"Yes"', True],
+            ['"yes"', True],
+            ['False', False],
+            ['"False"', False],
+            ['parse_rc(cyg_apt_rc)', False], # malicious code
+        ];
 
-    def testParseRcWithTrailingWhitespaces(self):
-        self._assertParseRcWithTrailingWhitespace(' \r\t\r\n');
+    @dataProvider('getParseRcWithTrailingWhitespaceData')
+    def testParseRcWithTrailingWhitespace(self, whitespace):
+        f = open(self._getTmpFileName(), 'w');
+        f.write("mirror = \"http://foo\""+whitespace);
+        f.close();
+        ret = utils.parse_rc(self._getTmpFileName());
+        self.assertTrue(isinstance(ret, ConfigStructure));
+        self.assertEqual("http://foo", ret.mirror);
+
+    def getParseRcWithTrailingWhitespaceData(self):
+        return [
+            [' '],
+            ['\r'],
+            ['\t'],
+            [' \r\t\r\n'],
+        ];
 
     def testPrsort(self):
         in_lst = ["B", "A", "a", "1", "b", "/", "", "2"];
@@ -349,48 +356,44 @@ class TestUtils(TestCase):
 
         self.assertFalse(os.path.isdir(basePath));
 
-    def testUriGet(self):
+    @dataProvider('getUriGetData')
+    def testUriGet(self, uri, protocol):
         directory = self._getTmpDir();
-        uri = "http://cygwin.uib.no/x86/setup.bz2.sig";
-        verbose = False;
-        utils.uri_get(directory, uri, verbose);
-        self.assertTrue(
-            os.path.exists(os.path.join(directory, "setup.bz2.sig")),
-            "http request"
-        );
+        targetPath = os.path.join(directory, os.path.basename(uri));
 
-        self.assertRaises(
-            ApplicationException,
-            utils.uri_get,
-            "",
-            "",
-            verbose
-        );
-
-        uri = "ftp://cygwin.uib.no/pub/cygwin/x86/setup.ini.sig";
         try:
-            utils.uri_get(directory, uri, verbose);
+            utils.uri_get(directory, uri, False);
         except utils.RequestException:
-            self.skipTest("Your network doesn't allow FTP requests.");
-        self.assertTrue(
-            os.path.exists(os.path.join(directory, "setup.ini.sig")),
-            "ftp request"
-        );
+            self.skipTest("Your network doesn't allow {0} requests.".format(protocol));
 
-        uri = "rsync://cygwin.uib.no/cygwin/x86/setup-legacy.bz2.sig";
-        self.assertRaises(
-            ApplicationException,
-            utils.uri_get,
-            directory,
-            uri,
-            verbose
-        );
+        self.assertTrue(os.path.exists(targetPath));
 
-    def testOpenTarfileFromLZMABall(self):
-        self._successOpenTarfile("pkgxz");
+    def getUriGetData(self):
+        return [
+            ['http://cygwin.uib.no/x86/setup.bz2.sig', 'HTTP'],
+            ['ftp://cygwin.uib.no/pub/cygwin/x86/setup.ini.sig', 'FTP'],
+        ];
 
-    def testOpenTarfileFromBzip2Ball(self):
-        self._successOpenTarfile("pkg");
+    @dataProvider('getUriGetWithInvalidSchemeData')
+    @expectedException(InvalidArgumentException)
+    def testUriGetWithInvalidScheme(self, uri):
+        utils.uri_get(self._getTmpDir(), uri, False);
+
+    def getUriGetWithInvalidSchemeData(self):
+        return [
+            ['rsync://cygwin.uib.no/cygwin/x86/setup-legacy.bz2.sig'],
+            [''],
+        ];
+
+    @dataProvider('getOpenTarfileData')
+    def testOpenTarfile(self, package):
+        self._successOpenTarfile(package);
+
+    def getOpenTarfileData(self):
+        return [
+            ['pkg'],
+            ['pkgxz'],
+        ];
 
     def testOpenTarfileFromLZMABallWithoutPATH(self):
         if not sys.platform.startswith("cygwin") and not sys.platform.startswith("linux") :
@@ -427,82 +430,33 @@ class TestUtils(TestCase):
 
         self.assertEqual(sorted(filelist), sorted(self._var_setupIni.__dict__[pkgname].filelist));
 
-    def testPEArchitecture(self):
-        p = os.path.join(__DIR__, 'fixtures', 'utils');
+    @dataProvider('getPEArchitectureData')
+    def testPEArchitecture(self, filename, expected):
+        fn = os.path.join(__DIR__, 'fixtures', 'utils', filename);
 
-        fn = os.path.join(p, 'cyglsa.dll');
-        self.assertFalse(utils.pe_is_64_bit(fn));
+        self.assertTrue(utils.pe_is_64_bit(fn) is expected);
 
-        fn = os.path.join(p, 'cyglsa64.dll');
-        self.assertTrue(utils.pe_is_64_bit(fn));
+    def getPEArchitectureData(self):
+        return [
+            ['cyglsa.dll', False],
+            ['cyglsa64.dll', True],
+        ];
 
-        try:
-            fn = os.path.join(p, 'cyglsa-bad1.dll');
+    @dataProvider('getPEArchitectureInvalidData')
+    def testPEArchitectureRaisesWithInvalidFile(self, filename, expectedMessage):
+        fn = os.path.join(__DIR__, 'fixtures', 'utils', filename);
+        message = '^{0}$'.format(re.escape(expectedMessage.format(fn)));
+
+        with self.assertRaisesRegexp(UnexpectedValueException, message):
             utils.pe_is_64_bit(fn);
-        except Exception as e:
-            self.assertTrue(isinstance(e, UnexpectedValueException));
-            self.assertEqual(
-                str(e),
-                "File '{0}' is not a DOS executable.".format(fn)
-            );
-        else:
-            self.fail(
-                "Expected UnexpectedValueException"
-                " (not a DOS executable)."
-            );
 
-        try:
-            fn = os.path.join(p, 'cyglsa-bad2.dll');
-            utils.pe_is_64_bit(fn);
-        except Exception as e:
-            self.assertTrue(isinstance(e, UnexpectedValueException));
-            self.assertEqual(
-                str(e),
-                "Could not find PE header in file '{0}'.".format(fn)
-            );
-        else:
-            self.fail(
-                "Expected UnexpectedValueException"
-                " (could not find PE header)."
-            );
-
-        try:
-            fn = os.path.join(p, 'cyglsa-bad3.dll');
-            utils.pe_is_64_bit(fn);
-        except Exception as e:
-            self.assertTrue(isinstance(e, UnexpectedValueException));
-            self.assertEqual(
-                str(e),
-                "Bad machine value 0xDEAD in file '{0}'.".format(fn)
-            );
-        else:
-            self.fail(
-                "Expected UnexpectedValueException"
-                " (bad machine value)."
-            );
-
-        try:
-            fn = os.path.join(p, 'cyglsa-bad4.dll');
-            utils.pe_is_64_bit(fn);
-        except Exception as e:
-            self.assertTrue(isinstance(e, UnexpectedValueException));
-            self.assertEqual(
-                str(e),
-                "Could not find PE header in file '{0}'.".format(fn)
-            );
-        else:
-            self.fail(
-                "Expected UnexpectedValueException"
-                " (truncated before PE header)."
-            );
-
-    def _assertParseRcWithTrailingWhitespace(self, whitespace):
-        f = open(self._getTmpFileName(), 'w');
-        f.write("mirror = \"http://foo\""+whitespace);
-        f.close();
-        ret = utils.parse_rc(self._getTmpFileName());
-        self.assertTrue(isinstance(ret, ConfigStructure));
-        self.assertEqual("http://foo", ret.mirror);
+    def getPEArchitectureInvalidData(self):
+        return [
+            ['cyglsa-bad1.dll', "File '{0}' is not a DOS executable."],
+            ['cyglsa-bad2.dll', "Could not find PE header in file '{0}'."],
+            ['cyglsa-bad3.dll', "Bad machine value 0xDEAD in file '{0}'."],
+            ['cyglsa-bad4.dll', "Could not find PE header in file '{0}'."],
+        ];
 
 if __name__ == "__main__":
     unittest.main();

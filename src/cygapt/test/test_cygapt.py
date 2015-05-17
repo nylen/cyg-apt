@@ -21,6 +21,7 @@ import gzip;
 
 from cygapt.cygapt import CygApt;
 from cygapt.ob import CygAptOb;
+from cygapt.test.case import dataProvider;
 from cygapt.test.utils import TestCase;
 from cygapt.test.utils import SetupIniProvider;
 from cygapt.path_mapper import PathMapper;
@@ -142,20 +143,18 @@ class TestCygApt(TestCase):
     def test___init__(self):
         self.assertTrue(isinstance(self.obj, CygApt));
 
-    def testGetDownloadDirWithoutEndSlashOnMirror(self):
-        self._var_mirror = 'http://foo.bar';
+    @dataProvider('getGetDownloadDirData')
+    def testGetDownloadDir(self, mirror):
+        self._var_mirror = mirror;
         cygapt = self._createCygApt();
         self.assertEqual(self._getDownloadDir(), cygapt.getDownloadDir());
 
-    def testGetDownloadDirWithOneSlashOnMirror(self):
-        self._var_mirror = 'http://foo.bar/';
-        cygapt = self._createCygApt();
-        self.assertEqual(self._getDownloadDir(), cygapt.getDownloadDir());
-
-    def testGetDownloadDirWithTwoSlashOnMirror(self):
-        self._var_mirror = 'http://foo.bar//';
-        cygapt = self._createCygApt();
-        self.assertEqual(self._getDownloadDir(), cygapt.getDownloadDir());
+    def getGetDownloadDirData(self):
+        return [
+            ['http://foo.bar'],
+            ['http://foo.bar/'],
+            ['http://foo.bar//'],
+        ];
 
     def testWriteFileList(self):
         lst = ["file1", "file2/", "file3/dfd"];
@@ -237,27 +236,26 @@ class TestCygApt(TestCase):
         self.assertEqual(ret, (filename, md5));
 
     #test also doDownload ball getmd5 and md5
-    def testDownload(self):
+    @dataProvider('getDownloadData')
+    def testDownload(self, package):
+        self._var_packagename = getattr(self._var_setupIni, package).name;
+        self._var_files = ["", self._var_packagename];
+        self.obj = self._createCygApt();
+
         self.obj.download();
+
         filename = os.path.join(
             self._getDownloadDir(),
-            self._var_setupIni.__dict__[self.obj.getPkgName()].install.curr.url
+            getattr(self._var_setupIni, package).install.curr.url
         );
         self.assertTrue(os.path.exists(filename));
 
-    def testDownloadWithSha256HashingAlgorithm(self):
-        self._var_packagename = self._var_setupIni.sha256pkg.name;
-        self._var_files = ["", self._var_packagename];
-        self.obj = self._createCygApt();
-
-        self.testDownload();
-
-    def testDownloadWithSha512HashingAlgorithm(self):
-        self._var_packagename = self._var_setupIni.sha512pkg.name;
-        self._var_files = ["", self._var_packagename];
-        self.obj = self._createCygApt();
-
-        self.testDownload();
+    def getDownloadData(self):
+        return [
+            ['pkg'],
+            ['sha256pkg'],
+            ['sha512pkg'],
+        ];
 
     def testGetRequires(self):
         expected = self._var_setupIni.pkg.requires.split(" ");
@@ -331,60 +329,74 @@ class TestCygApt(TestCase):
         self.assertEqual(ret, expected);
 
     def testDoInstall(self):
-        self.testDownload();
+        self.testDownload(self.obj.getPkgName());
         self.obj._doInstall();
         self.assertInstall([self.obj.getPkgName()]);
 
-    def testDoInstallExternal(self):
-        self.testDownload();
-        self.obj.setCygwinPlatform(False);
-        self.obj._doInstall();
-        self.assertInstall([self.obj.getPkgName()]);
+    @dataProvider('getDoInstallExternalData')
+    def testDoInstallExternal(self, package):
+        self.obj._doInstallExternal(os.path.join(
+            self._dir_mirror,
+            getattr(self._var_setupIni, package).install.curr.url,
+        ));
 
-    def testDoInstallExternalWithLZMACompression(self):
-        self.obj.setPkgName("pkgxz");
+        self.assertInstall([package], True);
 
-        self.testDownload();
-        self.obj.setCygwinPlatform(False);
-        self.obj._doInstall();
-        self.assertInstall([self.obj.getPkgName()]);
+    def getDoInstallExternalData(self):
+        return [
+            ['pkg'],
+            ['pkgxz'],
+        ];
 
     def testPostInstall(self):
-        self.testDoInstall();
+        self._writeScript(os.path.join(self._dir_postinstall, "foo.sh"), 0);
         self.obj._postInstall();
         self.assertPostInstall();
 
-    def testPostInstallWhenScriptSuccessWithShExtension(self):
-        self._assertPostInstallWhenScriptSuccess('.sh');
+    def provideSupportedScriptExtention(self):
+        data = [
+            ['.sh'],
+            ['.dash'],
+        ];
 
-    def testPostInstallWhenScriptSuccessWithDashExtension(self):
-        self._assertPostInstallWhenScriptSuccess('.dash');
+        if self._hasBatchInterpreter() :
+            data += [
+                ['.bat'],
+                ['.cmd'],
+            ];
 
-    def testPostInstallWhenScriptSuccessWithBatExtension(self):
-        self._skipIfOutsideCygwinAndWindows();
+        return data;
 
-        self._assertPostInstallWhenScriptSuccess('.bat');
+    @dataProvider('provideSupportedScriptExtention')
+    def testPostInstallWhenScriptSuccess(self, extension):
+        foo = os.path.join(self._dir_postinstall, "foo"+extension);
+        bar = os.path.join(self._dir_postinstall, "bar"+extension);
+        self._writeScript(foo, 0);
+        self._writeScript(bar, 0);
+        op_bar = os.path.join(self._dir_postinstall, "0p_bar."+extension);
+        self._writeScript(op_bar, 0);
+        zp_bar = os.path.join(self._dir_postinstall, "zp_bar."+extension);
+        self._writeScript(zp_bar, 0);
 
-    def testPostInstallWhenScriptSuccessWithCmdExtension(self):
-        self._skipIfOutsideCygwinAndWindows();
+        self.obj.postinstall();
 
-        self._assertPostInstallWhenScriptSuccess('.cmd');
+        self.assertPostInstall();
+        self.assertTrue(os.path.isfile(foo+".done"));
+        self.assertTrue(os.path.isfile(bar+".done"));
 
-    def testPostInstallWhenScriptFailsWithShExtension(self):
-        self._assertPostInstallWhenScriptFails('.sh');
+    @dataProvider('provideSupportedScriptExtention')
+    def testPostInstallWhenScriptFails(self, extension):
+        foo = os.path.join(self._dir_postinstall, "foo"+extension);
+        self._writeScript(foo, 1);
+        bar = os.path.join(self._dir_postinstall, "bar"+extension);
+        self._writeScript(bar, 2);
 
-    def testPostInstallWhenScriptFailsWithDashExtension(self):
-        self._assertPostInstallWhenScriptFails('.dash');
+        self.obj.postinstall();
 
-    def testPostInstallWhenScriptFailsWithBatExtension(self):
-        self._skipIfOutsideCygwinAndWindows();
-
-        self._assertPostInstallWhenScriptFails('.bat');
-
-    def testPostInstallWhenScriptFailsWithCmdExtension(self):
-        self._skipIfOutsideCygwinAndWindows();
-
-        self._assertPostInstallWhenScriptFails('.cmd');
+        self.assertTrue(os.path.isfile(foo));
+        self.assertFalse(os.path.isfile(foo+".done"));
+        self.assertTrue(os.path.isfile(bar));
+        self.assertFalse(os.path.isfile(bar+".done"));
 
     def testPostInstallWithPerpetualScriptsRunningBeforeAllOtherAndSorted(self):
         supportedExt = ['.sh', '.dash', '.cmd', '.bat'];
@@ -488,46 +500,59 @@ class TestCygApt(TestCase):
         self.assertFalse(os.path.isfile(bar+".done"));
 
     def testGetFileList(self):
-        self.testDoInstall();
         expected = self._var_setupIni.pkg.filelist;
+        self.obj._writeFileList(expected);
         ret = self.obj.getFileList();
         ret.sort();
         expected.sort();
         self.assertEqual(ret, expected);
 
     def testDoUninstall(self):
-        self.testPostInstall();
+        self.testInstall(self.obj.getPkgName());
         self.obj._doUninstall();
         self.assertRemove([self.obj.getPkgName()]);
 
-    def testInstall(self):
-        self._assertInstall('pkg');
+    @dataProvider('getInstallData')
+    def testInstall(self, packageName):
+        self._var_packagename = packageName;
+        self._var_files = ["", self._var_packagename];
+        self.obj = self._createCygApt();
 
-    def testInstallWithLZMACompression(self):
-        self._assertInstall('pkgxz');
+        # INSTALL
+        self.obj.install();
 
-    def testInstallWithDashScript(self):
-        self._assertInstall('dashpkg');
+        expected = list();
+        requires = getattr(self._var_setupIni, packageName).requires;
+        if requires :
+            expected += requires.split(" ");
+        expected.append(packageName);
+        self.assertInstall(expected);
+        self.assertPostInstall();
 
-    def testInstallWithBatScript(self):
-        self._skipIfOutsideCygwinAndWindows();
+    def getInstallData(self):
+        data = [
+            ['pkg'],
+            ['pkgxz'],
+            ['dashpkg'],
+        ];
 
-        self._assertInstall('batpkg');
+        if self._hasBatchInterpreter() :
+            data += [
+                ['batpkg'],
+                ['cmdpkg'],
+            ];
 
-    def testInstallWithCmdScript(self):
-        self._skipIfOutsideCygwinAndWindows();
-
-        self._assertInstall('cmdpkg');
+        return data;
 
     def testRemove(self):
-        self.testInstall();
+        self.testInstall(self.obj.getPkgName());
         # REMOVE
         self.obj.remove();
         self.assertRemove([self.obj.getPkgName()]);
 
     def testUpgrade(self):
-        self.testInstall();
         pkgname = self._var_setupIni.pkg.name;
+        self.testInstall(pkgname);
         version_file = os.path.join(
             self._dir_mtroot,
             "var",
@@ -547,7 +572,7 @@ class TestCygApt(TestCase):
         self.assertNotEqual(retcurr, rettest);
 
     def testPurge(self):
-        self.testPostInstall();
+        self.testInstall(self.obj.getPkgName());
         self.obj.purge();
         self.assertRemove([self.obj.getPkgName()]);
 
@@ -559,11 +584,11 @@ class TestCygApt(TestCase):
         self.assertTrue(os.path.isdir(self.obj.getPkgName()));
 
     def testFind(self):
-        self.testDoInstall();
+        pkgname = self._var_setupIni.libpkg.name;
+        self.testInstall(pkgname);
 
         self.obj.setPkgName("version");
 
-        pkgname = self._var_setupIni.pkg.name;
         expected = "{0}: {1}\n".format(
             pkgname,
             "/var/"+pkgname+"/version"
@@ -573,31 +598,24 @@ class TestCygApt(TestCase):
         ret = ob.getClean();
         self.assertEqual(ret, expected);
 
-    def testIsBarredPackage(self):
-        self.assertTrue(
-            self.obj._isBarredPackage(self._var_setupIni.libbarredpkg.name)
-        );
-        self.assertTrue(
-            self.obj._isBarredPackage(self._var_setupIni.barredpkg.name)
-        );
-        self.assertFalse(
-            self.obj._isBarredPackage(self._var_setupIni.libpkg.name)
-        );
-        self.assertFalse(
-            self.obj._isBarredPackage(self._var_setupIni.pkg.name)
-        );
-        self.obj._isBarredPackage("not_exists_pkg");
+    @dataProvider('getIsBarredPackageData')
+    def testIsBarredPackage(self, package, expected):
+        result = self.obj._isBarredPackage(package);
 
-        barredPackages = [
-            "python",
-            "python-argparse",
-            "gnupg",
-            "xz",
+        self.assertEqual(result, expected);
+
+    def getIsBarredPackageData(self):
+        return [
+            ['python', True],
+            ['python-argparse', True],
+            ['gnupg', True],
+            ['xz', True],
+            ['libbarredpkg', True],
+            ['barredpkg', True],
+            ['pkg', False],
+            ['libpkg', False],
+            ['not_exists_pkg', False],
         ];
-        for package in barredPackages:
-            result = self.obj._isBarredPackage(package);
-            message = "The package `{0}` is barred.".format(package);
-            self.assertTrue(result, message);
 
     def testGetRessourceWithSetupIniFieldWarnDeprecationWarning(self):
         self._writeUserConfig(self._file_user_config, keepBC=True);
@@ -617,12 +635,24 @@ class TestCygApt(TestCase):
             self._file_user_config,
         );
 
-    def assertInstall(self, pkgname_list):
+    def assertInstall(self, pkgname_list, onlyFiles=False):
         pkg_ini_list = [];
         for pkg in pkgname_list:
             pkg_ini_list.append(self._var_setupIni.__dict__[pkg]);
 
         for pkg in pkg_ini_list:
+            for filename in pkg.filelist:
+                filename = self._dir_mtroot + filename;
+                if onlyFiles or os.path.normpath(os.path.dirname(filename)) != os.path.normpath(self._dir_postinstall):
+                    self.assertTrue(
+                        os.path.exists(filename),
+                        "{0} not exists".format(filename)
+                    );
+
+            if onlyFiles :
+                continue;
+
+            # Confirm the package file list exists and correct
             gz_file = os.path.join(
                 self._dir_confsetup,
                 "{0}.lst.gz".format(pkg.name)
@@ -634,13 +664,6 @@ class TestCygApt(TestCase):
             lines.sort();
             lines = ''.join(lines).splitlines(); # remove ending newline
             self.assertEqual(pkg.filelist, lines);
-            for filename in pkg.filelist:
-                filename = self._dir_mtroot + filename;
-                if os.path.normpath(os.path.dirname(filename)) != os.path.normpath(self._dir_postinstall):
-                    self.assertTrue(
-                        os.path.exists(filename),
-                        "{0} not exists".format(filename)
-                    );
 
             # Confirm the package is represented in installed.db
             message = "The package '{0}' is in '{1}'.".format(
@@ -706,57 +729,11 @@ class TestCygApt(TestCase):
             for line in contents.splitlines() :
                 self.assertNotEqual(line.split()[0], pkg.name, message);
 
-    def _assertPostInstallWhenScriptSuccess(self, extension):
-        foo = os.path.join(self._dir_postinstall, "foo"+extension);
-        bar = os.path.join(self._dir_postinstall, "bar"+extension);
-        self._writeScript(foo, 0);
-        self._writeScript(bar, 0);
-        op_bar = os.path.join(self._dir_postinstall, "0p_bar."+extension);
-        self._writeScript(op_bar, 0);
-        zp_bar = os.path.join(self._dir_postinstall, "zp_bar."+extension);
-        self._writeScript(zp_bar, 0);
-
-        self.obj.postinstall();
-
-        self.assertPostInstall();
-        self.assertTrue(os.path.isfile(foo+".done"));
-        self.assertTrue(os.path.isfile(bar+".done"));
-
-    def _assertPostInstallWhenScriptFails(self, extension):
-        foo = os.path.join(self._dir_postinstall, "foo"+extension);
-        self._writeScript(foo, 1);
-        bar = os.path.join(self._dir_postinstall, "bar"+extension);
-        self._writeScript(bar, 2);
-
-        self.obj.postinstall();
-
-        self.assertTrue(os.path.isfile(foo));
-        self.assertFalse(os.path.isfile(foo+".done"));
-        self.assertTrue(os.path.isfile(bar));
-        self.assertFalse(os.path.isfile(bar+".done"));
-
-    def _assertInstall(self, packageName):
-        self._var_packagename = packageName;
-        self._var_files = ["", self._var_packagename];
-        self.obj = self._createCygApt();
-
-        # INSTALL
-        self.obj.install();
-
-        expected = list();
-        requires = getattr(self._var_setupIni, packageName).requires;
-        if requires :
-            expected += requires.split(" ");
-        expected.append(packageName);
-        self.assertInstall(expected);
-        self.assertPostInstall();
-
-    def _skipIfOutsideCygwinAndWindows(self):
-        if not (
+    def _hasBatchInterpreter(self):
+        return  (
             sys.platform.startswith("cygwin")
             or sys.platform.startswith("win")
-        ) :
-            self.skipTest("requires Cygwin or Windows");
+        );
 
 if __name__ == "__main__":
     unittest.main();

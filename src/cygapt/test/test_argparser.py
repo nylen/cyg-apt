@@ -21,6 +21,7 @@ import unittest;
 import sys;
 
 from cygapt.test.case import TestCase;
+from cygapt.test.case import dataProvider;
 from cygapt.argparser import CygAptArgParser;
 
 class TestArgParser(TestCase):
@@ -49,12 +50,6 @@ class TestArgParser(TestCase):
         self.assertTrue(ret.verbose);
         self.assertEqual(ret.command, "install");
         self.assertEqual(ret.package, ['pkg']);
-
-    def testParsePostInstall(self):
-        self._assertParseCommand("postinstall");
-
-    def testParsePostRemove(self):
-        self._assertParseCommand("postremove", ["pkg"]);
 
     def testArgumentType(self):
         sys.argv.append("--mirror=http://a.mirror.str");
@@ -95,7 +90,8 @@ class TestArgParser(TestCase):
 
         self.assertTrue(ret.nopostremove);
 
-    def _assertParseCommand(self, command, args=None):
+    @dataProvider('getParseCommandData')
+    def testParseCommand(self, command, args=None):
         """
         @param command: str
         @param args:    list
@@ -111,6 +107,12 @@ class TestArgParser(TestCase):
 
         self.assertEqual(ret.command, command);
         self.assertEqual(ret.package, args);
+
+    def getParseCommandData(self):
+        return [
+            ['postinstall'],
+            ['postremove', ['pkg']],
+        ];
 
 if __name__ == "__main__":
     unittest.main();
