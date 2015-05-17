@@ -13,9 +13,26 @@
 
 from __future__ import absolute_import;
 
-import sys;
+class ProcessFailedException(Exception):
+    def __init__(self, process):
+        Exception.__init__(self, """\
+The command "{0}" failed.
+Exit Code: {1} ({2})
 
-if sys.version_info < (3, ):
-    from .py2.exception import SkipTestException as SkipTestException;
-else:
-    from unittest import SkipTest as SkipTestException;
+Output:
+================
+{3}
+
+Error Output:
+================
+{4}\
+""".format(
+            process.getCommandLine(),
+            process.getExitCode(),
+            process.getExitCodeText(),
+            process.getOutput(),
+            process.getErrorOutput(),
+        ));
+
+class LogicException(Exception):
+    pass;

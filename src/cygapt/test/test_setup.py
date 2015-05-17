@@ -20,10 +20,11 @@ from __future__ import absolute_import;
 import unittest;
 import sys;
 import os;
-import subprocess;
 import urllib;
+import re;
 
 from cygapt.setup import CygAptSetup;
+from cygapt.test.case import dataProvider;
 from cygapt.test.utils import TestCase;
 from cygapt.test.utils import SetupIniProvider;
 from cygapt.setup import PlatformException;
@@ -32,6 +33,7 @@ from cygapt.exception import PathExistsException;
 from cygapt.exception import UnexpectedValueException;
 from cygapt.setup import SignatureException;
 from cygapt.ob import CygAptOb;
+from cygapt.process import Process;
 
 
 class TestSetup(TestCase):
@@ -101,60 +103,42 @@ class TestSetup(TestCase):
         self._writeUserConfig(self._file_user_config);
         self.obj._gpgImport(self.obj.GPG_CYG_PUBLIC_RING_URI);
 
-        try:
+        message = '^{0}$'.format(re.escape(
+            "{0}{1}{2}/setup.bz2 not signed by Cygwin's public key."
+            " Use -X to ignore signatures."
+            "".format(
+            self._var_mirror,
+            '' if self._var_mirror.endswith('/') else '/',
+            self._var_setupIni.getArchitecture(),
+        )));
+
+        with self.assertRaisesRegexp(SignatureException, message):
             self.obj.update(self._file_user_config, True);
-        except Exception as e:
-            self.assertTrue(isinstance(e, SignatureException));
-            self.assertEqual(e.getMessage(), " ".join([
-                "{0}{1}/setup.bz2 not signed by Cygwin's public key.",
-                "Use -X to ignore signatures.",
-            ]).format(
-                self._var_mirror+('' if self._var_mirror.endswith('/') else '/'),
-                self._var_setupIni.getArchitecture(),
-            ));
-        else:
-            self.fail(" ".join([
-                ".update() raises an SignatureException when the mirror have",
-                "not the Cygwin signature.",
-            ]));
 
-    def testUpdateWithoutVerifySignature(self):
+    @dataProvider('getUpdateWithoutVerifySignatureWithAnyEndSlashCountData')
+    def testUpdateWithoutVerifySignatureWithAnyEndSlashCount(self, mirrorEndSlashCount):
         if not self._var_cygwin_p:
             self.skipTest("requires cygwin or linux");
 
+        self._var_mirror = self._var_mirror.rstrip('/')+'/'*mirrorEndSlashCount;
         self._writeUserConfig(self._file_user_config);
 
         self.obj.update(self._file_user_config, False);
 
         self._assertUpdate();
 
-    def testUpdateWithoutVerifySignatureAndWithoutMirrorEndSlash(self):
+    def getUpdateWithoutVerifySignatureWithAnyEndSlashCountData(self):
+        return [
+            [0],
+            [1],
+        ];
+
+    @dataProvider('getUpdateWithoutVerifySignatureAndWithValidArchitectureData')
+    def testUpdateWithoutVerifySignatureAndWithValidArchitecture(self, arch):
         if not self._var_cygwin_p:
             self.skipTest("requires cygwin or linux");
 
-        self._var_mirror = self._var_mirror.rstrip('/');
-        self._writeUserConfig(self._file_user_config);
-
-        self.obj.update(self._file_user_config, False);
-
-        self._assertUpdate();
-
-    def testUpdateWithoutVerifySignatureAndWithMirrorEndSlash(self):
-        if not self._var_cygwin_p:
-            self.skipTest("requires cygwin or linux");
-
-        self._var_mirror = self._var_mirror.rstrip('/')+'/';
-        self._writeUserConfig(self._file_user_config);
-
-        self.obj.update(self._file_user_config, False);
-
-        self._assertUpdate();
-
-    def testUpdateWithoutVerifySignatureOn64Bit(self):
-        if not self._var_cygwin_p:
-            self.skipTest("requires cygwin or linux");
-
-        self._var_arch = "x86_64";
+        self._var_arch = arch;
         self._var_setupIni = SetupIniProvider(self, self._var_arch);
         self.obj.setArchitecture(self._var_arch);
 
@@ -164,6 +148,12 @@ class TestSetup(TestCase):
 
         self._assertUpdate();
 
+    def getUpdateWithoutVerifySignatureAndWithValidArchitectureData(self):
+        return [
+            ["x86"],
+            ["x86_64"],
+        ];
+
     def testUpdateWithoutMirror(self):
         if not self._var_cygwin_p:
             self.skipTest("requires cygwin or linux");
@@ -171,21 +161,15 @@ class TestSetup(TestCase):
         self._var_mirror = "";
         self._writeUserConfig(self._file_user_config);
 
-        try:
+        message = '^{0}$'.format(re.escape(
+            'A mirror must be specified on the configuration file "{0}"'
+            ' or with the command line option "--mirror".'
+            ' See cygwin.com/mirrors.html for the list of mirrors.'
+            ''.format(self._file_user_config),
+        ));
+
+        with self.assertRaisesRegexp(UnexpectedValueException, message):
             self.obj.update(self._file_user_config, False);
-        except Exception as e:
-            self.assertTrue(isinstance(e, UnexpectedValueException));
-            self.assertEqual(e.getMessage(), (
-                "A mirror must be specified on the configuration file \"{0}\" "
-                "or with the command line option \"--mirror\". "
-                "See cygwin.com/mirrors.html for the list of mirrors."
-                "".format(self._file_user_config)
-            ));
-        else:
-            self.fail(
-                ".update() raises an UnexpectedValueException if the mirror "
-                "was not defined."
-            );
 
     def testUpdateWithSetupIniFieldWarnDeprecationWarning(self):
         if not self._var_cygwin_p:
@@ -339,12 +323,9 @@ class TestSetup(TestCase):
             "--list-public-keys",
             "--fingerprint",
         ]);
-        p = subprocess.Popen(cmd, shell=True,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE);
-        if p.wait():
-            raise RuntimeError(p.stderr.read());
-        lines = p.stdout.readlines();
+        p = Process(cmd);
+        p.mustRun();
+        lines = p.getOutput().splitlines(True);
         findout = False;
         for line in lines:
             if isinstance(line, bytes):
@@ -360,29 +341,30 @@ class TestSetup(TestCase):
     def testUsage(self):
         self.obj.usage();
 
-    def testUsageContainPostInstallCommand(self):
-        self._assertUsageContainCommand("postinstall");
-
-    def testUsageContainPostRemoveCommand(self):
-        self._assertUsageContainCommand("postremove");
-
-    def testUsageContainChecksumCommand(self):
-        self._assertUsageContainCommand("checksum");
-
     def testUsageNotContainMd5Command(self):
         try:
-            self._assertUsageContainCommand("md5");
+            self.testUsageContainCommand("md5");
         except self.failureException :
             pass;
         else:
             self.fail("Failed asserting that usage does not contain md5 command.");
 
-    def _assertUsageContainCommand(self, command):
+    @dataProvider('getUsageContainCommandData')
+    def testUsageContainCommand(self, command):
         ob = CygAptOb(True);
-        self.obj.usage();
-        ret = ob.getClean();
+        try:
+            self.obj.usage();
+        finally:
+            ret = ob.getClean();
 
         self.assertTrue("    {0}".format(command) in ret);
+
+    def getUsageContainCommandData(self):
+        return [
+            ['postinstall'],
+            ['postremove'],
+            ['checksum'],
+        ];
 
     def _assertUpdate(self, keepBC=False):
         """Asserts that the local setup.ini has been updated.

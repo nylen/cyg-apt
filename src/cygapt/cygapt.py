@@ -31,6 +31,7 @@ from cygapt.exception import InvalidArgumentException;
 from cygapt.exception import UnexpectedValueException;
 from cygapt.path_mapper import PathMapper;
 from cygapt.structure import ConfigStructure;
+from cygapt.process import Process;
 
 class CygApt:
     INSTALLED_DB_MAGIC = "INSTALLED.DB 2\n";
@@ -214,9 +215,9 @@ class CygApt:
     def _checkForSetupExe(self):
         # It's far from bulletproof, but it's surprisingly hard to detect
         # setup.exe running since it doesn't lock any files.
-        p = os.popen(self.__pm.mapPath("/bin/ps -W"));
-        psout = p.readlines();
-        p.close();
+        p = Process(self.__pm.mapPath("/bin/ps -W"));
+        p.run();
+        psout = p.getOutput().splitlines(True);
         setup_re = re.compile(r"(?<![a-z0-9_ -])setup(|-1\.7|-x86|-x86_64)\.exe", re.IGNORECASE);
         for l in psout:
             m = setup_re.search(l);
@@ -701,16 +702,7 @@ class CygApt:
                 cmd = " ".join(["cmd", self.CMD_OPTIONS, os.path.basename(mapped_file)]);
                 cwd = os.path.dirname(mapped_file);
 
-            backupCwd = None;
-            try:
-                if cwd :
-                    backupCwd = os.getcwd();
-                    os.chdir(cwd);
-
-                retval = os.system(cmd);
-            finally:
-                if backupCwd :
-                    os.chdir(backupCwd);
+            retval = Process(cmd, cwd).run(True);
 
             if os.path.exists(mapped_file_done):
                 os.remove(mapped_file_done);
@@ -778,12 +770,12 @@ class CygApt:
                     # Convert to links if possible -- depends on coreutils being installed
                     if m.issym() and self.__lnExists:
                         link_target = m.linkname;
-                        os.system(" ".join([
+                        Process(" ".join([
                             self.__dosLn,
                             "-s",
                             link_target,
                             path
-                        ]));
+                        ])).run(True);
                     elif m.islnk() and self.__lnExists:
                         # Hard link -- expect these to be very rare
                         link_target = m.linkname;
@@ -794,11 +786,11 @@ class CygApt:
                                 os.path.join(tempdir, link_target),
                                 mapped_target
                             );
-                        os.system(" ".join([
+                        Process(" ".join([
                             self.__dosLn,
                             mapped_target,
                             path
-                        ]));
+                        ])).run(True);
                     else:
                         shutil.move(os.path.join(tempdir, m.name), path);
         finally:
@@ -1170,9 +1162,9 @@ class CygApt:
         if not self.__cygwinPlatform:
             command += "'";
 
-        p = os.popen(command);
-        outputlines = p.readlines();
-        p.close();
+        p = Process(command);
+        p.run();
+        outputlines = p.getOutput().splitlines(True);
 
         unformat = "";
         start = False;
