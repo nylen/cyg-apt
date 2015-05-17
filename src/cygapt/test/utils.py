@@ -19,11 +19,11 @@ import urllib;
 import tarfile;
 import bz2;
 import hashlib;
-import subprocess;
 import atexit;
 import time;
 
 from cygapt.test.case import TestCase as BaseTestCase;
+from cygapt.process import Process;
 
 class TestCase(BaseTestCase):
     __mirrorDir = None;
@@ -572,15 +572,12 @@ class PackageIni():
         f = open(bin_f, 'w');
         f.write('#!/bin/sh\necho "running";');
         f.close();
-        ret = 0;
-        ret += os.system('ln -s "' + self.name + '" "' + link_bin_f + '"');
-        ret += os.system('ln "' + bin_f + '" "' + hardlink_bin_f + '"');
-        ret += os.system('ln -s "{0}" "{1}"'.format(
+        Process('ln -s "' + self.name + '" "' + link_bin_f + '"').mustRun();
+        Process('ln "' + bin_f + '" "' + hardlink_bin_f + '"').mustRun();
+        Process('ln -s "{0}" "{1}"'.format(
             os.path.relpath(version_d, os.path.dirname(link_version_d)),
             link_version_d,
-        ));
-        if ret > 0:
-            raise OSError("fail to create links");
+        )).mustRun();
 
         self._writeScript(postinstall_f, 0);
         self._writeScript(preremove_f, 0);
@@ -659,7 +656,7 @@ class PackageIni():
             f.close();
             os.remove(srcPath);
         elif "xz" == compression :
-            subprocess.check_call(['xz', '-f', srcPath]);
+            Process(['xz', '-f', srcPath]).mustRun();
 
     def _md5Sum(self, path):
         """Generate the md5sum from a file.

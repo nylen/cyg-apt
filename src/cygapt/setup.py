@@ -18,14 +18,12 @@ import bz2;
 import inspect;
 import os;
 import shutil;
-import subprocess;
 import sys;
 import urllib;
 import platform;
 
 from cygapt.cygapt import CygApt;
 from cygapt.exception import ApplicationException;
-from cygapt.exception import ProcessException;
 from cygapt.exception import PathExistsException;
 from cygapt.exception import UnexpectedValueException;
 from cygapt.utils import RequestException;
@@ -34,6 +32,7 @@ import cygapt.utils as cautils;
 import cygapt.version as version;
 import cygapt.copying as copying;
 from cygapt.structure import ConfigStructure;
+from cygapt.process import Process;
 
 class CygAptSetup:
     RC_OPTIONS = [
@@ -383,13 +382,9 @@ class CygAptSetup:
             cmd = gpg_path + "--verify --no-secmem-warning ";
             cmd += "{0}/{1} ".format(self.__tmpDir, sig_name);
             cmd += "{0}/{1} ".format(self.__tmpDir, setup_ini_name);
-            p = subprocess.Popen(
-                cmd,
-                shell=True,
-                stderr=subprocess.PIPE
-            );
-            p.wait();
-            verify = p.stderr.read();
+            p = Process(cmd);
+            p.run();
+            verify = p.getErrorOutput();
             if isinstance(verify, bytes):
                 marker = self.GPG_GOOD_FINGER.encode();
             else:
@@ -459,16 +454,10 @@ class CygAptSetup:
 
         if os.path.exists(cygcheck_path):
             cmd = cygcheck_path + " -cd ";
-            proc = subprocess.Popen(
-                cmd,
-                shell=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            );
-            if proc.wait():
-                raise ProcessException(proc.stderr.readlines());
+            proc = Process(cmd);
+            proc.mustRun();
 
-            lines = proc.stdout.readlines();
+            lines = proc.getOutput().splitlines(True);
             # remove first two lines
             pkgs = lines[2:];
 
@@ -491,14 +480,7 @@ class CygAptSetup:
         cmd = "gpg ";
         cmd += "--no-secmem-warning ";
         cmd += "--import {0}".format(tmpfile);
-        p = subprocess.Popen(
-            cmd,
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        );
-        if p.wait():
-            raise ProcessException(p.stderr.readlines());
+        Process(cmd).mustRun();
 
 class PlatformException(ApplicationException):
     pass;

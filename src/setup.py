@@ -41,6 +41,7 @@ setup(
     name=pkgname,
     packages=[
         'cygapt',
+        'cygapt.process',
         'cygapt.test',
         'cygapt.test.case',
         'cygapt.test.case.py2',

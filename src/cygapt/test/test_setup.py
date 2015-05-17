@@ -20,7 +20,6 @@ from __future__ import absolute_import;
 import unittest;
 import sys;
 import os;
-import subprocess;
 import urllib;
 import re;
 
@@ -34,6 +33,7 @@ from cygapt.exception import PathExistsException;
 from cygapt.exception import UnexpectedValueException;
 from cygapt.setup import SignatureException;
 from cygapt.ob import CygAptOb;
+from cygapt.process import Process;
 
 
 class TestSetup(TestCase):
@@ -323,12 +323,9 @@ class TestSetup(TestCase):
             "--list-public-keys",
             "--fingerprint",
         ]);
-        p = subprocess.Popen(cmd, shell=True,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE);
-        if p.wait():
-            raise RuntimeError(p.stderr.read());
-        lines = p.stdout.readlines();
+        p = Process(cmd);
+        p.mustRun();
+        lines = p.getOutput().splitlines(True);
         findout = False;
         for line in lines:
             if isinstance(line, bytes):
