@@ -572,12 +572,14 @@ class PackageIni():
         f = open(bin_f, 'w');
         f.write('#!/bin/sh\necho "running";');
         f.close();
-        Process('ln -s "' + self.name + '" "' + link_bin_f + '"').mustRun();
-        Process('ln "' + bin_f + '" "' + hardlink_bin_f + '"').mustRun();
-        Process('ln -s "{0}" "{1}"'.format(
+        Process(['ln', '-s', self.name, link_bin_f]).mustRun();
+        Process(['ln', bin_f, hardlink_bin_f]).mustRun();
+        Process([
+            'ln',
+            '-s',
             os.path.relpath(version_d, os.path.dirname(link_version_d)),
             link_version_d,
-        )).mustRun();
+        ]).mustRun();
 
         self._writeScript(postinstall_f, 0);
         self._writeScript(preremove_f, 0);
