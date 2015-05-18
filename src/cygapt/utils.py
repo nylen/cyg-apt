@@ -32,7 +32,7 @@ from cygapt.structure import ConfigStructure;
 from cygapt.process import Process;
 
 def cygpath(path):
-    p = Process("cygpath \"{0}\"".format(path));
+    p = Process(["cygpath", path]);
     p.run();
     dospath = p.getOutput().strip();
     return dospath;

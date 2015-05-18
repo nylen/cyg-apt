@@ -23,6 +23,7 @@ import shutil;
 import sys;
 import urllib;
 import tempfile;
+import subprocess;
 
 import cygapt.utils as cautils;
 from cygapt.exception import ApplicationException;
@@ -37,9 +38,9 @@ class CygApt:
     INSTALLED_DB_MAGIC = "INSTALLED.DB 2\n";
     DIST_NAMES = ('curr', 'test', 'prev');
     FORCE_BARRED = ["python", "python-argparse", "gnupg", "xz"];
-    SH_OPTIONS = " --norc --noprofile ";
-    DASH_OPTIONS = " ";
-    CMD_OPTIONS = " /V:ON /E:ON /C ";
+    SH_OPTIONS = ["--norc", "--noprofile"];
+    DASH_OPTIONS = [];
+    CMD_OPTIONS = ["/V:ON", "/E:ON", "/C"];
     CYG_POSTINSTALL_DIR = "/etc/postinstall";
     CYG_PREREMOVE_DIR = "/etc/preremove";
     CYG_POSTREMOVE_DIR = "/etc/postremove";
@@ -215,7 +216,7 @@ class CygApt:
     def _checkForSetupExe(self):
         # It's far from bulletproof, but it's surprisingly hard to detect
         # setup.exe running since it doesn't lock any files.
-        p = Process(self.__pm.mapPath("/bin/ps -W"));
+        p = Process([self.__pm.mapPath("/bin/ps"), "-W"]);
         p.run();
         psout = p.getOutput().splitlines(True);
         setup_re = re.compile(r"(?<![a-z0-9_ -])setup(|-1\.7|-x86|-x86_64)\.exe", re.IGNORECASE);
@@ -676,30 +677,20 @@ class CygApt:
         mapped_file_done = mapped_file + ".done";
         if os.path.isfile(mapped_file):
             sys.stderr.write("running: {0}\n".format(file_name));
-            if self.__cygwinPlatform:
-                cmd = " ".join([
-                    "bash",
-                    self.SH_OPTIONS,
-                    mapped_file
-                ]);
-            else:
-                cmd = " ".join([
-                    self.__dosBash,
-                    self.SH_OPTIONS,
-                    mapped_file
-                ]);
+            cmd = ["bash"] + self.SH_OPTIONS + [mapped_file];
+            if not self.__cygwinPlatform:
+                cmd[0] = self.__dosBash;
 
             cwd = None;
             extension = os.path.splitext(mapped_file)[1];
 
             if ".dash" == extension :
-                cmd = ["dash", self.DASH_OPTIONS, mapped_file];
+                cmd = ["dash"] + self.DASH_OPTIONS + [mapped_file];
                 if not self.__cygwinPlatform:
                     cmd[0] = self.__dosDash;
-                cmd = " ".join(cmd);
 
             if extension in [".bat", ".cmd"] :
-                cmd = " ".join(["cmd", self.CMD_OPTIONS, os.path.basename(mapped_file)]);
+                cmd = ["cmd"] + self.CMD_OPTIONS + [os.path.basename(mapped_file)];
                 cwd = os.path.dirname(mapped_file);
 
             retval = Process(cmd, cwd).run(True);
@@ -770,12 +761,12 @@ class CygApt:
                     # Convert to links if possible -- depends on coreutils being installed
                     if m.issym() and self.__lnExists:
                         link_target = m.linkname;
-                        Process(" ".join([
+                        Process([
                             self.__dosLn,
                             "-s",
                             link_target,
                             path
-                        ])).run(True);
+                        ]).run(True);
                     elif m.islnk() and self.__lnExists:
                         # Hard link -- expect these to be very rare
                         link_target = m.linkname;
@@ -786,11 +777,11 @@ class CygApt:
                                 os.path.join(tempdir, link_target),
                                 mapped_target
                             );
-                        Process(" ".join([
+                        Process([
                             self.__dosLn,
                             mapped_target,
                             path
-                        ])).run(True);
+                        ]).run(True);
                     else:
                         shutil.move(os.path.join(tempdir, m.name), path);
         finally:
@@ -1142,25 +1133,21 @@ class CygApt:
         """Executes all undone preremove and postremove scripts."""
         self._postRemove();
 
-    def _integrityControl(self, checklist=[]):
-        options = "-c ";
+    def _integrityControl(self, checklist=None):
+        if None is checklist :
+            checklist = list();
+
+        options = ["-c"];
         if self.__verbose:
-            options += "-v ";
+            options.append("-v");
 
         if len(checklist) == 0:
             checklist.append(self.__pkgName);
 
-        pkg_lst = " ".join(checklist);
-        command = '';
+        command = ["/bin/cygcheck"] + options + checklist;
         if not self.__cygwinPlatform:
-            command += self.__dosBash + ' ' + self.SH_OPTIONS;
-            command += " -c ";
-            command += "'";
-        command += "/bin/cygcheck ";
-        command += options;
-        command += pkg_lst;
-        if not self.__cygwinPlatform:
-            command += "'";
+            command = subprocess.list2cmdline(command);
+            command = [self.__dosBash] + self.SH_OPTIONS + ["-c"] + [command];
 
         p = Process(command);
         p.run();
