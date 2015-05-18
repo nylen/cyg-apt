@@ -23,7 +23,7 @@ class PathMapper:
         self.__cygwinPlatform = cygwin_p;
         self.__map = {};
 
-        p = Process(self.__root + "/bin/mount");
+        p = Process([self.__root + "/bin/mount"]);
         p.run();
         mountout = p.getOutput().splitlines(True);
         self._addMapping(mountout);

@@ -373,15 +373,15 @@ class CygAptSetup:
                 raise RequestException(msg, previous=e);
 
             if self.__cygwinPlatform:
-                gpg_path = "gpg ";
+                gpg_path = "gpg";
             else:
                 if self._cygwinVersion() < 1.7:
-                    gpg_path = "/usr/bin/gpg ";
+                    gpg_path = "/usr/bin/gpg";
                 else:
-                    gpg_path = "/usr/local/bin/gpg ";
-            cmd = gpg_path + "--verify --no-secmem-warning ";
-            cmd += "{0}/{1} ".format(self.__tmpDir, sig_name);
-            cmd += "{0}/{1} ".format(self.__tmpDir, setup_ini_name);
+                    gpg_path = "/usr/local/bin/gpg";
+            cmd = [gpg_path, "--verify", "--no-secmem-warning"];
+            cmd.append("{0}/{1}".format(self.__tmpDir, sig_name));
+            cmd.append("{0}/{1}".format(self.__tmpDir, setup_ini_name));
             p = Process(cmd);
             p.run();
             verify = p.getErrorOutput();
@@ -453,7 +453,7 @@ class CygAptSetup:
         cygcheck_path = self.__pm.mapPath("/bin/cygcheck");
 
         if os.path.exists(cygcheck_path):
-            cmd = cygcheck_path + " -cd ";
+            cmd = [cygcheck_path, "-cd"];
             proc = Process(cmd);
             proc.mustRun();
 
@@ -477,9 +477,9 @@ class CygAptSetup:
 
         cautils.uri_get(self.__tmpDir, uri, verbose=self.__verbose);
         tmpfile = os.path.join(self.__tmpDir, os.path.basename(uri));
-        cmd = "gpg ";
-        cmd += "--no-secmem-warning ";
-        cmd += "--import {0}".format(tmpfile);
+        cmd = ["gpg"];
+        cmd.append("--no-secmem-warning");
+        cmd += ["--import", tmpfile];
         Process(cmd).mustRun();
 
 class PlatformException(ApplicationException):
